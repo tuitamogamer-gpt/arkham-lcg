@@ -130,8 +130,28 @@ export const plain = (s = "") =>
     .replace(/\[([^\]]+)\]/g, "$1");
 export const CARD_ART: Record<string, string> = {
   ...scans,
+  // Visually verified against both faces: the campus locations use `b` for
+  // their revealed side, but Your Friend's Room uses the opposite convention.
+  // Default inspection should show the same rules face as the current text.
+  ...Object.fromEntries(
+    ["12116", "12117", "12118", "12119", "12120"]
+      .filter((code) => (scans as Record<string, string>)[`${code}b`])
+      .map((code) => [code, (scans as Record<string, string>)[`${code}b`]]),
+  ),
   "12004": "/art/joe-card.png",
   "12005": "/art/intuition.png",
   "12031": "/art/fingerprint.png",
   "12034": "/art/magnifying.png",
+};
+// Do not infer a location's reveal state from ArkhamDB's filename suffix.
+export const LOCATION_ART: Record<
+  string,
+  { revealed: string; unrevealed: string }
+> = {
+  "12113": { revealed: "12113", unrevealed: "12113b" },
+  "12116": { revealed: "12116b", unrevealed: "12116" },
+  "12117": { revealed: "12117b", unrevealed: "12117" },
+  "12118": { revealed: "12118b", unrevealed: "12118" },
+  "12119": { revealed: "12119b", unrevealed: "12119" },
+  "12120": { revealed: "12120b", unrevealed: "12120" },
 };

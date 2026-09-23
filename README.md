@@ -28,6 +28,7 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - **Player-controlled event progression**: every visible scripted step pauses with its source card, affected investigator, and before/after changes. Attacks and encounter revelations wait for confirmation before their effects resolve. Phase transitions, draws, injuries, and reactions unfold step by step, with no timers or autoplay.
 - Inspect the table or cards while paused; review the most recent 500 events in the read-only event history. Closing a checkpoint only minimizes it. Unrelated actions and stale confirmations cannot skip it.
 - Local autosave, save export/import, preservation of pending events, tests and choices, automatic migration of older solo and party saves, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
+- Physical tabletop based on the 2026 rulebook and real session photography: landscape act/agenda stacks, full location faces, miniature investigator markers, tactile counters, sideways exhausted assets, player/encounter piles and a public chaos-bag/victory viewer. See [design research and sources](docs/tabletop-design-research.md).
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
 - Searchable archive of **196 normalized 2026 card definitions**; all five investigator dossiers.
 
@@ -87,6 +88,7 @@ DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
 node --import tsx scripts/pacing-browser-check.mjs
 node --import tsx scripts/rules-browser-check.mjs
 node --import tsx scripts/timing-browser-check.mjs
+node --import tsx scripts/tabletop-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs

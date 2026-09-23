@@ -15,7 +15,6 @@ import {
   Heart,
   Info,
   MagnifyingGlass,
-  MapPin,
   PersonSimpleRun,
   Plus,
   Skull,
@@ -23,16 +22,21 @@ import {
   StarFour,
   X,
 } from "@phosphor-icons/react";
-import { card, CARD_ART, CONNECTIONS, MAP_POS, plain } from "../game/data";
+import { card, CARD_ART, plain } from "../game/data";
+import {
+  InvestigatorMat,
+  LocationTable,
+  ScenarioTray,
+  SupplyTray,
+  TableCard,
+} from "./Tabletop";
 import {
   availableConnections,
   canAct,
   canPlay,
   fastOptions,
   commitValue,
-  engaged,
   location,
-  stats,
   testValue,
   party,
   partySize,
@@ -44,14 +48,7 @@ import {
   commitCards,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
-import {
-  Button,
-  CardFace,
-  Modal,
-  SkillIcon,
-  SkillStats,
-  Token,
-} from "./Common";
+import { Button, CardFace, Modal, SkillIcon, Token } from "./Common";
 export function Game({
   game: s,
   dispatch,
@@ -81,15 +78,6 @@ export function Game({
   const [weapon, setWeapon] = useState("");
   const [deck, setDeck] = useState(false);
   const [endConfirm, setEndConfirm] = useState(false);
-  const [mobileMap, setMobileMap] = useState(
-    () => window.matchMedia("(max-width: 760px)").matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 760px)");
-    const update = () => setMobileMap(mq.matches);
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
   useEffect(() => {
     if (s.status === "playing")
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -150,37 +138,6 @@ export function Game({
       ? investigateTarget || s.player.location
       : s.player.location;
   const fightSource = weapons.some((a) => a.id === weapon) ? weapon : "";
-  const pos = (c: string): [number, number] => {
-    if (s.act === 1) return [50, 50];
-    if (s.act === 2 && mobileMap)
-      return [
-        50,
-        ({ "12113": 20, "12117": 50, "12116": 80 } as Record<string, number>)[
-          c
-        ] || 50,
-      ];
-    if (s.act === 2)
-      return [
-        { 12113: mobileMap ? 16 : 20, 12117: 50, 12116: mobileMap ? 84 : 80 }[
-          Number(c) as 12113
-        ] || 50,
-        50,
-      ];
-    if (mobileMap)
-      return (
-        (
-          {
-            "12117": [24, 19],
-            "12116": [50, 50],
-            "12118": [77, 19],
-            "12119": [24, 81],
-            "12120": [77, 81],
-          } as Record<string, [number, number]>
-        )[c] || [50, 50]
-      );
-    const [x, y] = MAP_POS[c];
-    return [x, y === 18 ? 23 : y === 82 ? 77 : y];
-  };
   if (s.status === "resolution")
     return (
       <div className="resolution-page page-content">
@@ -349,200 +306,24 @@ export function Game({
       </div>
       <div className="game-layout">
         <div className="table-main">
-          <div className="story-track">
-            <button
-              className="story-card act-card"
-              onClick={() => inspect(String(12108 + s.act))}
-            >
-              <div className="story-icon">
-                <BookOpen size={23} weight="light" />
-              </div>
-              <div>
-                <span>ACT {s.act} / 4</span>
-                <h3>{card(String(12108 + s.act)).name}</h3>
-                <p>{actText[s.act - 1]}</p>
-              </div>
-              <span className="story-number">
-                {s.act === 1
-                  ? 2 * partySize(s)
-                  : s.act === 3
-                    ? 3 * partySize(s)
-                    : "✧"}
-              </span>
-            </button>
-            <button
-              className="story-card agenda-card"
-              onClick={() => inspect(String(12105 + s.agenda))}
-            >
-              <div className="story-icon">
-                <Fire size={24} weight="light" />
-              </div>
-              <div>
-                <span>AGENDA {s.agenda} / 3</span>
-                <h3>{card(String(12105 + s.agenda)).name}</h3>
-                <p>The clock is always ticking.</p>
-              </div>
-              <div className="doom-counter">
-                <strong>{s.doom}</strong>
-                <span>/ {[3, 5, 10][s.agenda - 1]}</span>
-                <small>DOOM</small>
-              </div>
-            </button>
+          <div className={`table-surface scenario-act-${s.act}`}>
+            <ScenarioTray
+              game={s}
+              objective={actText[s.act - 1]}
+              inspect={inspect}
+            />
+            <LocationTable
+              game={s}
+              locked={locked}
+              inspect={inspect}
+              move={(code) => a("move", code)}
+            />
+            <SupplyTray game={s} inspect={inspect} />
           </div>
-          <section
-            className={`location-board act-${s.act}`}
-            aria-label="Location map"
-          >
-            <div className="board-header">
-              <span>
-                <MapPin size={13} /> MISKATONIC UNIVERSITY
-              </span>
-              <span>
-                {s.locations.filter((l) => l.active && l.revealed).length}{" "}
-                locations explored
-              </span>
-            </div>
-            <svg
-              className="map-lines"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              {s.locations
-                .filter((l) => l.active)
-                .flatMap((l) =>
-                  (CONNECTIONS[l.code] || [])
-                    .filter(
-                      (c) =>
-                        c > l.code &&
-                        s.locations.find((x) => x.code === c)?.active,
-                    )
-                    .map((c) => (
-                      <line
-                        key={l.code + c}
-                        x1={pos(l.code)[0]}
-                        y1={pos(l.code)[1]}
-                        x2={pos(c)[0]}
-                        y2={pos(c)[1]}
-                      />
-                    )),
-                )}
-            </svg>
-            <div className="compass-rose">
-              <span>N</span>
-              <StarFour weight="thin" size={74} />
-            </div>
-            {s.locations
-              .filter((l) => l.active)
-              .map((l) => (
-                <button
-                  key={l.code}
-                  className={`map-location ${l.code === s.player.location ? "current" : ""} ${l.revealed ? "revealed" : "unrevealed"} ${l.fire ? "burning" : ""} ${near.includes(l.code) ? "connected" : ""}`}
-                  style={{
-                    left: `${pos(l.code)[0]}%`,
-                    top: `${pos(l.code)[1]}%`,
-                  }}
-                  onClick={() =>
-                    near.includes(l.code) && !locked
-                      ? a("move", l.code)
-                      : l.revealed && inspect(l.code)
-                  }
-                  disabled={locked && !l.revealed}
-                  aria-label={
-                    near.includes(l.code) && !locked
-                      ? `Move to ${card(l.code).name}`
-                      : `Inspect ${card(l.code).name}`
-                  }
-                  title={
-                    near.includes(l.code)
-                      ? `Move · ${partySize(s) <= 2 && s.player.location === "12116" && !s.flags.quad ? "free" : "1 action"}`
-                      : card(l.code).name
-                  }
-                >
-                  {l.code === s.player.location && (
-                    <span className="you-marker">
-                      <MapPin size={11} weight="fill" /> YOU ARE HERE
-                    </span>
-                  )}
-                  <div
-                    className={`location-art art-${l.code}`}
-                    style={
-                      CARD_ART[l.code]
-                        ? {
-                            backgroundImage: `url(${CARD_ART[l.code]})`,
-                            backgroundPosition: "center 25%",
-                            backgroundSize: "120%",
-                          }
-                        : undefined
-                    }
-                  >
-                    <span className="loc-symbol">
-                      {l.revealed ? (
-                        <BookOpen size={21} weight="light" />
-                      ) : (
-                        <StarFour size={28} weight="thin" />
-                      )}
-                    </span>
-                    {l.fire && (
-                      <span className="fire-marker" aria-label="On fire">
-                        <Fire size={16} weight="fill" />
-                      </span>
-                    )}
-                    {s.enemies.some((e) => e.location === l.code) && (
-                      <span className="enemy-marker">
-                        <Skull size={12} />{" "}
-                        {s.enemies.filter((e) => e.location === l.code).length}
-                      </span>
-                    )}
-                  </div>
-                  <h3>{card(l.code).name}</h3>
-                  <div className="location-stats">
-                    <span>
-                      <Drop size={12} />{" "}
-                      {l.revealed
-                        ? Math.max(0, (card(l.code).shroud || 0) - l.reduction)
-                        : "?"}
-                    </span>
-                    <i />
-                    <span>
-                      <MagnifyingGlass size={12} /> {l.revealed ? l.clues : "?"}
-                    </span>
-                  </div>
-                  <span className="location-pawns">
-                    {roster
-                      .filter(
-                        (p) => p.status === "active" && p.location === l.code,
-                      )
-                      .map((p) => (
-                        <span
-                          key={p.code}
-                          title={card(p.code).name}
-                          className={card(p.code).faction_code}
-                        >
-                          {card(p.code)
-                            .name.split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
-                      ))}
-                  </span>
-                  {near.includes(l.code) && (
-                    <span className="move-hint">
-                      MOVE HERE <ArrowRight size={10} />
-                    </span>
-                  )}
-                </button>
-              ))}
-            <div className="board-legend">
-              <span>
-                <Drop size={12} /> Shroud
-              </span>
-              <span>
-                <MagnifyingGlass size={12} /> Clues
-              </span>
-              <span>Click a connected location to move</span>
-            </div>
-          </section>
+          <div className="objective-ribbon">
+            <BookOpen size={13} />
+            <span>{actText[s.act - 1]}</span>
+          </div>
           <div className="action-bar">
             <div className="action-count">
               {[0, 1, 2].map((i) => (
@@ -584,6 +365,15 @@ export function Game({
               <Stack size={18} /> Draw card
             </button>
             <button
+              className="action-button fast-action"
+              disabled={locked || s.player.turnEnded}
+              onClick={() => dispatch({ type: "openWindow" })}
+              aria-label="Fast abilities · all investigators"
+              title="Fast abilities · all investigators"
+            >
+              <StarFour size={16} /> Fast abilities
+            </button>
+            <button
               className="end-turn"
               onClick={() =>
                 s.player.actions > 0
@@ -595,13 +385,6 @@ export function Game({
               End turn <ArrowRight size={17} />
             </button>
           </div>
-          <Button
-            secondary
-            disabled={locked || s.player.turnEnded}
-            onClick={() => dispatch({ type: "openWindow" })}
-          >
-            Fast abilities · all investigators
-          </Button>
           {tools.length > 0 && (
             <div className="tool-selector">
               <label>
@@ -780,7 +563,11 @@ export function Game({
                       className="enemy-info"
                       onClick={() => inspect(e.code)}
                     >
-                      <Skull size={23} weight="light" />
+                      <span
+                        className={`enemy-card-preview ${e.exhausted ? "exhausted" : ""}`}
+                      >
+                        <TableCard code={e.code} />
+                      </span>
                       <span>
                         <b>{card(e.code).name}</b>
                         <small>
@@ -841,6 +628,11 @@ export function Game({
                 ))}
             </section>
           )}
+          <InvestigatorMat
+            game={s}
+            inspect={inspect}
+            openDeck={() => setDeck(true)}
+          />
           <section className="hand-section">
             <div className="zone-heading">
               <h3>
@@ -877,139 +669,29 @@ export function Game({
               ))}
             </div>
           </section>
-          <section className="assets-section">
-            <div className="zone-heading">
-              <h3>
-                In play <span>{s.player.assets.length}</span>
-              </h3>
-              <small>2 hand · 1 ally · 1 head slot</small>
-            </div>
-            <div className="asset-row">
-              {s.player.assets.map((as) => (
-                <button
-                  key={as.id}
-                  onClick={() => inspect(as.code)}
-                  className={`asset-chip ${as.exhausted ? "exhausted" : ""}`}
-                >
-                  <span className="asset-symbol">
-                    <StarFour size={18} />
-                  </span>
-                  <span>
-                    <b>{card(as.code).name}</b>
-                    <small>
-                      {card(as.code).slot || "No slot"}
-                      {as.uses ? ` · ${as.uses} uses` : ""}
-                      {as.damage ? ` · ${as.damage} damage` : ""}
-                      {as.horror ? ` · ${as.horror} horror` : ""}
-                      {as.exhausted ? " · exhausted" : ""}
-                    </small>
-                  </span>
-                </button>
-              ))}
-              {!s.player.assets.length && (
-                <div className="empty-assets">
-                  <Plus size={20} weight="light" />
-                  Play assets from your hand to prepare for what’s ahead.
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
-        <aside className="investigator-panel">
-          <div className="player-header">
-            <div
-              className="portrait-small"
-              style={{ backgroundImage: `url(${CARD_ART[s.player.code]})` }}
-            />
-            <div>
-              <span className="class-label">{member.faction_code}</span>
-              <h2>{member.name}</h2>
-              <button onClick={() => inspect(s.player.code)}>
-                Investigator details <Info size={12} />
-              </button>
-            </div>
-          </div>
-          <SkillStats
-            values={(
-              ["willpower", "intellect", "combat", "agility"] as const
-            ).map((k) => stats(s, k))}
-          />
-          <div className="vitals">
-            <div>
-              <span>
-                <Heart size={15} /> Health
-              </span>
-              <b>
-                {Math.max(0, health(s) - s.player.damage)}
-                <small>/{health(s)}</small>
-              </b>
-              <div className="vital-track health">
-                <i
-                  style={{
-                    width: `${((health(s) - s.player.damage) / health(s)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <div>
-              <span>
-                <Brain size={15} /> Sanity
-              </span>
-              <b>
-                {Math.max(0, sanity(s) - s.player.horror)}
-                <small>/{sanity(s)}</small>
-              </b>
-              <div className="vital-track sanity">
-                <i
-                  style={{
-                    width: `${((sanity(s) - s.player.horror) / sanity(s)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="player-pools">
-            <div>
-              <Coins size={22} weight="light" />
-              <b>{s.player.resources}</b>
-              <span>RESOURCES</span>
-            </div>
-            <div>
-              <MagnifyingGlass size={22} weight="light" />
-              <b>{s.player.clues}</b>
-              <span>CLUES</span>
-            </div>
-          </div>
-          <div className="objective-tip">
-            <span>YOUR NEXT LEAD</span>
-            <p>
-              {s.player.actions === 0
-                ? "End this investigator’s turn to pass control. The enemy phase begins after everyone has finished."
-                : engaged(s).some((e) => !e.exhausted)
-                  ? "An enemy is engaged with you. Fight, evade, or parley before taking other actions to avoid its attack."
-                  : actText[s.act - 1]}
-            </p>
-          </div>
-          <div className="game-log">
-            <div className="zone-heading">
-              <h3>The chronicle</h3>
-              <button onClick={onHistory}>
-                {s.event ? "PAUSED" : "HISTORY"}
-              </button>
-            </div>
-            <div className="log-entries" aria-live="polite">
+          <details className="table-chronicle">
+            <summary>
+              <ClockCounterClockwise size={14} />
+              <strong>The chronicle</strong>
+              <span>{s.log.at(-1)?.text}</span>
+              <CaretRight size={13} />
+            </summary>
+            <div className="log-entries">
               {s.log
                 .slice(-18)
                 .reverse()
-                .map((l) => (
-                  <div className={`log-entry ${l.tone}`} key={l.id}>
-                    <span>{String(l.round).padStart(2, "0")}</span>
-                    <p>{l.text}</p>
+                .map((entry) => (
+                  <div className={`log-entry ${entry.tone}`} key={entry.id}>
+                    <span>{String(entry.round).padStart(2, "0")}</span>
+                    <p>{entry.text}</p>
                   </div>
                 ))}
             </div>
-          </div>
-        </aside>
+            <button className="history-trigger" onClick={onHistory}>
+              Read full event history <ArrowRight size={13} />
+            </button>
+          </details>
+        </div>
       </div>
       {s.status === "mulligan" && (
         <Modal title="Your opening hand" wide>
