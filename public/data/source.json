@@ -1,0 +1,11 @@
+{
+  "pack": "core_2026",
+  "edition": "Core Set (2026)",
+  "source": "https://github.com/zzorba/arkhamdb-json-data",
+  "revision": "7ae21d7563ce9f68396c0d5e3a36f40f90fe1156",
+  "retrievedAt": "2026-09-23T17:23:57.264Z",
+  "count": 196,
+  "api": "https://arkhamdb.com/api/public/cards/core_2026.json?encounter=1",
+  "apiCount": 195,
+  "notes": "Repository definitions take precedence over live API text. Duplicate definitions are expanded recursively; hidden faces are retained. API supplies image paths. Content remains property of Fantasy Flight Games."
+}

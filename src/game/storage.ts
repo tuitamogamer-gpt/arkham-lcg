@@ -1,0 +1,207 @@
+import type { GameState } from "./types";
+import { card } from "./data";
+export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
+const integer = (n: unknown, min = 0, max = 100000): n is number =>
+  typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
+const record = (x: unknown): x is Record<string, unknown> =>
+  !!x && typeof x === "object" && !Array.isArray(x);
+const instances = (xs: unknown): boolean =>
+  Array.isArray(xs) &&
+  xs.every(
+    (c) =>
+      record(c) &&
+      typeof c.id === "string" &&
+      typeof c.code === "string" &&
+      !!card(c.code),
+  );
+const codes = (xs: unknown): boolean =>
+  Array.isArray(xs) && xs.every((c) => typeof c === "string" && !!card(c));
+const effects = (xs: unknown): boolean =>
+  Array.isArray(xs) &&
+  xs.length < 500 &&
+  xs.every(
+    (e) =>
+      record(e) &&
+      typeof e.kind === "string" &&
+      (!e.code || (typeof e.code === "string" && !!card(e.code))),
+  );
+export function validSave(x: unknown): x is GameState {
+  try {
+    if (!record(x)) return false;
+    const s = x as unknown as GameState,
+      p = s.player;
+    if (
+      s.version !== 1 ||
+      !record(p) ||
+      p.code !== "12004" ||
+      typeof s.id !== "string"
+    )
+      return false;
+    if (
+      !["mulligan", "playing", "resolution"].includes(s.status) ||
+      !["investigation", "enemy", "upkeep", "mythos", "roundEnd"].includes(
+        s.phase,
+      ) ||
+      !["easy", "standard", "hard", "expert"].includes(s.difficulty)
+    )
+      return false;
+    if (
+      !integer(s.round, 1, 999) ||
+      !integer(s.seed, 1, 4294967295) ||
+      !integer(s.nextId, 1) ||
+      !integer(s.act, 1, 4) ||
+      !integer(s.agenda, 1, 4) ||
+      !integer(s.doom) ||
+      !integer(s.actions, 0, 3) ||
+      !integer(s.actionsTaken)
+    )
+      return false;
+    if (
+      ![p.resources, p.clues, p.damage, p.horror].every((n) => integer(n)) ||
+      !["12113", "12116", "12117", "12118", "12119", "12120"].includes(
+        p.location,
+      )
+    )
+      return false;
+    if (
+      ![p.hand, p.deck, p.discard, p.assets, s.enemies].every(instances) ||
+      !codes(p.threats) ||
+      !codes(s.encounterDeck) ||
+      !codes(s.encounterDiscard) ||
+      !codes(s.victory)
+    )
+      return false;
+    if (
+      !p.assets.every(
+        (a) =>
+          integer(a.uses) &&
+          integer(a.damage) &&
+          integer(a.horror) &&
+          typeof a.exhausted === "boolean",
+      )
+    )
+      return false;
+    if (
+      !s.enemies.every(
+        (e) =>
+          integer(e.damage) &&
+          !!card(e.location) &&
+          typeof e.exhausted === "boolean" &&
+          typeof e.engaged === "boolean",
+      )
+    )
+      return false;
+    if (
+      !Array.isArray(s.locations) ||
+      s.locations.length !== 6 ||
+      new Set(s.locations.map((l) => l.code)).size !== 6 ||
+      !s.locations.every(
+        (l) =>
+          card(l.code)?.type_code === "location" &&
+          integer(l.clues) &&
+          integer(l.reduction) &&
+          typeof l.active === "boolean" &&
+          typeof l.revealed === "boolean" &&
+          typeof l.fire === "boolean",
+      )
+    )
+      return false;
+    if (
+      !s.locations.some((l) => l.code === p.location && l.active) ||
+      !integer(s.fireSetAside, 0, 5) ||
+      !record(s.flags) ||
+      !effects(s.queue)
+    )
+      return false;
+    if (
+      !Array.isArray(s.bag) ||
+      s.bag.length < 1 ||
+      s.bag.length > 44 ||
+      !s.bag.every(
+        (t) =>
+          typeof t === "string" &&
+          /^(?:[+-]?\d|skull|tablet|elder_thing|auto_fail|elder_sign)$/.test(t),
+      )
+    )
+      return false;
+    if (
+      !Array.isArray(s.log) ||
+      !s.log.every(
+        (l) =>
+          integer(l.id) &&
+          integer(l.round, 1) &&
+          typeof l.text === "string" &&
+          ["neutral", "good", "bad", "story"].includes(l.tone),
+      )
+    )
+      return false;
+    if (
+      !record(s.campaign) ||
+      !Array.isArray(s.campaign.notes) ||
+      !s.campaign.notes.every((n) => typeof n === "string") ||
+      ![
+        s.campaign.xp,
+        s.campaign.physicalTrauma,
+        s.campaign.mentalTrauma,
+      ].every((n) => integer(n))
+    )
+      return false;
+    if (
+      s.decision !== null &&
+      (!record(s.decision) ||
+        typeof s.decision.title !== "string" ||
+        typeof s.decision.description !== "string" ||
+        !Array.isArray(s.decision.choices) ||
+        !s.decision.choices.length ||
+        !s.decision.choices.every(
+          (c) =>
+            typeof c.id === "string" &&
+            typeof c.label === "string" &&
+            effects(c.effects),
+        ))
+    )
+      return false;
+    if (
+      s.test !== null &&
+      (!record(s.test) ||
+        !["commit", "revealed"].includes(s.test.stage) ||
+        !["willpower", "intellect", "combat", "agility"].includes(
+          s.test.skill,
+        ) ||
+        typeof s.test.title !== "string" ||
+        typeof s.test.kind !== "string" ||
+        ![s.test.difficulty, s.test.base, s.test.bonus].every((n) =>
+          integer(n),
+        ) ||
+        !Array.isArray(s.test.committed) ||
+        !s.test.committed.every((id) => p.hand.some((c) => c.id === id)) ||
+        !Array.isArray(s.test.tokens) ||
+        !Number.isFinite(s.test.modifier))
+    )
+      return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+export function readSave(): GameState | null {
+  try {
+    const data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+    return validSave(data) ? data : null;
+  } catch {
+    return null;
+  }
+}
+export function writeSave(s: GameState) {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+}
+export function exportSave(s: GameState) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(s, null, 2)], { type: "application/json" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `arkham-${s.id}-round-${s.round}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
