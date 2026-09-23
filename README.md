@@ -4,6 +4,8 @@ A cinematic, local-first Arkham Horror: The Card Game prototype, built with Reac
 
 ## Run
 
+Play the deployed build at **https://arkham-lcg.vercel.app**.
+
 ```sh
 npm install
 npm run dev
@@ -69,9 +71,15 @@ npm test
 npm run build
 # With the dev server running:
 node scripts/browser-check.mjs
+# Verify the production game:
+BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 ```
 
 Browser artifacts are written under ignored `output/browser/`. They include a pending-test reload, turn progression, archive filters, save export, and mobile overflow checks. Scenario-chain tests use controlled fixtures and do not claim to establish full-game balance or exhaust every possible card interaction.
+
+## Deployment
+
+The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.com/tuitamogamer-gpt/arkham-lcg). Vercel is connected to this repository; pushes to `main` deploy to production. `vercel.json` uses `npm ci`, `npm run build`, and the `dist` output directory. Local Vercel configuration and environment files are ignored by Git and excluded from uploads.
 
 ## Art and attribution
 
