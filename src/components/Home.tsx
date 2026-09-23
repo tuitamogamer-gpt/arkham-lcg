@@ -1,16 +1,16 @@
 import {
   ArrowUpRight,
-  Clock,
-  CheckCircle,
-  LockKey,
-  MapTrifold,
-  BookOpenText,
-  FloppyDisk,
   ArrowRight,
-  Sparkle,
+  BookOpenText,
+  LockKey,
+  StarFour,
+  UsersThree,
+  FloppyDisk,
 } from "@phosphor-icons/react";
 import type { GameState } from "../game/types";
-import { Button, SkillStats } from "./Common";
+import { card, CARD_ART, PLAYABLE_INVESTIGATORS } from "../game/data";
+import { party } from "../game/engine";
+import { Button } from "./Common";
 export function Home({
   game,
   onStart,
@@ -27,34 +27,25 @@ export function Home({
   onScenario: (n: number) => void;
 }) {
   return (
-    <div className="page-content home-page">
-      <div className="welcome-row">
-        <div>
-          <div className="eyebrow">Arkham, Massachusetts · 1926</div>
-          <h1>Some doors are better left closed.</h1>
-        </div>
-        <div className="chapter-stamp">
-          CHAPTER<span>II</span>
-        </div>
-      </div>
-      <section className="campaign-hero">
-        <div className="hero-image" />
-        <div className="hero-grain" />
-        <div className="hero-content">
-          <div className="hero-tag">
-            <span /> THE 2026 CORE SET
+    <div className="night-home">
+      <section className="night-hero">
+        <div className="night-hero-art" />
+        <div className="night-vignette" />
+        <div className="night-hero-copy">
+          <div className="occult-rule">
+            <StarFour size={14} />
+            <span>ARKHAM, MASSACHUSETTS · 1926</span>
+            <StarFour size={14} />
           </div>
-          <h2>
-            Brethren
-            <br />
-            of <em>Ash.</em>
-          </h2>
+          <h1>
+            ARKHAM<span>HORROR</span>
+          </h1>
+          <div className="chronicle-wordmark">The Chronicle</div>
           <p>
-            A missing friend. A city veiled in smoke.
-            <br />
-            Follow the clues into the heart of a growing darkness.
+            There are things in this city that should stay buried. <br />
+            Tonight, you’re going to dig them up.
           </p>
-          <div className="hero-actions">
+          <div className="night-hero-actions">
             <Button onClick={game ? onResume : onStart} arrow>
               {game?.status === "resolution"
                 ? "Open campaign record"
@@ -62,146 +53,185 @@ export function Home({
                   ? "Continue investigation"
                   : "Begin your investigation"}
             </Button>
-            <button className="text-button light" onClick={onGuide}>
-              How to play <ArrowUpRight size={16} />
+            <button className="night-text-link" onClick={onGuide}>
+              Learn to survive <ArrowUpRight size={16} />
             </button>
           </div>
-          <div className="hero-meta">
+          <div className="night-meta">
             <span>
-              <MapTrifold size={15} /> 3 chapters · 1 playable
+              <UsersThree size={17} />
+              1–3 investigators. One mind behind them.
             </span>
-            <i />
-            <span>
-              <Clock size={15} /> Solo investigation
-            </span>
+            <span>THE 2026 CORE SET</span>
           </div>
         </div>
-        <div className="hero-caption">
-          <span>CASE FILE NO. 001</span>
-          <strong>Miskatonic University</strong>
-          <small>Something is stirring on campus.</small>
+        <aside className="campaign-case">
+          <div className="case-topline">
+            <span>MISKATONIC UNIVERSITY</span>
+            <span>CONFIDENTIAL</span>
+          </div>
+          <div className="case-number">
+            CASE
+            <br />
+            <b>001</b>
+          </div>
+          <span className="case-eyebrow">THE CURRENT CAMPAIGN</span>
+          <h2>
+            Brethren <br />
+            of <em>Ash</em>
+          </h2>
+          <p>
+            A missing friend. A room in disarray.
+            <br />
+            And the unmistakable scent of smoke.
+          </p>
+          <div className="case-divider">
+            <StarFour size={16} />
+          </div>
+          <div className="case-status">
+            <span>CHAPTER I</span>
+            <strong>Spreading Flames</strong>
+            <span className="case-ready">
+              {game
+                ? `SAVED · ROUND ${String(game.round).padStart(2, "0")}`
+                : "READY TO INVESTIGATE"}
+            </span>
+          </div>
+          <button className="case-open" onClick={game ? onResume : onStart}>
+            Open the case file <ArrowRight size={18} />
+          </button>
+        </aside>
+        <div className="night-hero-footer">
+          <span>THE UNKNOWN AWAITS</span>
+          <span>✦</span>
+          <span>A COOPERATIVE INVESTIGATION, PLAYED SOLO</span>
         </div>
-        <div className="hero-corner">✧</div>
       </section>
-      <div className="home-bottom">
-        <section className="chapters-section">
-          <div className="section-title">
-            <h2>The investigation</h2>
-            <span>
-              BRETHREN OF ASH <ArrowRight size={14} />
-            </span>
+      <section className="night-desk">
+        <div className="night-section-title">
+          <div>
+            <span className="eyebrow">FOLLOW THE THREAD</span>
+            <h2>A trail of smoke & secrets.</h2>
           </div>
-          <div className="scenario-list">
-            {[
-              {
-                name: "Spreading Flames",
-                place: "Miskatonic University",
-                available: true,
-              },
-              {
-                name: "Smoke and Mirrors",
-                place: "The streets of Arkham",
-                available: false,
-              },
-              {
-                name: "Queen of Ash",
-                place: "Beneath the city",
-                available: false,
-              },
-            ].map((c, i) => (
+          <span>BRETHREN OF ASH / THREE CHAPTERS</span>
+        </div>
+        <div className="night-chapters">
+          {[
+            {
+              name: "Spreading Flames",
+              place: "Miskatonic University",
+              copy: "The first spark of something terrible.",
+              ready: true,
+            },
+            {
+              name: "Smoke and Mirrors",
+              place: "The streets of Arkham",
+              copy: "Every answer hides another question.",
+              ready: false,
+            },
+            {
+              name: "Queen of Ash",
+              place: "Beneath the city",
+              copy: "Some doors can never be closed again.",
+              ready: false,
+            },
+          ].map((c, i) => (
+            <button
+              key={c.name}
+              className={`night-chapter chapter-${i + 1} ${c.ready ? "ready" : "locked"}`}
+              onClick={() => onScenario(i)}
+            >
+              <div className="night-chapter-art" />
+              <span className="chapter-index">0{i + 1}</span>
+              <div>
+                <span>{c.place}</span>
+                <h3>{c.name}</h3>
+                <p>{c.copy}</p>
+              </div>
+              <span className="chapter-state">
+                {c.ready ? (
+                  <>
+                    <span className="ember-dot" /> PLAYABLE{" "}
+                    <ArrowUpRight size={17} />
+                  </>
+                ) : (
+                  <>
+                    <LockKey size={13} />
+                    COMING LATER
+                  </>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="night-investigators">
+          <div className="night-party-intro">
+            <span className="eyebrow">YOU DON’T HAVE TO GO ALONE</span>
+            <h2>
+              Three lives. <br />
+              One investigation.
+            </h2>
+            <p>
+              Lead a lone investigator or control a party of two or three.
+              Switch seats, combine strengths, and face the darkness together.
+            </p>
+            <Button secondary onClick={onStart} arrow>
+              {game ? "Start a new investigation" : "Assemble your party"}
+            </Button>
+            <button className="night-text-link" onClick={onFiles}>
+              Read investigator dossiers <ArrowUpRight size={14} />
+            </button>
+          </div>
+          <div className="night-dossiers">
+            {PLAYABLE_INVESTIGATORS.map((c, i) => (
               <button
-                className={`scenario-tile scenario-${i + 1}`}
-                key={c.name}
-                onClick={() => onScenario(i)}
+                className={`night-dossier ${card(c).faction_code}`}
+                key={c}
+                onClick={onStart}
               >
-                <div className="scenario-art">
-                  <span className="scenario-number">0{i + 1}</span>
-                  <span
-                    className={`scenario-status ${c.available ? "ready" : ""}`}
-                  >
-                    {c.available ? (
-                      <CheckCircle size={12} />
-                    ) : (
-                      <LockKey size={11} />
-                    )}{" "}
-                    {c.available ? "PLAYABLE" : "COMING LATER"}
-                  </span>
-                </div>
-                <div className="scenario-caption">
-                  <span>SCENARIO 0{i + 1}</span>
-                  <h3>{c.name}</h3>
-                  <p>{c.place}</p>
+                <div
+                  className="dossier-photo"
+                  style={{ backgroundImage: `url(${CARD_ART[c]})` }}
+                />
+                <span className="dossier-tab">{card(c).faction_code}</span>
+                <div className="dossier-note">
+                  <span>INVESTIGATOR 0{i + 1}</span>
+                  <h3>{card(c).name}</h3>
+                  <p>{card(c).subname}</p>
                   <ArrowUpRight size={17} />
                 </div>
               </button>
             ))}
           </div>
-          <div className="field-guide-callout">
-            <div className="guide-icon">
-              <BookOpenText size={24} weight="light" />
-            </div>
-            <div>
-              <h3>Your first night in Arkham?</h3>
-              <p>
-                Learn the essentials. We’ll take care of the rules as you play.
-              </p>
-            </div>
-            <button onClick={onGuide}>
-              Open field guide <ArrowRight size={16} />
-            </button>
-          </div>
-        </section>
-        <aside className="home-investigator">
-          <div className="section-title">
-            <h2>Your investigator</h2>
-            <button
-              className="icon-button"
-              aria-label="View investigators"
-              onClick={onFiles}
-            >
-              <ArrowUpRight size={17} />
-            </button>
-          </div>
-          <button className="investigator-summary" onClick={onFiles}>
-            <div className="portrait-small" />
-            <div>
-              <span className="class-label">SEEKER</span>
-              <h3>Joe Diamond</h3>
-              <p>The Private Investigator</p>
-            </div>
-          </button>
-          <SkillStats />
-          <div className="prepared-row">
-            <CheckCircle size={15} />
-            <div>
-              <strong>Ready for the unknown</strong>
-              <span>Official 33-card starter deck</span>
-            </div>
-          </div>
-          <div className="save-note">
-            <FloppyDisk size={15} />
+        </div>
+        <div className="night-help">
+          <BookOpenText size={24} />
+          <div>
+            <strong>Your first night in Arkham?</strong>
             <span>
-              {game
-                ? `Saved · Round ${game.round} · ${game.status === "resolution" ? "Resolved" : game.phase}`
-                : "Your progress saves automatically."}
+              Read the field guide. The table takes care of the rules.
             </span>
           </div>
-          {game && (
-            <button className="text-button" onClick={onStart}>
-              Start a new investigation <ArrowRight size={14} />
-            </button>
-          )}
-        </aside>
-      </div>
-      <footer className="page-footer">
-        <span>
-          <Sparkle size={13} /> An independent fan-made experience
-        </span>
-        <span>Arkham Horror: The Card Game · Core Set 2026</span>
-        <span>
-          LOCAL PLAY <i />
-        </span>
-      </footer>
+          <button onClick={onGuide}>
+            Open field guide <ArrowRight size={17} />
+          </button>
+        </div>
+        {game && (
+          <div className="night-saved">
+            <FloppyDisk size={14} />
+            Saved locally ·{" "}
+            {party(game)
+              .map((p) => card(p.code).name)
+              .join(" / ")}{" "}
+            · Round {game.round}
+          </div>
+        )}
+        <footer className="night-footer">
+          <span>ARKHAM CHRONICLE</span>
+          <span>An independent fan-made experience · Core Set 2026</span>
+          <StarFour size={16} />
+        </footer>
+      </section>
     </div>
   );
 }

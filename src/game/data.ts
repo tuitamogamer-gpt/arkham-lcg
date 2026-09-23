@@ -12,6 +12,20 @@ export const JOE_DECK = [
   30, 31, 32, 33, 34, 35, 16, 17, 18, 19, 20, 21, 87, 87, 88, 88, 5, 36, 37, 38,
   22, 23, 24, 89, 89, 39, 25, 93, 93, 92, 92, 6, 100,
 ].map(code);
+export const DANIELA_DECK = [
+  2, 16, 17, 18, 19, 20, 21, 72, 73, 74, 75, 76, 77, 86, 86, 88, 88, 22, 23, 24,
+  78, 79, 89, 89, 25, 80, 81, 92, 92, 94, 94, 3, 104,
+].map(code);
+export const TRISH_DECK = [
+  8, 44, 45, 46, 47, 48, 49, 30, 31, 32, 33, 34, 35, 86, 86, 88, 88, 50, 51, 52,
+  36, 37, 38, 89, 89, 53, 39, 91, 91, 93, 93, 9, 103,
+].map(code);
+export const STARTER_DECKS: Record<string, string[]> = {
+  "12004": JOE_DECK,
+  "12001": DANIELA_DECK,
+  "12007": TRISH_DECK,
+};
+export const PLAYABLE_INVESTIGATORS = ["12004", "12001", "12007"];
 export const BAGS: Record<Difficulty, string[]> = {
   easy: [
     "+1",

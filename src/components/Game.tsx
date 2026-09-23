@@ -22,7 +22,7 @@ import {
   StarFour,
   X,
 } from "@phosphor-icons/react";
-import { card, CONNECTIONS, MAP_POS, plain } from "../game/data";
+import { card, CARD_ART, CONNECTIONS, MAP_POS, plain } from "../game/data";
 import {
   availableConnections,
   canAct,
@@ -32,6 +32,13 @@ import {
   location,
   stats,
   testValue,
+  party,
+  partySize,
+  health,
+  sanity,
+  enemyHealth,
+  canSwitch,
+  commitOwner,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
 import {
@@ -42,12 +49,6 @@ import {
   SkillStats,
   Token,
 } from "./Common";
-const actText = [
-  "Find 2 clues. Advance at the end of the round.",
-  "Escape the dormitories. Reach Miskatonic Quad.",
-  "Bring 3 clues to Orne Library at the end of the round.",
-  "Defeat the Servant of Flame. Spend clues to deal damage.",
-];
 export function Game({
   game: s,
   dispatch,
@@ -61,6 +62,14 @@ export function Game({
   onHome: () => void;
   onExport: () => void;
 }) {
+  const roster = party(s),
+    member = card(s.player.code);
+  const actText = [
+    `Find ${2 * partySize(s)} clues as a group. Advance at the end of the round.`,
+    "Get every surviving investigator to Miskatonic Quad.",
+    `Bring ${3 * partySize(s)} group clues to Orne Library at the end of the round.`,
+    "Defeat the Servant of Flame. Spend group clues to deal damage.",
+  ];
   const [mulligan, setMulligan] = useState<string[]>([]);
   const [investigateSource, setInvestigateSource] = useState("");
   const [investigateTarget, setInvestigateTarget] = useState("");
@@ -81,6 +90,36 @@ export function Game({
       window.scrollTo({ top: 0, behavior: "instant" });
   }, [s.id, s.status]);
 
+  useEffect(() => {
+    setMulligan([]);
+    setInvestigateSource("");
+    setInvestigateTarget("");
+    setWeapon("");
+    setDeck(false);
+  }, [s.player.code]);
+  useEffect(() => {
+    const changeSeat = (event: KeyboardEvent) => {
+      if (
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.repeat ||
+        document.querySelector('[role="dialog"]') ||
+        (event.target as HTMLElement)?.closest(
+          'input, textarea, select, [contenteditable="true"]',
+        )
+      )
+        return;
+      const index = ["1", "2", "3"].indexOf(event.key);
+      const next = index >= 0 ? party(s)[index] : undefined;
+      if (next && next.code !== s.player.code && canSwitch(s, next.code)) {
+        event.preventDefault();
+        dispatch({ type: "switchInvestigator", code: next.code });
+      }
+    };
+    window.addEventListener("keydown", changeSeat);
+    return () => window.removeEventListener("keydown", changeSeat);
+  }, [s, dispatch]);
   const a = (kind: string, target?: string, source?: string) =>
     dispatch({ type: "act", kind, target, source });
   const loc = location(s);
@@ -91,10 +130,10 @@ export function Game({
     s.status !== "playing" ||
     s.phase !== "investigation";
   const tools = s.player.assets.filter((a) =>
-    ["12031", "12033", "12088"].includes(a.code),
+    ["12031", "12033", "12049", "12088"].includes(a.code),
   );
   const weapons = s.player.assets.filter((a) =>
-    ["12019", "12020"].includes(a.code),
+    ["12002", "12019", "12020", "12045", "12077", "12086"].includes(a.code),
   );
   const source = tools.some((a) => a.id === investigateSource)
     ? investigateSource
@@ -106,6 +145,13 @@ export function Game({
   const fightSource = weapons.some((a) => a.id === weapon) ? weapon : "";
   const pos = (c: string): [number, number] => {
     if (s.act === 1) return [50, 50];
+    if (s.act === 2 && mobileMap)
+      return [
+        50,
+        ({ "12113": 20, "12117": 50, "12116": 80 } as Record<string, number>)[
+          c
+        ] || 50,
+      ];
     if (s.act === 2)
       return [
         { 12113: mobileMap ? 16 : 20, 12117: 50, 12116: mobileMap ? 84 : 80 }[
@@ -117,16 +163,16 @@ export function Game({
       return (
         (
           {
-            "12117": [17, 50],
+            "12117": [24, 19],
             "12116": [50, 50],
-            "12118": [58, 25],
-            "12119": [58, 75],
-            "12120": [84, 50],
+            "12118": [77, 19],
+            "12119": [24, 81],
+            "12120": [77, 81],
           } as Record<string, [number, number]>
         )[c] || [50, 50]
       );
     const [x, y] = MAP_POS[c];
-    return [x, y === 18 ? 28 : y === 82 ? 72 : y];
+    return [x, y === 18 ? 23 : y === 82 ? 77 : y];
   };
   if (s.status === "resolution")
     return (
@@ -155,6 +201,17 @@ export function Game({
             <span>
               <b>{s.campaign.mentalTrauma}</b> MENTAL TRAUMA
             </span>
+          </div>
+          <div className="party-resolution">
+            {roster.map((p) => (
+              <div key={p.code}>
+                <strong>{card(p.code).name}</strong>
+                <span>
+                  {p.status} · {p.xp} XP · {p.physicalTrauma} physical /{" "}
+                  {p.mentalTrauma} mental trauma
+                </span>
+              </div>
+            ))}
           </div>
           <div className="campaign-record">
             <h3>Recorded in your campaign log</h3>
@@ -207,6 +264,69 @@ export function Game({
           </span>
         </div>
       </div>
+      <section className="party-bar" aria-label="Investigator seats">
+        <div className="party-label">
+          <span className="eyebrow">YOUR INVESTIGATION PARTY</span>
+          <small>
+            One controller · {partySize(s)} investigator
+            {partySize(s) === 1 ? "" : "s"}
+          </small>
+        </div>
+        <div className="party-seats">
+          {roster.map((p, i) => (
+            <button
+              key={p.code}
+              className={`seat ${card(p.code).faction_code} ${p.code === s.player.code ? "active" : ""} ${p.turnEnded ? "finished" : ""}`}
+              aria-label={`Control ${card(p.code).name}`}
+              title={`Control ${card(p.code).name} · press ${i + 1}`}
+              aria-pressed={p.code === s.player.code}
+              disabled={p.code !== s.player.code && !canSwitch(s, p.code)}
+              onClick={() =>
+                p.code !== s.player.code &&
+                dispatch({ type: "switchInvestigator", code: p.code })
+              }
+            >
+              <div
+                className="seat-portrait"
+                style={{ backgroundImage: `url(${CARD_ART[p.code]})` }}
+              />
+              <span className="seat-copy">
+                <small>
+                  {p.status !== "active"
+                    ? p.status
+                    : p.code === s.player.code
+                      ? s.phase === "investigation"
+                        ? "ACTIVE INVESTIGATOR"
+                        : s.phase.toUpperCase()
+                      : p.turnEnded
+                        ? "TURN COMPLETE"
+                        : "READY TO ACT"}
+                </small>
+                <strong>{card(p.code).name}</strong>
+                <span>
+                  <Heart size={11} />
+                  {health(s, p) - p.damage} <Brain size={11} />
+                  {sanity(s, p) - p.horror} <MagnifyingGlass size={11} />
+                  {p.clues} <Coins size={11} />
+                  {p.resources}
+                </span>
+              </span>
+              <span className="seat-number">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+            </button>
+          ))}
+        </div>
+        {roster.length > 1 && (
+          <p className="seat-hint">
+            {s.phase !== "investigation"
+              ? "Resolve each investigator’s encounter or choice. Their seat changes automatically."
+              : s.player.turnStarted
+                ? `Finish ${member.name}’s turn to pass control.`
+                : "Choose any ready investigator to take this turn. Press 1–3 to switch seats."}
+          </p>
+        )}
+      </section>
       <div className="phase-track">
         {["mythos", "investigation", "enemy", "upkeep"].map((p, i) => (
           <div className={s.phase === p ? "active" : ""} key={p}>
@@ -232,7 +352,11 @@ export function Game({
                 <p>{actText[s.act - 1]}</p>
               </div>
               <span className="story-number">
-                {s.act === 1 ? "2" : s.act === 3 ? "3" : "✧"}
+                {s.act === 1
+                  ? 2 * partySize(s)
+                  : s.act === 3
+                    ? 3 * partySize(s)
+                    : "✧"}
               </span>
             </button>
             <button
@@ -254,7 +378,10 @@ export function Game({
               </div>
             </button>
           </div>
-          <section className="location-board" aria-label="Location map">
+          <section
+            className={`location-board act-${s.act}`}
+            aria-label="Location map"
+          >
             <div className="board-header">
               <span>
                 <MapPin size={13} /> MISKATONIC UNIVERSITY
@@ -317,7 +444,7 @@ export function Game({
                   }
                   title={
                     near.includes(l.code)
-                      ? `Move · ${s.player.location === "12116" && !s.flags.quad ? "free" : "1 action"}`
+                      ? `Move · ${partySize(s) <= 2 && s.player.location === "12116" && !s.flags.quad ? "free" : "1 action"}`
                       : card(l.code).name
                   }
                 >
@@ -326,7 +453,18 @@ export function Game({
                       <MapPin size={11} weight="fill" /> YOU ARE HERE
                     </span>
                   )}
-                  <div className={`location-art art-${l.code}`}>
+                  <div
+                    className={`location-art art-${l.code}`}
+                    style={
+                      CARD_ART[l.code]
+                        ? {
+                            backgroundImage: `url(${CARD_ART[l.code]})`,
+                            backgroundPosition: "center 25%",
+                            backgroundSize: "120%",
+                          }
+                        : undefined
+                    }
+                  >
                     <span className="loc-symbol">
                       {l.revealed ? (
                         <BookOpen size={21} weight="light" />
@@ -359,6 +497,24 @@ export function Game({
                       <MagnifyingGlass size={12} /> {l.revealed ? l.clues : "?"}
                     </span>
                   </div>
+                  <span className="location-pawns">
+                    {roster
+                      .filter(
+                        (p) => p.status === "active" && p.location === l.code,
+                      )
+                      .map((p) => (
+                        <span
+                          key={p.code}
+                          title={card(p.code).name}
+                          className={card(p.code).faction_code}
+                        >
+                          {card(p.code)
+                            .name.split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </span>
+                      ))}
+                  </span>
                   {near.includes(l.code) && (
                     <span className="move-hint">
                       MOVE HERE <ArrowRight size={10} />
@@ -379,9 +535,17 @@ export function Game({
           <div className="action-bar">
             <div className="action-count">
               {[0, 1, 2].map((i) => (
-                <span className={i < s.actions ? "available" : ""} key={i} />
+                <span
+                  className={i < s.player.actions ? "available" : ""}
+                  key={i}
+                />
               ))}
-              <small>{s.actions} actions left</small>
+              <small>
+                {s.player.actions} actions left
+                {s.player.code === "12007" && !s.player.flags.extraEvade
+                  ? " + evade"
+                  : ""}
+              </small>
             </div>
             <button
               className="action-button primary-action"
@@ -411,7 +575,7 @@ export function Game({
             <button
               className="end-turn"
               onClick={() =>
-                s.actions > 0
+                s.player.actions > 0
                   ? setEndConfirm(true)
                   : dispatch({ type: "endTurn" })
               }
@@ -499,6 +663,39 @@ export function Game({
                 Resign from the scenario
               </Button>
             )}
+            {s.player.assets.some((a) => a.code === "12046") &&
+              near.map((c) => (
+                <Button
+                  secondary
+                  key={`olivier-${c}`}
+                  disabled={!!canAct(s, "olivier", c)}
+                  onClick={() => a("olivier", c)}
+                >
+                  Olivier · move to {card(c).name}
+                </Button>
+              ))}
+            {s.player.assets.some((a) => a.code === "12075") && (
+              <Button
+                secondary
+                disabled={!!canAct(s, "jumpsuit")}
+                onClick={() => a("jumpsuit")}
+              >
+                Jumpsuit · recover a Tool or Weapon
+              </Button>
+            )}
+            {s.player.assets.some((a) => a.code === "12002") &&
+              s.enemies
+                .filter((e) => e.location === s.player.location)
+                .map((e) => (
+                  <Button
+                    secondary
+                    key={`wrench-${e.id}`}
+                    disabled={!!canAct(s, "wrench", e.id)}
+                    onClick={() => a("wrench", e.id)}
+                  >
+                    Wrench · provoke {card(e.code).name}
+                  </Button>
+                ))}
             {s.player.threats.map((c) => (
               <Button
                 secondary
@@ -559,10 +756,9 @@ export function Game({
                           {e.exhausted
                             ? "Exhausted"
                             : e.engaged
-                              ? "Engaged with you"
+                              ? `Engaged · ${card(e.engagedWith || s.player.code).name}`
                               : card(e.location).name}{" "}
-                          · {Math.max(0, (card(e.code).health || 0) - e.damage)}{" "}
-                          health
+                          · {Math.max(0, enemyHealth(s, e) - e.damage)} health
                         </small>
                       </span>
                     </button>
@@ -584,7 +780,8 @@ export function Game({
                         <PersonSimpleRun size={14} /> Evade{" "}
                         {card(e.code).enemy_evade}
                       </button>
-                      {!e.engaged && (
+                      {(!e.engaged ||
+                        (e.engagedWith && e.engagedWith !== s.player.code)) && (
                         <button
                           disabled={!!canAct(s, "engage", e.id)}
                           onClick={() => a("engage", e.id)}
@@ -605,7 +802,7 @@ export function Game({
                           disabled={!!canAct(s, "clueDamage", e.id)}
                           onClick={() => a("clueDamage", e.id)}
                         >
-                          1 clue → 1 damage
+                          {partySize(s)} group clues → {partySize(s)} damage
                         </button>
                       )}
                     </div>
@@ -616,7 +813,8 @@ export function Game({
           <section className="hand-section">
             <div className="zone-heading">
               <h3>
-                Your hand <span>{s.player.hand.length}</span>
+                {member.name.split(" ")[0]}’s hand{" "}
+                <span>{s.player.hand.length}</span>
               </h3>
               <button onClick={() => setDeck(true)}>
                 <Stack size={14} />
@@ -688,11 +886,14 @@ export function Game({
         </div>
         <aside className="investigator-panel">
           <div className="player-header">
-            <div className="portrait-small" />
+            <div
+              className="portrait-small"
+              style={{ backgroundImage: `url(${CARD_ART[s.player.code]})` }}
+            />
             <div>
-              <span className="class-label">SEEKER</span>
-              <h2>Joe Diamond</h2>
-              <button onClick={() => inspect("12004")}>
+              <span className="class-label">{member.faction_code}</span>
+              <h2>{member.name}</h2>
+              <button onClick={() => inspect(s.player.code)}>
                 Investigator details <Info size={12} />
               </button>
             </div>
@@ -708,11 +909,15 @@ export function Game({
                 <Heart size={15} /> Health
               </span>
               <b>
-                {7 - s.player.damage}
-                <small>/7</small>
+                {Math.max(0, health(s) - s.player.damage)}
+                <small>/{health(s)}</small>
               </b>
               <div className="vital-track health">
-                <i style={{ width: `${((7 - s.player.damage) / 7) * 100}%` }} />
+                <i
+                  style={{
+                    width: `${((health(s) - s.player.damage) / health(s)) * 100}%`,
+                  }}
+                />
               </div>
             </div>
             <div>
@@ -720,11 +925,15 @@ export function Game({
                 <Brain size={15} /> Sanity
               </span>
               <b>
-                {7 - s.player.horror}
-                <small>/7</small>
+                {Math.max(0, sanity(s) - s.player.horror)}
+                <small>/{sanity(s)}</small>
               </b>
               <div className="vital-track sanity">
-                <i style={{ width: `${((7 - s.player.horror) / 7) * 100}%` }} />
+                <i
+                  style={{
+                    width: `${((sanity(s) - s.player.horror) / sanity(s)) * 100}%`,
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -743,8 +952,8 @@ export function Game({
           <div className="objective-tip">
             <span>YOUR NEXT LEAD</span>
             <p>
-              {s.actions === 0
-                ? "End your turn to resolve enemy attacks, upkeep, and the next mythos phase."
+              {s.player.actions === 0
+                ? "End this investigator’s turn to pass control. The enemy phase begins after everyone has finished."
                 : engaged(s).length
                   ? "An enemy is engaged with you. Fight, evade, or parley before taking other actions to avoid its attack."
                   : actText[s.act - 1]}
@@ -772,8 +981,11 @@ export function Game({
       {s.status === "mulligan" && (
         <Modal title="Your opening hand" wide>
           <div className="modal-intro">
-            <div className="eyebrow">Before the first turn</div>
-            <h2>A good detective comes prepared.</h2>
+            <div className="eyebrow">
+              Opening hand {s.partyOrder.indexOf(s.player.code) + 1} of{" "}
+              {partySize(s)} · {member.name}
+            </div>
+            <h2>{member.name}, prepare for the unknown.</h2>
             <p>
               Keep your opening hand, or select cards to replace once.
               Replacements are drawn before these cards return to your deck.
@@ -797,7 +1009,7 @@ export function Game({
             ))}
           </div>
           <div className="modal-footer">
-            <span>5 resources · 3 actions · Joe Diamond</span>
+            <span>5 resources · 3 actions · {member.name}</span>
             <Button
               onClick={() => dispatch({ type: "mulligan", ids: mulligan })}
               arrow
@@ -812,7 +1024,9 @@ export function Game({
       {s.test && (
         <Modal title={s.test.title}>
           <div className="modal-intro">
-            <div className="eyebrow">Skill test · {s.test.skill}</div>
+            <div className="eyebrow">
+              {member.name} · {s.test.skill} test
+            </div>
             <h2>{s.test.title}</h2>
           </div>
           <div className="test-values">
@@ -832,10 +1046,16 @@ export function Game({
             <>
               <p className="test-instructions">
                 Commit matching cards to improve your odds. Committed cards are
-                discarded after the test.
+                discarded after the test. Each teammate at your location may
+                contribute one card.
               </p>
               <div className="commit-list">
-                {s.player.hand
+                {roster
+                  .filter(
+                    (p) =>
+                      p.status === "active" && p.location === s.player.location,
+                  )
+                  .flatMap((p) => p.hand)
                   .filter((c) => commitValue(s, c.id) > 0)
                   .map((c) => (
                     <button
@@ -852,7 +1072,12 @@ export function Game({
                           <Plus size={14} />
                         )}
                       </span>
-                      <span>{card(c.code).name}</span>
+                      <span>
+                        {card(c.code).name}
+                        <small className="commit-owner">
+                          {card(commitOwner(s, c.id)!.code).name}
+                        </small>
+                      </span>
                       <b>+{commitValue(s, c.id)}</b>
                     </button>
                   ))}
@@ -869,7 +1094,11 @@ export function Game({
                       (a.code === "12017" &&
                         ["combat", "agility"].includes(s.test!.skill)) ||
                       (a.code === "12035" &&
-                        ["willpower", "intellect"].includes(s.test!.skill)),
+                        ["willpower", "intellect"].includes(s.test!.skill)) ||
+                      (a.code === "12047" &&
+                        ["intellect", "agility"].includes(s.test!.skill)) ||
+                      (a.code === "12076" &&
+                        ["willpower", "agility"].includes(s.test!.skill)),
                   )
                   .map((a) => (
                     <Button
@@ -911,6 +1140,22 @@ export function Game({
                     : `${testValue(s)} ${s.test.modifier >= 0 ? "+" : "−"} ${Math.abs(s.test.modifier)} = ${Math.max(0, testValue(s) + s.test.modifier)} · ${s.test.success ? "Success" : "Failure"}`}
                 </p>
               </div>
+              {s.player.hand
+                .filter(
+                  (c) =>
+                    c.code === "12081" &&
+                    !s.test!.committed.includes(c.id) &&
+                    commitValue(s, c.id) > 0,
+                )
+                .map((c) => (
+                  <Button
+                    secondary
+                    key={c.id}
+                    onClick={() => dispatch({ type: "commit", id: c.id })}
+                  >
+                    Commit Timely Intervention · +{commitValue(s, c.id)}
+                  </Button>
+                ))}
               <Button
                 className="full"
                 onClick={() => dispatch({ type: "resolve" })}
@@ -924,7 +1169,7 @@ export function Game({
       {s.decision && !s.test && (
         <Modal title={s.decision.title}>
           <div className="modal-intro">
-            <div className="eyebrow">The choice is yours</div>
+            <div className="eyebrow">{member.name} · The choice is yours</div>
             <h2>{s.decision.title}</h2>
             <p>{s.decision.description}</p>
           </div>
@@ -953,9 +1198,16 @@ export function Game({
             <div className="eyebrow">Investigation phase</div>
             <h2>End your turn?</h2>
             <p>
-              You have {s.actions} unused action{s.actions === 1 ? "" : "s"}.
-              Enemies will act, then you’ll ready your cards and draw the next
-              encounter.
+              You have {s.player.actions} unused action
+              {s.player.actions === 1 ? "" : "s"}.
+              {roster.some(
+                (p) =>
+                  p.code !== s.player.code &&
+                  p.status === "active" &&
+                  !p.turnEnded,
+              )
+                ? "Control will pass to the next ready investigator."
+                : "Everyone will have finished. Resolve fire, enemy attacks, upkeep, and the next mythos phase."}
             </p>
           </div>
           <div className="modal-footer">
@@ -976,7 +1228,7 @@ export function Game({
       {deck && (
         <Modal title="Deck and discard" onClose={() => setDeck(false)}>
           <div className="modal-intro">
-            <div className="eyebrow">Joe Diamond · Official starter</div>
+            <div className="eyebrow">{member.name} · Official starter</div>
             <h2>Your deck</h2>
             <p>
               {s.player.deck.length} cards remaining. The draw order is hidden.

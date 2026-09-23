@@ -1,5 +1,5 @@
 import type { GameState } from "./types";
-import { card } from "./data";
+import { card, STARTER_DECKS } from "./data";
 export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
 const integer = (n: unknown, min = 0, max = 100000): n is number =>
   typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
@@ -31,12 +31,78 @@ export function validSave(x: unknown): x is GameState {
     const s = x as unknown as GameState,
       p = s.player;
     if (
-      s.version !== 1 ||
+      s.version !== 2 ||
       !record(p) ||
-      p.code !== "12004" ||
+      !STARTER_DECKS[p.code] ||
       typeof s.id !== "string"
     )
       return false;
+    if (
+      !Array.isArray(s.companions) ||
+      s.companions.length > 2 ||
+      !Array.isArray(s.partyOrder)
+    )
+      return false;
+    const party = [p, ...s.companions];
+    if (
+      party.length < 1 ||
+      party.length > 3 ||
+      new Set(party.map((p) => p.code)).size !== party.length ||
+      s.partyOrder.length !== party.length ||
+      new Set(s.partyOrder).size !== party.length ||
+      !s.partyOrder.every((c) => party.some((p) => p.code === c)) ||
+      !s.partyOrder.includes(s.leadInvestigator) ||
+      !s.partyOrder.includes(s.turnInvestigator)
+    )
+      return false;
+    for (const member of party) {
+      if (
+        !record(member) ||
+        !STARTER_DECKS[member.code] ||
+        !["active", "defeated", "resigned"].includes(member.status) ||
+        !record(member.flags) ||
+        ![
+          member.resources,
+          member.clues,
+          member.damage,
+          member.horror,
+          member.actionsTaken,
+          member.xp,
+          member.physicalTrauma,
+          member.mentalTrauma,
+        ].every((n) => integer(n)) ||
+        !integer(member.actions, 0, 3) ||
+        ![member.turnStarted, member.turnEnded, member.mulliganDone].every(
+          (b) => typeof b === "boolean",
+        )
+      )
+        return false;
+      if (
+        !["12113", "12116", "12117", "12118", "12119", "12120"].includes(
+          member.location,
+        ) ||
+        ![member.hand, member.deck, member.discard, member.assets].every(
+          instances,
+        ) ||
+        !codes(member.threats)
+      )
+        return false;
+      if (
+        !member.assets.every(
+          (a) =>
+            integer(a.uses) &&
+            integer(a.damage) &&
+            integer(a.horror) &&
+            typeof a.exhausted === "boolean",
+        )
+      )
+        return false;
+      if (
+        member.status === "active" &&
+        !s.locations?.some((l) => l.code === member.location && l.active)
+      )
+        return false;
+    }
     if (
       !["mulligan", "playing", "resolution"].includes(s.status) ||
       !["investigation", "enemy", "upkeep", "mythos", "roundEnd"].includes(
@@ -52,8 +118,8 @@ export function validSave(x: unknown): x is GameState {
       !integer(s.act, 1, 4) ||
       !integer(s.agenda, 1, 4) ||
       !integer(s.doom) ||
-      !integer(s.actions, 0, 3) ||
-      !integer(s.actionsTaken)
+      !integer(p.actions, 0, 3) ||
+      !integer(p.actionsTaken)
     )
       return false;
     if (
@@ -87,7 +153,9 @@ export function validSave(x: unknown): x is GameState {
           integer(e.damage) &&
           !!card(e.location) &&
           typeof e.exhausted === "boolean" &&
-          typeof e.engaged === "boolean",
+          typeof e.engaged === "boolean" &&
+          (!e.engagedWith || s.partyOrder.includes(e.engagedWith)) &&
+          (!e.owner || s.partyOrder.includes(e.owner)),
       )
     )
       return false;
@@ -107,7 +175,8 @@ export function validSave(x: unknown): x is GameState {
     )
       return false;
     if (
-      !s.locations.some((l) => l.code === p.location && l.active) ||
+      (p.status === "active" &&
+        !s.locations.some((l) => l.code === p.location && l.active)) ||
       !integer(s.fireSetAside, 0, 5) ||
       !record(s.flags) ||
       !effects(s.queue)
@@ -174,7 +243,9 @@ export function validSave(x: unknown): x is GameState {
           integer(n),
         ) ||
         !Array.isArray(s.test.committed) ||
-        !s.test.committed.every((id) => p.hand.some((c) => c.id === id)) ||
+        !s.test.committed.every((id) =>
+          party.some((p) => p.hand.some((c) => c.id === id)),
+        ) ||
         !Array.isArray(s.test.tokens) ||
         !Number.isFinite(s.test.modifier))
     )
@@ -184,10 +255,52 @@ export function validSave(x: unknown): x is GameState {
     return false;
   }
 }
+export function decodeSave(value: unknown): GameState | null {
+  try {
+    const x = structuredClone(value);
+    if (record(x) && x.version === 1 && record(x.player)) {
+      const p = x.player;
+      const campaign = record(x.campaign) ? x.campaign : {};
+      Object.assign(p, {
+        actions: x.actions,
+        actionsTaken: x.actionsTaken,
+        turnEnded: x.status === "resolution",
+        turnStarted: Number(x.actionsTaken) > 0,
+        mulliganDone: x.status !== "mulligan",
+        status:
+          x.status === "resolution" && campaign.result === "defeat"
+            ? "defeated"
+            : x.status === "resolution" && campaign.result === "resigned"
+              ? "resigned"
+              : "active",
+        flags: { ...(record(x.flags) ? x.flags : {}) },
+        xp: campaign.xp ?? 0,
+        physicalTrauma: campaign.physicalTrauma ?? 0,
+        mentalTrauma: campaign.mentalTrauma ?? 0,
+      });
+      Object.assign(x, {
+        version: 2,
+        companions: [],
+        partyOrder: [p.code],
+        leadInvestigator: p.code,
+        turnInvestigator: p.code,
+      });
+      delete x.actions;
+      delete x.actionsTaken;
+      if (Array.isArray(x.enemies))
+        x.enemies.forEach((e) => {
+          if (record(e) && e.engaged) e.engagedWith = p.code;
+        });
+    }
+    return validSave(x) ? x : null;
+  } catch {
+    return null;
+  }
+}
 export function readSave(): GameState | null {
   try {
     const data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
-    return validSave(data) ? data : null;
+    return decodeSave(data);
   } catch {
     return null;
   }

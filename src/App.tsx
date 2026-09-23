@@ -17,7 +17,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { createGame, gameSummary, reduceGame } from "./game/engine";
-import { exportSave, readSave, validSave, writeSave } from "./game/storage";
+import { exportSave, readSave, decodeSave, writeSave } from "./game/storage";
 import type { Action, Difficulty, GameState } from "./game/types";
 import { Archive, Investigators } from "./components/Archive";
 import {
@@ -30,7 +30,7 @@ import {
 } from "./components/Common";
 import { Home } from "./components/Home";
 import { Game } from "./components/Game";
-import { BAGS } from "./game/data";
+import { BAGS, card, CARD_ART, PLAYABLE_INVESTIGATORS } from "./game/data";
 type Page = "home" | "investigators" | "archive" | "guide" | "game";
 declare global {
   interface Window {
@@ -56,7 +56,7 @@ function Guide() {
           [
             "02",
             "Investigate. Follow the story.",
-            "Use intellect to test against your location’s shroud. Succeed to discover a clue. Acts explain your objective; in Spreading Flames, the first act requires 2 clues at the end of the round.",
+            "Use intellect to test against your location’s shroud. Succeed to discover a clue. Acts explain your objective; in Spreading Flames, the first act requires 2 clues per investigator, paid as a group at the end of the round.",
           ],
           [
             "03",
@@ -71,7 +71,7 @@ function Guide() {
           [
             "05",
             "The clock never stops.",
-            "After your turn, hunters move and engaged enemies attack. Upkeep readies cards, draws a card, and grants a resource. The next mythos phase adds doom and draws an encounter. The first round skips mythos.",
+            "After every investigator has finished their turn, hunters move and engaged enemies attack their targets. Upkeep readies cards, draws a card, and grants a resource for each investigator. The next mythos phase adds one doom and draws one encounter per investigator. The first round skips mythos.",
           ],
           [
             "06",
@@ -91,18 +91,20 @@ function Guide() {
         <div>
           <h3>What you can play in this first build</h3>
           <p>
-            Solo Spreading Flames, using Joe Diamond’s 2026 investigator and
-            official 33-card starter deck. The four acts, three agendas,
-            encounter deck, card abilities, chaos tests, and scenario
-            resolutions are scripted. Other investigators and later scenarios
-            are available to explore in the archive; their gameplay is still to
-            come.
+            Spreading Flames with 1–3 investigators, all controlled by you.
+            Choose Joe Diamond, Daniela Reyes, and Trish Scarborough with their
+            official 2026 starter decks. Each investigator has a separate hand,
+            deck, resources, clues, health, sanity, and three-action turn. Trish
+            also has her extra evade action.
           </p>
           <p>
-            Damage and horror are assigned one point at a time, then applied
-            simultaneously. The engine covers this fixed solo card pool;
-            multiplayer, custom decks, a general timing-window system, and
-            campaign upgrades are not implemented.
+            Finish an investigator’s turn before changing seats. You may choose
+            a different ready investigator before taking your first action. At
+            the same location, teammates can each commit one card to your test.
+            The shared scenario scales with the original party size, even after
+            an investigator is eliminated. Dexter, Isabelle, later scenarios,
+            custom decks, campaign upgrades, and general timing windows remain
+            in development.
           </p>
         </div>
       </section>
@@ -140,6 +142,9 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(readSave);
   const [inspect, setInspect] = useState<string | null>(null);
   const [setup, setSetup] = useState(false);
+  const [selectedInvestigators, setSelectedInvestigators] = useState<string[]>([
+    "12004",
+  ]);
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
   const [scenario, setScenario] = useState<number | null>(null);
   const [settings, setSettings] = useState(false);
@@ -174,7 +179,8 @@ export default function App() {
           ? gameSummary(game)
           : {
               status: "campaign selection",
-              available: "Spreading Flames · Joe Diamond",
+              available:
+                "Spreading Flames · 1–3 investigators · Joe, Daniela, Trish",
             }),
       });
     window.advanceTime = async () => {};
@@ -242,6 +248,7 @@ export default function App() {
       createGame(
         difficulty,
         crypto.getRandomValues(new Uint32Array(1))[0] || 1,
+        selectedInvestigators,
       ),
     );
     setSetup(false);
@@ -350,7 +357,7 @@ export default function App() {
           </div>
           <div className="topbar-right">
             <span className="local-indicator">
-              <i /> ALL SYSTEMS LOCAL
+              <i /> THE NIGHT IS YOURS
             </span>
             <button
               onClick={() => navigate("guide")}
@@ -359,7 +366,14 @@ export default function App() {
             >
               ?
             </button>
-            <div className="user-monogram">JD</div>
+            <div className="user-monogram">
+              {game
+                ? card(game.player.code)
+                    .name.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                : "AH"}
+            </div>
           </div>
         </header>
         {page === "home" && (
@@ -411,15 +425,84 @@ export default function App() {
                 empty, and a strange quiet has fallen over Miskatonic
                 University.
               </p>
-              <div className="setup-investigator">
-                <div className="portrait-small" />
-                <div>
-                  <span className="class-label">YOUR INVESTIGATOR</span>
-                  <h3>Joe Diamond</h3>
-                  <span>Official 2026 starter deck · 33 cards</span>
-                </div>
+              <div className="party-setup-heading">
+                <span className="eyebrow">Assemble your investigators</span>
+                <span>{selectedInvestigators.length} / 3 selected</span>
               </div>
-              <SkillStats />
+              <p className="party-setup-help">
+                Control every investigator yourself. Choose one for true solo,
+                or two or three for a shared hot-seat investigation.
+              </p>
+              <div className="party-choices">
+                {PLAYABLE_INVESTIGATORS.map((c) => {
+                  const investigator = card(c),
+                    selected = selectedInvestigators.includes(c);
+                  return (
+                    <button
+                      key={c}
+                      className={`investigator-choice ${investigator.faction_code} ${selected ? "selected" : ""}`}
+                      aria-pressed={selected}
+                      aria-label={`Select ${investigator.name}`}
+                      onClick={() =>
+                        setSelectedInvestigators((current) =>
+                          current.includes(c)
+                            ? current.length > 1
+                              ? current.filter((x) => x !== c)
+                              : current
+                            : [...current, c],
+                        )
+                      }
+                    >
+                      <img src={CARD_ART[c]} alt={investigator.name} />
+                      <span className="choice-check">
+                        {selected ? (
+                          <CheckCircle size={19} weight="fill" />
+                        ) : (
+                          <span />
+                        )}
+                      </span>
+                      <span className="choice-details">
+                        <small>
+                          {investigator.faction_code} ·{" "}
+                          {c === "12004"
+                            ? "Clues & combat"
+                            : c === "12001"
+                              ? "Protection & combat"
+                              : "Evasion & clues"}
+                        </small>
+                        <strong>{investigator.name}</strong>
+                        <span>
+                          {selected && selectedInvestigators[0] === c
+                            ? "Lead investigator · "
+                            : ""}
+                          33-card official starter
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedInvestigators.length > 1 && (
+                <label className="lead-picker">
+                  Lead investigator{" "}
+                  <select
+                    aria-label="Lead investigator"
+                    value={selectedInvestigators[0]}
+                    onChange={(e) =>
+                      setSelectedInvestigators((list) => [
+                        e.target.value,
+                        ...list.filter((c) => c !== e.target.value),
+                      ])
+                    }
+                  >
+                    {selectedInvestigators.map((c) => (
+                      <option value={c} key={c}>
+                        {card(c).name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="difficulty-label" htmlFor="difficulty">
                 Choose your difficulty
               </label>
@@ -463,7 +546,9 @@ export default function App() {
                 Enter Miskatonic University
               </Button>
               <span className="setup-footnote">
-                Solo · Scripted rules · Autosave enabled
+                {selectedInvestigators.length} investigator
+                {selectedInvestigators.length === 1 ? "" : "s"} · One controller
+                · Autosave enabled
               </span>
             </div>
           </div>
@@ -534,8 +619,9 @@ export default function App() {
               try {
                 if (file.size > 2000000) throw new Error("too large");
                 const value: unknown = JSON.parse(await file.text());
-                if (!validSave(value)) throw new Error("invalid");
-                setGame(value);
+                const decoded = decodeSave(value);
+                if (!decoded) throw new Error("invalid");
+                setGame(decoded);
                 navigate("game");
                 setSettings(false);
                 setNotice("Saved investigation restored.");

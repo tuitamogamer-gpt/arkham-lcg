@@ -224,10 +224,10 @@ export function CardFace({
   compact?: boolean;
   selected?: boolean;
 }) {
-  if (CARD_ART[c.code] && !compact)
+  if (CARD_ART[c.code])
     return (
       <button
-        className={`card-face official-scan ${c.faction_code} ${selected ? "selected" : ""}`}
+        className={`card-face official-scan ${compact ? "compact" : ""} ${c.faction_code} ${selected ? "selected" : ""}`}
         aria-label={`Inspect ${c.name}`}
         onClick={onClick}
       >

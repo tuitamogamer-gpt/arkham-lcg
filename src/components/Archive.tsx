@@ -5,7 +5,13 @@ import {
   LockKey,
   CheckCircle,
 } from "@phosphor-icons/react";
-import { cards, investigators, plain } from "../game/data";
+import {
+  cards,
+  investigators,
+  plain,
+  CARD_ART,
+  PLAYABLE_INVESTIGATORS,
+} from "../game/data";
 import { CardFace, SkillStats, Button } from "./Common";
 export function Archive({ inspect }: { inspect: (c: string) => void }) {
   const [query, setQuery] = useState("");
@@ -130,8 +136,11 @@ export function Investigators({
                 DOSSIER / {c.position.toString().padStart(2, "0")}{" "}
                 <span>{c.faction_code}</span>
               </div>
-              {c.code === "12004" ? (
-                <div className="dossier-portrait" />
+              {PLAYABLE_INVESTIGATORS.includes(c.code) ? (
+                <div
+                  className="dossier-portrait"
+                  style={{ backgroundImage: `url(${CARD_ART[c.code]})` }}
+                />
               ) : (
                 <div className="dossier-initials">
                   {c.name
@@ -156,7 +165,7 @@ export function Investigators({
                   {plain(c.text).split("elder_sign")[0].split("effect:")[0]}
                 </p>
                 <div className="file-status">
-                  {c.code === "12004" ? (
+                  {PLAYABLE_INVESTIGATORS.includes(c.code) ? (
                     <>
                       <CheckCircle size={15} /> Playable · official starter deck
                     </>
@@ -171,7 +180,7 @@ export function Investigators({
                   <Button secondary onClick={() => inspect(c.code)}>
                     Open dossier <ArrowUpRight size={16} />
                   </Button>
-                  {c.code === "12004" && (
+                  {PLAYABLE_INVESTIGATORS.includes(c.code) && (
                     <Button onClick={onStart}>Play</Button>
                   )}
                 </div>

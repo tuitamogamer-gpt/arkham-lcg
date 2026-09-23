@@ -1,0 +1,2955 @@
+/* The midnight investigation table. Brass, oxidized green, smoke and paper. */
+:root {
+  --pine: #c5a46a;
+  --deep: #070e0e;
+  --gold: #c7a36a;
+  --paper: #0e1918;
+  --ink: #ddd4b9;
+  --muted: #a5a797;
+  --hairline: #c4a26b30;
+  color: #ddd4b9;
+  background: #091211;
+  --faction: #bca273;
+}
+body {
+  background:
+    radial-gradient(ellipse at 60% 0, #23363155, transparent 60%), #0a1413;
+}
+body:after {
+  opacity: 0.052;
+  mix-blend-mode: soft-light;
+  z-index: 35;
+}
+h1,
+h2,
+h3 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+::selection {
+  background: #806d3b;
+  color: #fff5d4;
+}
+.sidebar {
+  width: 88px;
+  padding: 25px 12px 0;
+  background: linear-gradient(90deg, #080e0e, #101a18);
+  border-right: 1px solid #ba94553b;
+  color: #b9af8d;
+}
+.brand {
+  justify-content: center;
+  padding: 0;
+  min-height: 55px;
+}
+.brand > span,
+.sidebar-rule span,
+.sidebar nav button > span,
+.sidebar nav button > small,
+.edition-plaque,
+.sidebar-control > span,
+.sidebar-control > i,
+.sidebar-foot {
+  display: none;
+}
+.sidebar-rule {
+  margin: 22px 0 24px;
+  height: 1px;
+  background: #b09a632b;
+}
+.sidebar-rule:before,
+.sidebar-rule:after {
+  display: none;
+}
+.sidebar nav {
+  gap: 13px;
+}
+.sidebar nav button {
+  padding: 15px;
+  justify-content: center;
+  border-radius: 2px;
+  color: #a79e80;
+  min-height: 50px;
+}
+.sidebar nav button svg {
+  width: 24px;
+  height: 24px;
+}
+.sidebar nav button:hover {
+  background: #b7985210;
+  color: #e7c58a;
+}
+.sidebar nav button.active {
+  background: linear-gradient(90deg, #9b7d3428, #14211c);
+  color: #e3c083;
+  box-shadow: inset 0 0 0 1px #bea06430;
+}
+.sidebar nav button.active:before {
+  background: #dfb771;
+  top: 7px;
+  bottom: 7px;
+}
+.continue-nav {
+  margin-top: 24px;
+}
+.continue-nav i {
+  position: absolute;
+  right: 7px;
+  top: 9px;
+}
+.sidebar-control {
+  justify-content: center;
+  padding: 15px 0;
+  width: 100%;
+  color: #a8a587;
+}
+.sidebar-bottom {
+  padding-bottom: 18px;
+}
+.sidebar .sigil {
+  width: 47px;
+  height: 47px;
+  filter: drop-shadow(0 0 15px #c69a372b);
+}
+.app-main {
+  margin-left: 88px;
+  background: transparent;
+  min-height: 100dvh;
+}
+.topbar {
+  height: 66px;
+  background: #0a1412d9;
+  border-bottom: 1px solid #ae995b25;
+  padding: 0 36px;
+  color: #b7b49a;
+}
+.breadcrumbs {
+  color: #b2af95;
+}
+.breadcrumbs > span:last-child {
+  color: #dbd1b2;
+}
+.local-indicator {
+  color: #9e9d81;
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+.local-indicator i {
+  background: #a9945b;
+}
+.user-monogram,
+.help-button {
+  background: #18241d;
+  color: #c1b68f;
+  border-color: #b99c4c30;
+}
+.page-content {
+  padding: 34px 40px 24px;
+}
+.eyebrow {
+  color: #bd9f6f;
+  letter-spacing: 2.5px;
+}
+.page-subtitle,
+.page-heading p {
+  color: #a9ad9f;
+}
+.button {
+  background: linear-gradient(130deg, #e0c18c, #a58650);
+  color: #171d17;
+  border: 1px solid #dec38e;
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 3px #e8d1a13b,
+    0 8px 30px #03090840;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  font-weight: 650;
+  min-height: 46px;
+  padding: 13px 20px;
+}
+.button:hover:not(:disabled) {
+  background: linear-gradient(130deg, #ead2a5, #c0a16b);
+  box-shadow: 0 4px 28px #c7a16320;
+  transform: translateY(-2px);
+}
+.button-arrow {
+  background: #52462422;
+  border: 1px solid #463c3022;
+  border-radius: 50%;
+  color: #302c20;
+}
+.button.secondary {
+  background: #1a2924;
+  color: #d6c398;
+  border: 1px solid #bd9a5b50;
+  box-shadow: inset 0 0 0 3px #b5964322;
+}
+.button.secondary:hover:not(:disabled) {
+  background: #29372a;
+  color: #f4e1b7;
+}
+.icon-button {
+  color: #bbad86;
+  background: transparent;
+}
+select,
+input {
+  color: #e0d7bb;
+  background: #101d1a;
+  border-color: #b4955d50;
+}
+select {
+  border-radius: 2px;
+}
+.muted,
+.centered {
+  color: #a6b0a1;
+}
+.text-button {
+  color: #d1b178;
+}
+/* A full-bleed campaign cover, with a physical case file sitting on the table. */
+.night-home {
+  overflow: hidden;
+}
+.night-hero {
+  min-height: 650px;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 335px;
+  gap: 50px;
+  align-items: center;
+  padding: 62px 6% 87px;
+  isolation: isolate;
+  border-bottom: 1px solid #b99d5940;
+}
+.night-hero-art {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: url("/art/miskatonic.png") center 45% / cover;
+  filter: saturate(0.6);
+}
+.night-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(90deg, #071311e8 3%, #06131183 48%, #07100fa8),
+    linear-gradient(0deg, #081411 0%, transparent 45%, #07110f55);
+}
+.night-hero-copy {
+  position: relative;
+  max-width: 640px;
+}
+.occult-rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #c7af7e;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  margin-bottom: 24px;
+}
+.occult-rule > span {
+  border-top: 1px solid #b6976150;
+  border-bottom: 1px solid #b6976130;
+  padding: 10px 0;
+}
+.night-hero h1 {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: clamp(55px, 6.8vw, 110px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 7px;
+  color: #ddcfab;
+  text-shadow:
+    0 3px 0 #4b4230,
+    0 10px 35px #0008;
+}
+.night-hero h1 > span {
+  display: block;
+  font-size: 0.7em;
+  letter-spacing: 18px;
+  margin-top: 7px;
+}
+.chronicle-wordmark {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 32px;
+  font-style: italic;
+  letter-spacing: 3px;
+  color: #bda570;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.chronicle-wordmark:before,
+.chronicle-wordmark:after {
+  content: "";
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #a68a55);
+}
+.chronicle-wordmark:after {
+  transform: rotate(180deg);
+}
+.night-hero-copy > p {
+  color: #c6c5b2;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 22px;
+  line-height: 1.5;
+  margin: 28px 0;
+}
+.night-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-top: 28px;
+}
+.night-text-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: #c4b695;
+  font-size: 11px;
+  padding: 10px 0;
+}
+.night-text-link:hover {
+  color: #f3d69c;
+}
+.night-meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 33px;
+  color: #a9b2a2;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.night-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 10px;
+}
+.night-meta > span:last-child {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #b3a477;
+}
+.campaign-case {
+  position: relative;
+  background: linear-gradient(135deg, #c4b58c, #e0d1a9 40%, #c5b389);
+  color: #292b21;
+  padding: 22px 30px 27px;
+  transform: rotate(2deg);
+  box-shadow:
+    0 0 0 6px #161c1655,
+    0 20px 60px #0008,
+    inset 0 0 55px #62503922;
+  border: 1px solid #a19166;
+  max-width: 355px;
+  justify-self: end;
+  width: 100%;
+  outline: 1px solid #ddcca775;
+  outline-offset: 5px;
+}
+.campaign-case:before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 27%;
+  width: 47%;
+  height: 24px;
+  background: #968e6a50;
+  transform: rotate(-4deg);
+  backdrop-filter: none;
+  border-left: 1px dashed #d5ca9a99;
+  border-right: 1px dashed #d5ca9a99;
+}
+.case-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 6px;
+  letter-spacing: 1.1px;
+  border-bottom: 1px solid #78683e44;
+  padding-bottom: 13px;
+  color: #4f503d;
+}
+.case-topline > span:last-child {
+  color: #805239;
+}
+.case-number {
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #6d634a;
+  margin-top: 24px;
+}
+.case-number b {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: #757454;
+}
+.case-eyebrow {
+  font-size: 7px;
+  letter-spacing: 1.6px;
+  display: block;
+  margin: 20px 0 10px;
+  color: #696242;
+}
+.campaign-case h2 {
+  font-size: 62px;
+  line-height: 0.84;
+  font-weight: 600;
+  color: #283b2e;
+}
+.campaign-case h2 em {
+  font-weight: 400;
+}
+.campaign-case > p {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 17px;
+  line-height: 1.4;
+  margin: 23px 0;
+  color: #5b5a43;
+}
+.case-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #82734b;
+}
+.case-divider:before,
+.case-divider:after {
+  content: "";
+  height: 1px;
+  background: #8c805745;
+  flex: 1;
+}
+.case-status {
+  display: flex;
+  flex-direction: column;
+  margin: 20px 0;
+  gap: 7px;
+}
+.case-status > span:first-child {
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #776c4b;
+}
+.case-status > strong {
+  font-size: 23px;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+}
+.case-ready {
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: #466044;
+}
+.case-open {
+  background: #243d30;
+  color: #e2d7b4;
+  padding: 13px 17px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  border: 1px solid #1c3024;
+  box-shadow: inset 0 0 0 3px #bca56c22;
+}
+.night-hero-footer {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 23px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #a59b76;
+}
+.night-hero-footer > span:last-child {
+  margin-left: auto;
+}
+.night-hero-footer > span:nth-child(2) {
+  font-size: 19px;
+}
+.night-desk {
+  padding: 43px 5% 0;
+  max-width: 1600px;
+  margin: auto;
+  background: radial-gradient(ellipse at 80% 40%, #35412622, transparent 70%);
+}
+.night-section-title {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 18px;
+}
+.night-section-title h2 {
+  font-size: 35px;
+  margin-top: 7px;
+  color: #e1d5b7;
+}
+.night-section-title > span {
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #8d927f;
+}
+.night-chapters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+}
+.night-chapter {
+  position: relative;
+  isolation: isolate;
+  min-height: 260px;
+  text-align: left;
+  padding: 23px;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  background: #15251e;
+  border: 1px solid #a48c515c;
+  box-shadow: inset 0 0 0 5px #07120e80;
+  overflow: hidden;
+  color: #ddd2b2;
+}
+.night-chapter:after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid #c2a06130;
+  pointer-events: none;
+}
+.night-chapter-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(0deg, #08140ff5, #0d161172 65%, #15241b4d),
+    url("/art/miskatonic.png") center/cover;
+  opacity: 0.7;
+  transition: transform 800ms var(--ease);
+}
+.chapter-2 .night-chapter-art {
+  background-position: 80%;
+  filter: hue-rotate(20deg) saturate(0.3);
+}
+.chapter-3 .night-chapter-art {
+  background-position: 10%;
+  filter: sepia(0.5);
+}
+.night-chapter:hover .night-chapter-art {
+  transform: scale(1.07);
+}
+.chapter-index {
+  position: relative;
+  display: block;
+  margin-bottom: auto;
+  padding-bottom: 18px;
+  line-height: 1;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 50px;
+  color: #c7bb8999;
+}
+.night-chapter > div > span {
+  font-size: 8px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #b3b58f;
+}
+.night-chapter h3 {
+  font-size: 31px;
+  line-height: 1.1;
+  margin: 10px 0;
+  color: #eadbbb;
+}
+.night-chapter p {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #adb79f;
+}
+.chapter-state {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 7px;
+  letter-spacing: 1.7px;
+  color: #bca673;
+  margin-top: 22px;
+}
+.chapter-state svg:last-child {
+  margin-left: auto;
+}
+.ember-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ceae67;
+  box-shadow: 0 0 10px #e5b55b77;
+}
+.night-chapter.locked {
+  opacity: 0.65;
+}
+.night-investigators {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 45px;
+  padding: 56px 0;
+  border-bottom: 1px solid #b6985833;
+}
+.night-party-intro h2 {
+  font-size: 40px;
+  line-height: 1.05;
+  color: #dfd4b5;
+  margin: 13px 0;
+}
+.night-party-intro > p {
+  color: #a8afa0;
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 20px 0 25px;
+}
+.night-party-intro .night-text-link {
+  margin-top: 8px;
+}
+.night-dossiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: center;
+}
+.night-dossier {
+  position: relative;
+  padding: 7px;
+  background: #c4b990;
+  border: 1px solid #6d725549;
+  box-shadow: 0 8px 35px #0004;
+  color: #303a29;
+  text-align: left;
+  transform: rotate(-2deg);
+  transition: transform 0.6s var(--ease) !important;
+}
+.night-dossier:nth-child(2) {
+  transform: rotate(2deg) translateY(12px);
+}
+.night-dossier:nth-child(3) {
+  transform: rotate(-1deg);
+}
+.night-dossier:hover {
+  transform: rotate(0deg) translateY(-6px);
+}
+.dossier-photo {
+  height: 210px;
+  background-size: 310%;
+  background-position: 10% 25%;
+  filter: saturate(0.58) contrast(1.07);
+  border: 1px solid #3e4a3944;
+}
+.dossier-tab {
+  position: absolute;
+  top: 16px;
+  right: -5px;
+  background: #324a35;
+  color: #e3d8b6;
+  padding: 7px 12px;
+  font-size: 7px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px #0004;
+}
+.guardian .dossier-tab {
+  background: #385462;
+}
+.seeker .dossier-tab {
+  background: #89703e;
+}
+.dossier-note {
+  position: relative;
+  padding: 16px 8px 13px;
+}
+.dossier-note > span {
+  font-size: 6px;
+  letter-spacing: 1.5px;
+  color: #6c6c4e;
+}
+.dossier-note h3 {
+  font-size: 24px;
+  line-height: 1;
+  margin: 8px 0;
+  color: #303c2b;
+}
+.dossier-note p {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 13px;
+  color: #66694e;
+}
+.dossier-note > svg {
+  position: absolute;
+  right: 7px;
+  bottom: 10px;
+  color: #687155;
+}
+.night-help {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 25px 0;
+  color: #b5a576;
+}
+.night-help > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.night-help strong {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 23px;
+  font-weight: 500;
+  color: #d5c7a1;
+}
+.night-help > div > span {
+  font-size: 10px;
+  color: #939f90;
+}
+.night-help > button {
+  margin-left: auto;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #c3ab75;
+  font-size: 10px;
+}
+.night-saved {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #a3ad98;
+  padding: 15px 0;
+  border-top: 1px solid #b5995420;
+}
+.night-footer {
+  padding: 26px 0;
+  border-top: 1px solid #b5995420;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #777f6f;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+}
+.night-footer > span:first-child {
+  font-family: "Cinzel", serif;
+  letter-spacing: 3px;
+  color: #b6a372;
+}
+/* Party selection and ownership are a visible part of the table. */
+.setup-modal {
+  display: block;
+}
+.setup-art {
+  display: none;
+}
+.setup-content {
+  padding: 5px 3px;
+}
+.setup-content > h2 {
+  color: #e7d8b1;
+  font-size: 45px;
+}
+.setup-content > p {
+  color: #aeb5a3;
+}
+.party-setup-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 27px;
+  gap: 10px;
+}
+.party-setup-heading > span:last-child {
+  font-size: 11px;
+  color: #c9b884;
+}
+.party-setup-heading > .eyebrow {
+  font-size: 9px;
+}
+.party-setup-help {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 10px 0 17px;
+  color: #aab49f;
+}
+.party-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.investigator-choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #14221d;
+  border: 1px solid #aa946442;
+  padding: 5px;
+  text-align: left;
+  border-radius: 3px;
+}
+.investigator-choice > img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.48;
+  object-fit: cover;
+  filter: saturate(0.5);
+  opacity: 0.65;
+}
+.investigator-choice.selected {
+  border-color: #d5b772;
+  box-shadow: 0 0 0 2px #bfa26733;
+  background: #2a3323;
+}
+.investigator-choice.selected > img {
+  filter: saturate(0.85);
+  opacity: 1;
+}
+.choice-check {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  color: #e3ca8f;
+  background: #122419;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+}
+.choice-check > span {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #899a75;
+  border-radius: 50%;
+}
+.choice-details {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #e0d2af;
+}
+.choice-details small {
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #b9a773;
+}
+.choice-details strong {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1;
+}
+.choice-details > span {
+  font-size: 8px;
+  color: #a7b49a;
+}
+.lead-picker {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin: 18px 0;
+  font-size: 11px;
+  color: #c0b488;
+}
+.difficulty-options > button {
+  background: #14231f;
+  color: #aab39c;
+  border: 1px solid #8f87543f;
+}
+.difficulty-options > button.selected {
+  background: #b79d65;
+  color: #111c13;
+  border-color: #d7bf84;
+}
+.difficulty-label {
+  color: #c2bb9d;
+}
+.bag-preview {
+  background: #080e0d66;
+  border-color: #aa936336;
+}
+.difficulty-description,
+.setup-footnote,
+.replace-note {
+  color: #acaf97;
+}
+.replace-note button {
+  color: #d6b773;
+}
+.party-bar {
+  margin: 0 0 22px;
+}
+.party-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 11px;
+  gap: 12px;
+}
+.party-label > .eyebrow {
+  font-size: 8px;
+}
+.party-label > small {
+  font-size: 9px;
+  color: #98a18e;
+}
+.party-seats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+}
+.party-seats:has(> .seat:only-child) {
+  grid-template-columns: minmax(0, 420px);
+}
+.party-seats:has(> .seat:nth-child(2):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 900px;
+}
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  background: #0d1915;
+  border: 1px solid #54624969;
+  color: #c5c8ad;
+  box-shadow: inset 0 0 0 4px #344a3225;
+  text-align: left;
+  padding: 8px;
+  border-radius: 3px;
+  min-width: 0;
+  min-height: 82px;
+}
+.seat.active {
+  border-color: #ccaa68;
+  background: linear-gradient(95deg, #344128, #1b2c21);
+  box-shadow:
+    inset 0 0 0 3px #bfa35c28,
+    0 0 20px #c9a6550d;
+}
+.seat:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.seat.active:disabled {
+  opacity: 1;
+}
+.seat.finished {
+  filter: saturate(0.5);
+}
+.seat-portrait {
+  height: 66px;
+  width: 51px;
+  flex-shrink: 0;
+  background-size: 330%;
+  background-position: 10% 27%;
+  border: 1px solid #ae986446;
+  border-radius: 2px;
+}
+.seat-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.seat-copy > small {
+  font-size: 7px;
+  letter-spacing: 1.3px;
+  color: #b6b693;
+}
+.seat.active .seat-copy > small {
+  color: #e0c082;
+}
+.seat-copy > strong {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 24px;
+  line-height: 1;
+  color: #e4d7b4;
+  font-weight: 500;
+}
+.seat-copy > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #a5b097;
+  font-size: 10px;
+}
+.seat-copy > span svg:not(:first-child) {
+  margin-left: 5px;
+}
+.seat-number {
+  font-family: "Cormorant Garamond", serif;
+  position: absolute;
+  right: 12px;
+  top: 9px;
+  color: #9b9e7670;
+  font-size: 22px;
+}
+.seat-hint {
+  font-size: 10px;
+  color: #9eaa94;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+/* Dark felt table with physical story cards, locations and player hands. */
+.game-page {
+  padding: 30px 36px 40px;
+  max-width: 1780px;
+  margin: auto;
+}
+.game-title {
+  margin-bottom: 26px;
+}
+.game-title h1 {
+  font-size: 44px;
+  color: #e2d3ae;
+  line-height: 1.05;
+}
+.game-title .eyebrow {
+  font-size: 8px;
+  margin-bottom: 9px;
+}
+.round-label {
+  color: #afa687;
+  border-color: #ac975a40;
+}
+.round-label b {
+  color: #dbc18a;
+  font-size: 32px;
+}
+.autosaved {
+  color: #a5b096;
+}
+.phase-track {
+  max-width: none;
+  border-color: #a58a4b40;
+  margin-bottom: 20px;
+}
+.phase-track > div {
+  font-size: 9px;
+  color: #83977f;
+  padding: 11px 17px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.phase-track > div.active {
+  background: linear-gradient(90deg, #9b885930, #617a4125);
+  color: #d8c18c;
+}
+.phase-track > div > svg {
+  color: #778665;
+}
+.phase-track > div > span {
+  color: inherit;
+}
+.game-layout {
+  grid-template-columns: minmax(0, 1fr) 266px;
+  gap: 22px;
+}
+.story-track {
+  gap: 15px;
+}
+.story-card {
+  min-height: 105px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #d2c39c, #e0d3b1 45%, #c1b48e);
+  border: 1px solid #aa9b6f;
+  padding: 17px 20px;
+  box-shadow:
+    inset 0 0 0 4px #eee0b659,
+    inset 0 0 0 5px #8b80534d,
+    0 4px 20px #0003;
+  color: #2c3b2a;
+}
+.story-card h3 {
+  color: #30402c;
+  font-size: 24px;
+}
+.story-card p {
+  font-size: 9px;
+  color: #666848;
+  line-height: 1.5;
+}
+.story-card > div > span {
+  color: #7d7348;
+  font-size: 7px;
+  letter-spacing: 1.7px;
+}
+.story-icon {
+  background: #84795314;
+  color: #697347;
+  border: 1px solid #8c885438;
+  border-radius: 50%;
+}
+.story-number {
+  color: #637344;
+}
+.agenda-card {
+  background: linear-gradient(135deg, #bcb095, #d4c1a1, #b2a28a);
+  color: #673c2c;
+}
+.agenda-card h3 {
+  color: #664230;
+}
+.agenda-card .story-icon {
+  color: #8e4d32;
+  background: #945b2e15;
+}
+.agenda-card p {
+  color: #78664a;
+}
+.doom-counter strong {
+  color: #8b4a32;
+}
+.doom-counter > span,
+.doom-counter small {
+  color: #84694d;
+}
+.location-board {
+  height: 405px;
+  border: 1px solid #7f83544f;
+  background:
+    radial-gradient(ellipse at center, #163c294a, #0b1714e8 78%),
+    url("/art/miskatonic.png") center 60% / cover;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 5px #5c72471c,
+    inset 0 0 75px #020806b3,
+    0 4px 30px #02070530;
+  overflow: visible;
+}
+.location-board:before {
+  opacity: 0.13;
+}
+.board-header {
+  color: #a6ae86;
+  font-size: 8px;
+}
+.board-header > span:last-child {
+  color: #809677;
+}
+.map-lines line {
+  stroke: #bdab76;
+  stroke-opacity: 0.4;
+  stroke-dasharray: 1 1;
+  stroke-width: 0.35;
+}
+.map-location {
+  width: 112px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #b4b18b, #d4c9a4);
+  border: 3px solid #a9a37b;
+  color: #283d2c;
+  box-shadow:
+    0 9px 20px #0007,
+    0 0 0 1px #272e20;
+  overflow: visible;
+}
+.map-location.current {
+  border-color: #c7b47b;
+  box-shadow:
+    0 0 0 2px #d8bb6b70,
+    0 0 35px #a5b24f1c,
+    0 9px 20px #0006;
+}
+.map-location:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 2px #e2c58999,
+    0 8px 22px #0008;
+}
+.map-location h3 {
+  font-size: 17px;
+  color: #30482f;
+}
+.location-art {
+  height: 84px;
+  filter: saturate(0.5) contrast(1.05);
+  border-radius: 0;
+  background-position: center;
+}
+.location-stats {
+  color: #5d7347;
+  border-top: 1px solid #70804929;
+}
+.you-marker {
+  color: #d4c98f;
+  font-size: 6px;
+  letter-spacing: 1px;
+  top: -22px;
+  white-space: nowrap;
+}
+.move-hint {
+  background: #263f29;
+  color: #d0cb9b;
+  border-radius: 0;
+  font-size: 6px;
+}
+.compass-rose {
+  color: #bdaa5730;
+}
+.compass-rose > span {
+  color: #a3ac7455;
+}
+.board-legend {
+  color: #899c76;
+  font-size: 7px;
+}
+.location-pawns {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -19px;
+  pointer-events: none;
+}
+.location-pawns > span {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #d8c186;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 7px;
+  background: #5a4c2b;
+  color: #f0deae;
+  box-shadow: 0 2px 6px #0009;
+}
+.location-pawns > .guardian {
+  background: #2a475b;
+}
+.location-pawns > .rogue {
+  background: #355234;
+}
+.fire-marker {
+  background: #a34722;
+  color: #f9d48f;
+}
+.enemy-marker {
+  background: #342b29;
+  color: #e3c2a6;
+}
+.action-bar {
+  margin-top: 19px;
+  background: linear-gradient(120deg, #1b2e22, #14251d);
+  border: 1px solid #96895350;
+  box-shadow: inset 0 0 0 4px #e3c58008;
+  border-radius: 3px;
+  padding: 10px 14px;
+}
+.action-button {
+  color: #b8c2a0;
+  background: transparent;
+  font-size: 11px;
+}
+.primary-action {
+  background: #b49d6030;
+  color: #e2cd93;
+  border: 1px solid #bba36b35;
+}
+.action-button:hover {
+  background: #b39e5a25 !important;
+  color: #e5d3a5 !important;
+}
+.action-count > span {
+  background: #344936;
+  border: 1px solid #77805766;
+}
+.action-count > span.available {
+  background: #b9ab70;
+  box-shadow: 0 0 8px #baa45a24;
+}
+.action-count > small {
+  color: #c1c29c;
+  font-size: 8px;
+}
+.end-turn {
+  color: #ceb87c;
+  font-size: 11px;
+  background: #060f0a40;
+  padding: 11px;
+  border-radius: 2px;
+}
+.tool-selector {
+  color: #9fab95;
+}
+.tool-selector select,
+.enemy-zone select {
+  background: #14231c;
+  color: #c8c7a6;
+  border-color: #9488574d;
+}
+.location-abilities .button {
+  font-size: 9px;
+  min-height: 34px;
+  padding: 8px 11px;
+}
+.location-abilities {
+  gap: 7px;
+}
+.hand-section,
+.assets-section {
+  margin-top: 28px;
+}
+.zone-heading h3 {
+  color: #d4c6a1;
+  font-size: 26px;
+}
+.zone-heading h3 > span {
+  background: #9f925226;
+  color: #d2c78f;
+  font-size: 11px;
+  border: 1px solid #a69d5940;
+}
+.zone-heading > button,
+.zone-heading > small,
+.zone-heading > span {
+  color: #949e82;
+}
+.hand-row {
+  gap: 14px;
+  padding: 16px 4px 8px;
+}
+.hand-card-wrap {
+  flex: 0 0 138px;
+  width: 138px;
+}
+.hand-card-wrap .card-face {
+  width: 138px;
+  height: 195px;
+  box-shadow: 0 8px 18px #0008;
+}
+.hand-card-wrap .card-face:hover {
+  transform: translateY(-8px) rotate(-1deg);
+}
+.card-face {
+  background: #cfc19a;
+  border-color: #998d60;
+  border-radius: 5px;
+  box-shadow: 0 4px 15px #0004;
+}
+.card-inner {
+  background: #d3c7a5;
+  border-color: #8c82574d;
+}
+.card-top {
+  color: #777147;
+  border-color: #94805b3b;
+}
+.card-copy h3 {
+  color: #35442f;
+}
+.card-illustration {
+  background: radial-gradient(
+    ellipse at 60% 20%,
+    color-mix(in srgb, var(--faction) 40%, #363f2a),
+    #202e22
+  );
+  color: #d6c594;
+}
+.card-ornament {
+  opacity: 0.35;
+}
+.card-illustration svg {
+  filter: drop-shadow(0 0 9px #f6da8f33);
+}
+.card-face.compact .card-illustration {
+  height: 64px;
+}
+.card-face.selected {
+  outline-color: #dfc079;
+  background: #e0cf9c;
+}
+.play-card {
+  background: #203223;
+  border: 1px solid #9c96563b;
+  color: #ccc599;
+  border-radius: 2px;
+  padding: 9px 4px;
+  font-size: 8px;
+}
+.play-card:disabled {
+  opacity: 0.45;
+  color: #98a383;
+}
+.official-scan {
+  padding: 3px;
+  background: #b9ac84;
+}
+.official-scan > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+}
+.official-scan .scan-caption {
+  display: none;
+}
+.asset-chip {
+  background: #182a21;
+  border-color: #8c83524d;
+  color: #d3cca8;
+  border-radius: 3px;
+  min-width: 160px;
+}
+.asset-chip small {
+  color: #9faa92;
+}
+.asset-symbol {
+  background: #a3924f1f;
+  color: #bea965;
+}
+.empty-assets {
+  background: #14221a40;
+  border-color: #75835946;
+  color: #8d9e80;
+  border-radius: 3px;
+}
+.enemy-zone {
+  background: #371e1870;
+  border-color: #9d694a4d;
+  padding: 14px;
+  border-radius: 3px;
+}
+.enemy-row {
+  border-color: #b6855740;
+}
+.enemy-info {
+  color: #d6bba0;
+}
+.enemy-info small {
+  color: #bd9880;
+}
+.enemy-actions > button {
+  background: #58432d4a;
+  color: #dbbd8d;
+  border-color: #a7845647;
+}
+.enemy-actions > button:disabled {
+  color: #b9a48b;
+}
+.investigator-panel {
+  border: 1px solid #9a8c5540;
+  background: linear-gradient(160deg, #1c2d20, #111f18);
+  padding: 19px 18px;
+  border-radius: 3px;
+  align-self: start;
+  box-shadow: inset 0 0 0 4px #87905c12;
+}
+.player-header {
+  align-items: center;
+  gap: 12px;
+}
+.player-header .portrait-small {
+  width: 60px;
+  height: 81px;
+  border-radius: 2px;
+  border: 2px solid #aba177;
+}
+.player-header h2 {
+  color: #e1d5b1;
+  font-size: 27px;
+  line-height: 1;
+}
+.class-label {
+  color: #c6a56a;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.player-header button {
+  color: #98a98a;
+  font-size: 8px;
+}
+.skill-stats {
+  border-color: #ac9e5a32;
+  color: #c0c497;
+}
+.skill-stats .willpower {
+  color: #98af9e;
+}
+.skill-stats .intellect {
+  color: #c8b57e;
+}
+.skill-stats .combat {
+  color: #c09578;
+}
+.skill-stats .agility {
+  color: #8ea17c;
+}
+.vitals > div > span {
+  color: #aab195;
+}
+.vitals b {
+  color: #d6cda3;
+}
+.vitals b small {
+  color: #788d75;
+}
+.vital-track {
+  background: #0b170f;
+}
+.vital-track.health i {
+  background: linear-gradient(90deg, #623d30, #bd7e5c);
+}
+.vital-track.sanity i {
+  background: linear-gradient(90deg, #315655, #79a8a0);
+}
+.player-pools {
+  border-color: #999c603d;
+}
+.player-pools b {
+  color: #c7c38c;
+}
+.player-pools span {
+  color: #9cab89;
+}
+.objective-tip {
+  background: #07160e66;
+  border-color: #8d9a4f30;
+  color: #b1bc91;
+}
+.objective-tip > span {
+  color: #ae9e66;
+}
+.objective-tip p {
+  color: #abb897;
+  line-height: 1.7;
+}
+.game-log {
+  margin-top: 26px;
+}
+.log-entries {
+  max-height: 310px;
+}
+.log-entry {
+  border-color: #9fac7830;
+}
+.log-entry > span {
+  color: #667d61;
+}
+.log-entry p {
+  color: #a4b38e;
+  font-size: 14px;
+}
+.log-entry.story p {
+  color: #c2bc8a;
+}
+.log-entry.bad p {
+  color: #c18b71;
+}
+.log-entry.good p {
+  color: #afc28e;
+}
+.party-resolution {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+.party-resolution > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #b99b5540;
+  background: #14261b;
+}
+.party-resolution span {
+  color: #9aab8c;
+  font-size: 11px;
+}
+/* Dialogs stay readable under candlelight. */
+.modal-backdrop {
+  background: #030908d9;
+  backdrop-filter: blur(7px);
+}
+.modal {
+  background: radial-gradient(ellipse at top, #2b3826, #15261e 75%);
+  color: #d9d0ac;
+  border: 1px solid #b5a06099;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 0 0 5px #b0a1611c,
+    0 30px 100px #0009;
+  padding: 32px;
+  max-height: 92dvh;
+}
+.modal.wide {
+  max-width: 970px;
+}
+.modal > .close {
+  background: #192b20;
+  color: #cdb887;
+  border: 1px solid #b4a15f40;
+  border-radius: 50%;
+}
+.modal h2 {
+  color: #e4d5ac;
+}
+.modal-intro p,
+.test-instructions,
+.test-footnote,
+.modal-footer > span {
+  color: #aeb899;
+}
+.modal-intro .eyebrow {
+  color: #c4a370;
+}
+.modal-footer {
+  border-color: #a49b5c3b;
+}
+.test-values {
+  background: #0b1b11;
+  border-color: #b5a65e40;
+}
+.test-values > div {
+  color: #bbba8a;
+}
+.test-values strong {
+  color: #e0d1a2;
+}
+.test-values > span,
+.test-values > div > span {
+  color: #8e9c7b;
+}
+.commit-list > button {
+  background: #11271b;
+  border: 1px solid #7582505c;
+  color: #d1ccab;
+}
+.commit-list > button.selected {
+  background: #3b4a28;
+  color: #e7d79e;
+  border-color: #c1ab67;
+}
+.commit-check {
+  border-color: #8e9a61;
+  color: #c2bd7a;
+}
+.commit-owner {
+  display: block;
+  color: #8ea17f;
+  font-size: 8px;
+  margin-top: 4px;
+}
+.commit-list > button b {
+  color: #c8c58c;
+}
+.decision-list > button {
+  background: #10271a;
+  border: 1px solid #8f915954;
+  color: #dbd2ab;
+  border-radius: 3px;
+}
+.decision-list > button small {
+  color: #9fac8d;
+}
+.decision-list > button:hover {
+  background: #2f4326;
+}
+.chaos-token {
+  background: radial-gradient(circle at 40% 35%, #d5c397, #a58d59);
+  color: #263323;
+  border: 2px solid #8c7e50;
+  box-shadow:
+    inset 0 0 0 2px #ecd69c88,
+    0 2px 5px #0005;
+}
+.chaos-token.fail {
+  background: radial-gradient(circle at 40% 30%, #8d4637, #462d25);
+  color: #e4b28d;
+  border-color: #ba8e5a;
+}
+.chaos-token.bless {
+  background: radial-gradient(circle at 40% 30%, #66825d, #2c4f3c);
+  color: #d9dba9;
+  border-color: #96a567;
+}
+.chaos-token.large {
+  width: 93px;
+  height: 93px;
+  border-width: 4px;
+  color: #e1cc96;
+  background: radial-gradient(circle at 40% 30%, #5e7150, #142f20);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 44px;
+  box-shadow:
+    inset 0 0 0 3px #93895877,
+    0 10px 40px #0006;
+}
+.test-outcome.passed {
+  background: #294e2b44;
+}
+.test-outcome.failed {
+  background: #6a382a44;
+}
+.test-outcome h2 {
+  color: #dccc9e;
+}
+.test-outcome p {
+  color: #b5bc9a;
+}
+.boost-list .button {
+  font-size: 10px;
+}
+.toast {
+  background: #263824;
+  color: #e3d6aa;
+  border-color: #b69a58;
+}
+.deck-list button {
+  color: #b8c29d;
+  border-color: #8b976040;
+  background: transparent;
+}
+.deck-list button:hover {
+  background: #293d24;
+}
+.card-detail h2 {
+  color: #e4d5ae;
+}
+.detail-rules {
+  background: #101f16;
+  border-color: #9e985742;
+  color: #bfc7a8;
+}
+.detail-rules p,
+.detail-rules div {
+  color: inherit;
+}
+.detail-metadata {
+  color: #899d80;
+}
+.detail-flavor {
+  color: #a9b18f;
+}
+.errata-note {
+  background: #b3995224;
+  color: #cbbc8e;
+  border-color: #b59b5440;
+}
+.archive-filters {
+  background: #12251c;
+  border-color: #9d925045;
+}
+.archive-filters .search {
+  background: transparent;
+  border-color: #8e915545;
+  color: #a9b78a;
+}
+.archive-filters input {
+  background: transparent;
+  color: #d8d2ae;
+}
+.archive-filters select {
+  background: #203023;
+  color: #d0c6a1;
+  border-color: #ae9a5d50;
+}
+.archive-count {
+  color: #849976;
+}
+.edition-tag {
+  background: #243323;
+  color: #b9b17b;
+  border-color: #91915440;
+}
+.investigator-file {
+  background: #15291e;
+  border-color: #85925042;
+}
+.file-copy h2 {
+  color: #e3d6b0;
+}
+.file-copy > p {
+  color: #a1b293;
+}
+.file-status {
+  color: #a6ba8c;
+  background: #364c272e;
+}
+.dossier-header {
+  color: #b09c65;
+  background: #1f301f;
+}
+.dossier-initials {
+  background: #263f2d;
+  color: #b1bc8d;
+}
+.guide-grid article {
+  background: #15271e;
+  border-color: #8b8a533e;
+}
+.guide-grid h2 {
+  color: #d2c398;
+}
+.guide-grid p,
+.coverage-note p {
+  color: #a5b39b;
+}
+.coverage-note {
+  background: #263f2840;
+  border-color: #87965b40;
+}
+.coverage-note h3 {
+  color: #ccca9e;
+}
+.source-links a {
+  color: #baa678;
+}
+.resolution-page {
+  background: #101e17;
+}
+.resolution-content > p {
+  color: #b2bc9a;
+}
+.resolution-stats {
+  border-color: #9da35e44;
+}
+.resolution-stats b {
+  color: #d6c591;
+}
+.campaign-record {
+  background: #22351e;
+  border-color: #96945940;
+  color: #b7c397;
+}
+.coming-note {
+  background: #1b2e1e;
+  color: #c5c294;
+}
+@media (min-width: 1600px) {
+  .night-hero {
+    min-height: 730px;
+    grid-template-columns: minmax(0, 1fr) 370px;
+    padding-left: 9%;
+    padding-right: 9%;
+  }
+  .campaign-case {
+    max-width: 370px;
+  }
+  .night-hero h1 {
+    font-size: 120px;
+  }
+  .night-desk {
+    padding-left: 7%;
+    padding-right: 7%;
+  }
+}
+@media (max-width: 1180px) {
+  .night-hero {
+    gap: 32px;
+    grid-template-columns: minmax(0, 1fr) 290px;
+    padding: 50px 5% 75px;
+    min-height: 620px;
+  }
+  .night-hero h1 {
+    font-size: 68px;
+  }
+  .night-hero h1 > span {
+    letter-spacing: 12px;
+  }
+  .campaign-case {
+    padding: 20px 24px;
+  }
+  .campaign-case h2 {
+    font-size: 55px;
+  }
+  .night-hero-actions {
+    gap: 17px;
+    flex-wrap: wrap;
+  }
+  .night-investigators {
+    grid-template-columns: 220px 1fr;
+    gap: 25px;
+  }
+  .dossier-photo {
+    height: 160px;
+  }
+  .night-party-intro h2 {
+    font-size: 34px;
+  }
+  .dossier-note h3 {
+    font-size: 21px;
+  }
+  .game-page {
+    padding: 28px 24px;
+  }
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 16px;
+  }
+  .investigator-panel {
+    padding: 14px;
+  }
+  .story-card {
+    padding: 16px 14px;
+  }
+  .story-icon {
+    display: none;
+  }
+  .seat-copy > strong {
+    font-size: 21px;
+  }
+  .seat-number {
+    display: none;
+  }
+  .seat-portrait {
+    width: 42px;
+    height: 61px;
+  }
+  .seat {
+    gap: 9px;
+  }
+  .seat-copy > small {
+    font-size: 6px;
+    letter-spacing: 1px;
+  }
+  .story-card h3 {
+    font-size: 21px;
+  }
+}
+@media (max-width: 960px) {
+  .night-hero {
+    grid-template-columns: 1fr 255px;
+    gap: 27px;
+  }
+  .night-hero h1 {
+    font-size: 57px;
+    letter-spacing: 4px;
+  }
+  .night-hero h1 > span {
+    letter-spacing: 9px;
+  }
+  .chronicle-wordmark {
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+  .chronicle-wordmark:after,
+  .chronicle-wordmark:before {
+    width: 30px;
+  }
+  .occult-rule {
+    font-size: 7px;
+    letter-spacing: 1.6px;
+    gap: 8px;
+  }
+  .campaign-case {
+    padding: 19px;
+  }
+  .campaign-case h2 {
+    font-size: 48px;
+  }
+  .case-number {
+    margin-top: 20px;
+  }
+  .night-hero-copy > p {
+    font-size: 20px;
+  }
+  .night-meta {
+    gap: 15px;
+  }
+  .night-chapters {
+    gap: 12px;
+  }
+  .night-chapter {
+    min-height: 245px;
+    padding: 18px;
+  }
+  .night-chapter h3 {
+    font-size: 25px;
+  }
+  .night-chapter p {
+    font-size: 14px;
+  }
+  .night-investigators {
+    grid-template-columns: 1fr;
+  }
+  .night-party-intro {
+    max-width: 540px;
+  }
+  .night-party-intro h2 br {
+    display: none;
+  }
+  .night-party-intro .button {
+    display: inline-flex;
+  }
+  .night-dossiers {
+    max-width: 700px;
+  }
+  .dossier-photo {
+    height: 230px;
+  }
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .investigator-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 25px;
+  }
+  .investigator-panel .game-log {
+    grid-column: 1/-1;
+  }
+  .investigator-panel .skill-stats {
+    margin: 0;
+  }
+  .investigator-panel .vitals,
+  .investigator-panel .player-pools,
+  .investigator-panel .objective-tip {
+    margin: 0;
+  }
+  .seat-copy > strong {
+    font-size: 21px;
+  }
+  .game-log .log-entries {
+    max-height: 170px;
+  }
+}
+@media (max-width: 700px) {
+  .sidebar {
+    width: 62px;
+    padding: 16px 7px 0;
+  }
+  .sidebar .sigil {
+    width: 39px;
+    height: 39px;
+  }
+  .sidebar nav button {
+    padding: 12px;
+    min-height: 44px;
+  }
+  .sidebar nav button svg {
+    width: 21px;
+    height: 21px;
+  }
+  .sidebar nav {
+    gap: 9px;
+  }
+  .sidebar-rule {
+    margin: 18px 0;
+  }
+  .app-main {
+    margin-left: 62px;
+  }
+  .topbar {
+    height: 56px;
+    padding: 0 18px;
+  }
+  .local-indicator {
+    display: none;
+  }
+  .breadcrumbs {
+    font-size: 9px;
+  }
+  .topbar-right {
+    gap: 10px;
+  }
+  .night-hero {
+    display: block;
+    padding: 40px 23px 72px;
+    min-height: 0;
+  }
+  .night-hero-copy {
+    max-width: 490px;
+    margin: 0 auto;
+  }
+  .night-hero-art {
+    background-position: 63% 30%;
+  }
+  .night-vignette {
+    background: linear-gradient(0deg, #071310 0%, #07131070 55%, #07131090);
+  }
+  .night-hero h1 {
+    font-size: clamp(43px, 9vw, 73px);
+    letter-spacing: 4px;
+  }
+  .night-hero h1 > span {
+    letter-spacing: 10px;
+  }
+  .occult-rule {
+    font-size: 6px;
+    letter-spacing: 1.3px;
+    margin-bottom: 23px;
+    gap: 7px;
+    white-space: nowrap;
+  }
+  .occult-rule svg {
+    width: 10px;
+  }
+  .chronicle-wordmark {
+    font-size: 24px;
+    margin-top: 15px;
+  }
+  .night-hero-copy > p {
+    font-size: 18px;
+    line-height: 1.5;
+    margin-top: 23px;
+  }
+  .night-hero-copy > p br {
+    display: none;
+  }
+  .night-hero-actions {
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .night-hero-actions .button {
+    font-size: 11px;
+    padding: 13px 15px;
+    min-height: 48px;
+  }
+  .night-text-link {
+    font-size: 10px;
+  }
+  .night-meta {
+    margin-top: 20px;
+    gap: 10px;
+  }
+  .night-meta > span {
+    font-size: 8px;
+    line-height: 1.6;
+  }
+  .night-meta > span:last-child {
+    font-size: 7px;
+  }
+  .campaign-case {
+    max-width: 410px;
+    margin: 35px auto 0;
+    transform: none;
+    padding: 24px;
+  }
+  .campaign-case h2 {
+    font-size: 55px;
+  }
+  .case-number {
+    position: absolute;
+    right: 28px;
+    top: 42px;
+  }
+  .case-eyebrow {
+    margin-top: 26px;
+    font-size: 6px;
+    max-width: 150px;
+  }
+  .campaign-case h2 br {
+    display: none;
+  }
+  .campaign-case > p {
+    font-size: 16px;
+    margin: 18px 0;
+  }
+  .case-status {
+    margin: 14px 0;
+    gap: 6px;
+  }
+  .case-topline {
+    font-size: 5px;
+    letter-spacing: 0.7px;
+  }
+  .night-hero-footer {
+    left: 23px;
+    right: 23px;
+    font-size: 5px;
+    letter-spacing: 1px;
+    gap: 10px;
+    bottom: 22px;
+  }
+  .night-hero-footer > span:last-child {
+    max-width: 110px;
+    line-height: 1.6;
+    text-align: right;
+  }
+  .night-desk {
+    padding: 32px 20px 0;
+  }
+  .night-section-title {
+    display: block;
+  }
+  .night-section-title h2 {
+    font-size: 31px;
+    line-height: 1.1;
+    margin: 10px 0;
+  }
+  .night-section-title > span {
+    font-size: 6px;
+    letter-spacing: 1.4px;
+  }
+  .night-section-title .eyebrow {
+    font-size: 7px;
+  }
+  .night-chapters {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .night-chapter {
+    min-height: 225px;
+    padding: 22px;
+  }
+  .night-chapter h3 {
+    font-size: 32px;
+  }
+  .night-chapter.locked {
+    min-height: 190px;
+  }
+  .night-investigators {
+    padding: 36px 0;
+    gap: 25px;
+  }
+  .night-party-intro h2 {
+    font-size: 33px;
+  }
+  .night-party-intro .eyebrow {
+    font-size: 7px;
+  }
+  .night-dossiers {
+    grid-template-columns: 1fr;
+    gap: 19px;
+  }
+  .night-dossier,
+  .night-dossier:nth-child(2),
+  .night-dossier:nth-child(3) {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    transform: none !important;
+    padding: 6px;
+  }
+  .dossier-photo {
+    height: 137px;
+    background-size: 370%;
+    background-position: 9% 22%;
+  }
+  .dossier-tab {
+    top: 8px;
+    right: -2px;
+    font-size: 6px;
+    padding: 6px 10px;
+  }
+  .dossier-note {
+    padding: 35px 11px 10px;
+  }
+  .dossier-note h3 {
+    font-size: 25px;
+  }
+  .dossier-note > span {
+    font-size: 5px;
+  }
+  .dossier-note p {
+    font-size: 12px;
+  }
+  .night-help {
+    align-items: start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .night-help > svg {
+    width: 19px;
+  }
+  .night-help strong {
+    font-size: 22px;
+  }
+  .night-help > div {
+    max-width: calc(100% - 40px);
+  }
+  .night-help > div > span {
+    font-size: 9px;
+    line-height: 1.6;
+  }
+  .night-help > button {
+    margin-left: 30px;
+    padding: 8px 0;
+  }
+  .night-footer {
+    align-items: start;
+    gap: 15px;
+    flex-wrap: wrap;
+    font-size: 7px;
+  }
+  .night-footer > span:nth-child(2) {
+    max-width: 200px;
+    font-size: 6px;
+    line-height: 1.8;
+  }
+  .night-footer > svg {
+    display: none;
+  }
+  .night-saved {
+    line-height: 1.8;
+    align-items: start;
+    font-size: 8px;
+  }
+  .game-page {
+    padding: 22px 16px 30px;
+  }
+  .game-title {
+    align-items: start;
+    gap: 16px;
+    margin-bottom: 23px;
+  }
+  .game-title h1 {
+    font-size: 34px;
+    line-height: 1;
+    overflow-wrap: normal;
+    white-space: normal;
+  }
+  .game-title .eyebrow {
+    font-size: 6px;
+    letter-spacing: 1.4px;
+  }
+  .game-header-actions {
+    gap: 4px;
+  }
+  .autosaved {
+    display: none;
+  }
+  .game-header-actions > .icon-button {
+    display: none;
+  }
+  .round-label {
+    padding-left: 9px;
+    font-size: 6px;
+    letter-spacing: 0.7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .round-label b {
+    font-size: 25px;
+    margin: 1px 0 0;
+  }
+  .party-label {
+    align-items: start;
+  }
+  .party-label > .eyebrow {
+    font-size: 6px;
+    letter-spacing: 1.2px;
+  }
+  .party-label > small {
+    font-size: 6px;
+  }
+  .party-seats,
+  .party-seats:has(> .seat:nth-child(2):last-child),
+  .party-seats:has(> .seat:only-child) {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .seat {
+    min-height: 63px;
+    padding: 6px 9px;
+    gap: 12px;
+  }
+  .seat-portrait {
+    height: 49px;
+    width: 37px;
+    background-size: 335%;
+  }
+  .seat-copy > strong {
+    font-size: 22px;
+  }
+  .seat-copy {
+    gap: 4px;
+  }
+  .seat-copy > small {
+    font-size: 6px;
+  }
+  .seat-copy > span {
+    font-size: 8px;
+  }
+  .seat-number {
+    display: block;
+    font-size: 23px;
+    right: 13px;
+    top: 14px;
+  }
+  .seat-hint {
+    font-size: 8px;
+    margin-top: 10px;
+    line-height: 1.65;
+  }
+  .party-bar {
+    margin-bottom: 19px;
+  }
+  .phase-track > div {
+    padding: 9px 5px;
+    gap: 3px;
+    font-size: 6px;
+    letter-spacing: 0;
+    text-transform: capitalize;
+  }
+  .phase-track > div > span {
+    font-size: 5px;
+  }
+  .phase-track > div > svg {
+    width: 9px;
+  }
+  .story-track {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .story-card {
+    min-height: 96px;
+    padding: 18px;
+  }
+  .story-card h3 {
+    font-size: 26px;
+  }
+  .story-card p {
+    font-size: 8px;
+    max-width: 190px;
+    line-height: 1.7;
+  }
+  .story-number {
+    font-size: 26px;
+  }
+  .story-icon {
+    display: flex;
+    width: 35px;
+    height: 35px;
+    flex-shrink: 0;
+  }
+  .agenda-card {
+    min-height: 86px;
+  }
+  .location-board {
+    height: 440px;
+    margin-top: 15px;
+    overflow: hidden;
+  }
+  .board-header {
+    font-size: 6px;
+    padding: 15px 12px;
+  }
+  .board-header > span:last-child {
+    display: none;
+  }
+  .board-legend {
+    font-size: 5px;
+    bottom: 12px;
+    gap: 9px;
+    flex-wrap: wrap;
+    left: 12px;
+    right: 12px;
+  }
+  .map-location {
+    width: 86px;
+    border-width: 2px;
+  }
+  .map-location h3 {
+    font-size: 14px;
+    padding: 6px 4px;
+    line-height: 1;
+  }
+  .location-art {
+    height: 62px;
+  }
+  .location-stats {
+    padding: 5px 0;
+    font-size: 8px;
+  }
+  .location-stats svg {
+    width: 9px;
+  }
+  .location-pawns > span {
+    width: 19px;
+    height: 19px;
+    font-size: 6px;
+  }
+  .you-marker {
+    font-size: 5px;
+    top: -19px;
+    letter-spacing: 0.5px;
+  }
+  .move-hint {
+    font-size: 4px;
+    letter-spacing: 0.6px;
+    padding: 4px;
+  }
+  .action-bar {
+    padding: 10px 8px;
+    gap: 6px;
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr;
+  }
+  .action-count {
+    grid-row: span 2;
+    padding: 0 6px;
+  }
+  .action-count small {
+    font-size: 6px;
+    line-height: 1.5;
+  }
+  .action-count > span {
+    width: 6px;
+    height: 6px;
+  }
+  .action-button {
+    font-size: 9px;
+    padding: 10px 4px;
+    gap: 5px;
+    justify-content: center;
+  }
+  .action-button svg {
+    width: 14px;
+  }
+  .end-turn {
+    font-size: 9px;
+    padding: 10px 4px;
+    gap: 7px;
+    margin: 0;
+    justify-content: center;
+  }
+  .end-turn svg {
+    width: 13px;
+  }
+  .tool-selector {
+    font-size: 8px;
+  }
+  .tool-selector select {
+    font-size: 9px;
+    max-width: 100%;
+    padding: 8px;
+  }
+  .tool-selector label {
+    flex-wrap: wrap;
+  }
+  .hand-row {
+    gap: 12px;
+  }
+  .hand-card-wrap {
+    flex-basis: 123px;
+    width: 123px;
+  }
+  .hand-card-wrap .card-face {
+    width: 123px;
+    height: 180px;
+  }
+  .play-card {
+    font-size: 7px;
+    min-height: 34px;
+  }
+  .zone-heading h3 {
+    font-size: 25px;
+  }
+  .zone-heading > button {
+    font-size: 7px;
+    max-width: 110px;
+    line-height: 1.5;
+  }
+  .assets-section .zone-heading small {
+    font-size: 6px;
+  }
+  .asset-chip {
+    min-width: 100%;
+    width: 100%;
+  }
+  .empty-assets {
+    min-height: 90px;
+    font-size: 10px;
+  }
+  .investigator-panel {
+    display: block;
+    padding: 19px;
+    margin-top: 10px;
+  }
+  .investigator-panel > .skill-stats {
+    margin: 20px 0;
+  }
+  .investigator-panel .vitals {
+    margin: 20px 0;
+  }
+  .investigator-panel .player-pools {
+    margin: 20px 0;
+  }
+  .investigator-panel .objective-tip {
+    margin-top: 20px;
+  }
+  .log-entry p {
+    font-size: 14px;
+  }
+  .enemy-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .enemy-actions {
+    flex-wrap: wrap;
+  }
+  .enemy-actions > button {
+    font-size: 8px;
+    min-height: 32px;
+  }
+  .enemy-zone > .zone-heading {
+    flex-wrap: wrap;
+  }
+  .enemy-zone select {
+    font-size: 8px;
+    max-width: 100%;
+  }
+  .location-abilities .button {
+    width: 100%;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .game-title > div:first-child {
+    min-width: 0;
+  }
+  .modal-backdrop {
+    padding: 12px;
+  }
+  .modal {
+    padding: 26px 19px;
+    border-width: 1px;
+    max-height: 94dvh;
+  }
+  .modal.wide {
+    padding: 27px 19px;
+  }
+  .modal-intro h2 {
+    font-size: 32px;
+    line-height: 1.1;
+  }
+  .modal-intro p {
+    font-size: 12px;
+  }
+  .setup-content > h2 {
+    font-size: 36px;
+  }
+  .setup-content > p {
+    font-size: 12px;
+  }
+  .party-setup-heading > .eyebrow {
+    font-size: 7px;
+    letter-spacing: 1.3px;
+  }
+  .party-setup-heading > span:last-child {
+    font-size: 9px;
+  }
+  .party-choices {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .investigator-choice {
+    display: grid;
+    grid-template-columns: 102px 1fr;
+    align-items: center;
+    padding: 5px;
+    min-height: 87px;
+  }
+  .investigator-choice > img {
+    width: 102px;
+    height: 75px;
+    object-fit: cover;
+    object-position: left;
+  }
+  .choice-check {
+    width: 18px;
+    height: 18px;
+    right: 8px;
+    top: 8px;
+  }
+  .choice-check svg {
+    width: 16px;
+  }
+  .choice-details {
+    padding: 10px;
+    gap: 6px;
+  }
+  .choice-details strong {
+    font-size: 23px;
+    line-height: 1.05;
+    padding-right: 5px;
+  }
+  .choice-details small {
+    font-size: 5px;
+    letter-spacing: 0.4px;
+  }
+  .choice-details > span {
+    font-size: 7px;
+    line-height: 1.5;
+  }
+  .lead-picker {
+    font-size: 10px;
+    gap: 12px;
+  }
+  .lead-picker select {
+    font-size: 10px;
+  }
+  .difficulty-options {
+    gap: 6px;
+  }
+  .difficulty-options > button {
+    padding: 10px 5px;
+    font-size: 10px;
+  }
+  .bag-preview {
+    gap: 5px;
+    justify-content: center;
+  }
+  .chaos-token {
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+  }
+  .chaos-token svg {
+    width: 13px;
+  }
+  .mulligan-hand {
+    gap: 10px;
+  }
+  .mulligan-hand > .card-face {
+    width: 125px;
+    min-width: 125px;
+    height: 181px;
+  }
+  .modal-footer {
+    align-items: start;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  .modal-footer > .button {
+    margin-left: auto;
+  }
+  .commit-list > button {
+    font-size: 11px;
+  }
+  .page-content {
+    padding: 25px 20px;
+  }
+  .file-copy h2 {
+    font-size: 32px;
+  }
+  .resolution-stats {
+    flex-wrap: wrap;
+  }
+  .party-resolution span {
+    font-size: 9px;
+    line-height: 1.8;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.setup-modal {
+  margin: 0;
+}
+@media (min-width: 701px) {
+  .location-board {
+    height: 325px;
+  }
+  .game-title {
+    margin-bottom: 20px;
+  }
+  .party-bar {
+    margin-bottom: 18px;
+  }
+}
+@media (max-width: 700px) {
+  .location-board.act-2,
+  .location-board.act-3,
+  .location-board.act-4 {
+    height: 590px;
+  }
+  .campaign-case h2 {
+    font-size: clamp(34px, 9vw, 47px);
+    line-height: 0.97;
+  }
+  .campaign-case h2 br {
+    display: block;
+  }
+  .case-number {
+    display: none;
+  }
+  .night-party-intro h2 br {
+    display: block;
+  }
+  .night-chapter.locked {
+    min-height: 225px;
+  }
+}
+
+/* Desktop table: preserve the card-table atmosphere while keeping play close at hand. */
+@media (min-width: 1101px) {
+  .game-page {
+    padding: 16px 28px 32px;
+    max-width: 1920px;
+  }
+  .game-title {
+    margin-bottom: 14px;
+  }
+  .game-title > div:first-child {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+  }
+  .game-title .eyebrow {
+    margin: 0;
+    font-size: 7px;
+  }
+  .game-title h1 {
+    font-size: 33px;
+    margin: 0;
+  }
+  .round-label b {
+    font-size: 25px;
+  }
+  .party-bar {
+    margin-bottom: 10px;
+  }
+  .party-label {
+    margin-bottom: 6px;
+  }
+  .seat {
+    min-height: 64px;
+    padding: 6px 9px;
+    gap: 11px;
+  }
+  .seat-portrait {
+    height: 48px;
+    width: 38px;
+  }
+  .seat-copy {
+    gap: 4px;
+  }
+  .seat-copy > strong {
+    font-size: 22px;
+  }
+  .seat-hint {
+    margin-top: 6px;
+    font-size: 9px;
+  }
+  .phase-track {
+    margin-bottom: 12px;
+  }
+  .phase-track > div {
+    padding: 7px 13px;
+    font-size: 8px;
+  }
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 18px;
+  }
+  .story-track {
+    margin-bottom: 10px;
+    gap: 12px;
+  }
+  .story-card {
+    min-height: 74px;
+    padding: 11px 14px;
+  }
+  .story-card h3 {
+    font-size: 22px;
+  }
+  .story-card .story-icon {
+    padding: 6px;
+  }
+  .location-board.act-1,
+  .location-board.act-2 {
+    height: 242px;
+  }
+  .location-board.act-3,
+  .location-board.act-4 {
+    height: 360px;
+  }
+  .location-art {
+    height: 68px;
+  }
+  .map-location h3 {
+    font-size: 16px;
+  }
+  .location-pawns {
+    top: 10px;
+    right: -14px;
+    bottom: auto;
+    left: auto;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 2;
+  }
+  .action-bar {
+    margin-top: 10px;
+    padding: 7px 10px;
+    position: sticky;
+    top: 10px;
+    z-index: 8;
+  }
+  .hand-section,
+  .assets-section {
+    margin-top: 16px;
+  }
+  .zone-heading {
+    margin: 0 0 7px;
+  }
+  .zone-heading h3 {
+    font-size: 23px;
+  }
+  .hand-row {
+    padding-top: 10px;
+  }
+  .investigator-panel {
+    position: sticky;
+    top: 16px;
+    padding: 14px;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+  .player-header .portrait-small {
+    width: 42px;
+    height: 58px;
+  }
+  .player-header h2 {
+    font-size: 23px;
+    white-space: normal;
+  }
+  .investigator-panel .skill-stats {
+    margin-top: 12px;
+    padding: 10px 0;
+  }
+  .vitals {
+    margin-top: 12px;
+  }
+  .player-pools {
+    margin: 14px 0;
+    padding: 14px 0;
+  }
+  .objective-tip {
+    padding: 13px;
+  }
+  .game-log {
+    margin-top: 18px;
+  }
+  .log-entries {
+    max-height: 200px;
+  }
+}

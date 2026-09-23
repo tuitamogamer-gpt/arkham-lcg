@@ -1,14 +1,19 @@
 import { readFile, writeFile, mkdir, access } from "node:fs/promises";
 const cards = JSON.parse(await readFile("public/data/core-2026.json", "utf8"));
-const manifest = {};
+const manifest = JSON.parse(
+  await readFile("public/data/art-manifest.json", "utf8").catch(() => "{}"),
+);
+const targets = process.env.CARD_CODES
+  ? cards.filter((c) => process.env.CARD_CODES.split(",").includes(c.code))
+  : cards;
 const failed = [];
 let cursor = 0;
 let failuresInARow = 0;
 let stopped = false;
 await mkdir("public/art/cards", { recursive: true });
 async function worker() {
-  while (cursor < cards.length && !stopped) {
-    const c = cards[cursor++];
+  while (cursor < targets.length && !stopped) {
+    const c = targets[cursor++];
     if (!c.imagesrc) continue;
     const url = new URL(c.imagesrc, "https://arkhamdb.com").href;
     const ext = c.imagesrc.split(".").pop();

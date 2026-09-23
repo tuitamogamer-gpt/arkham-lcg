@@ -1,4 +1,4 @@
-import { BAGS, CONNECTIONS, JOE_DECK, card, code } from "./data";
+import { BAGS, CONNECTIONS, STARTER_DECKS, card, code } from "./data";
 import type {
   Action,
   Asset,
@@ -9,6 +9,7 @@ import type {
   Enemy,
   GameState,
   Instance,
+  Investigator,
   Skill,
   Test,
 } from "./types";
@@ -51,7 +52,9 @@ function log(
   if (s.log.length > 250) s.log.shift();
 }
 function front(s: GameState, ...effects: Effect[]) {
-  s.queue.unshift(...effects);
+  s.queue.unshift(
+    ...effects.map((e) => ({ ...e, actor: e.actor || s.player.code })),
+  );
 }
 function choice(
   s: GameState,
@@ -62,10 +65,117 @@ function choice(
   s.decision = { title, description, choices };
 }
 const skip = option("skip", "Continue", []);
+export const party = (s: GameState): Investigator[] =>
+  [s.player, ...s.companions].sort(
+    (a, b) => s.partyOrder.indexOf(a.code) - s.partyOrder.indexOf(b.code),
+  );
+const survivors = (s: GameState) =>
+  party(s).filter((p) => p.status === "active");
+export const partySize = (s: GameState) => s.partyOrder.length;
+export const health = (s: GameState, p = s.player) => card(p.code).health || 7;
+export const sanity = (s: GameState, p = s.player) => card(p.code).sanity || 7;
+export const enemyHealth = (s: GameState, e: Enemy) =>
+  (card(e.code).health || 1) *
+  (card(e.code).health_per_investigator ? partySize(s) : 1);
+function focus(s: GameState, c: string) {
+  if (s.player.code === c) return;
+  const index = s.companions.findIndex((p) => p.code === c);
+  if (index < 0) return;
+  [s.player, s.companions[index]] = [s.companions[index], s.player];
+}
+function enqueue(s: GameState, ...effects: Effect[]) {
+  s.queue.push(
+    ...effects.map((e) => ({ ...e, actor: e.actor || s.player.code })),
+  );
+}
+export function canSwitch(s: GameState, c: string): boolean {
+  return (
+    s.status === "playing" &&
+    s.phase === "investigation" &&
+    !s.test &&
+    !s.decision &&
+    !s.queue.length &&
+    (!s.player.turnStarted ||
+      s.player.turnEnded ||
+      s.player.status !== "active") &&
+    survivors(s).some((p) => p.code === c && !p.turnEnded)
+  );
+}
+export const groupClues = (s: GameState, at?: string) =>
+  survivors(s)
+    .filter((p) => !at || p.location === at)
+    .reduce((n, p) => n + p.clues, 0);
+function spendGroupClues(s: GameState, n: number, at?: string) {
+  // The controller explicitly chooses contributors when more than one can pay.
+  const eligible = survivors(s).filter(
+    (p) => (!at || p.location === at) && p.clues > 0,
+  );
+  if (n <= 0) return;
+  if (eligible.length === 1) {
+    eligible[0].clues -= n;
+    return;
+  }
+  choice(
+    s,
+    "Spend group clues",
+    `${n} clue${n === 1 ? "" : "s"} still required. Choose an investigator to contribute one.`,
+    eligible.map((p) =>
+      option(p.code, `${card(p.code).name} · ${p.clues} clues`, [
+        eff("contributeClue", { target: p.code, amount: n, source: at }),
+      ]),
+    ),
+  );
+}
+function elimination(s: GameState, status: "defeated" | "resigned") {
+  const p = s.player;
+  if (p.status !== "active") return;
+  p.status = status;
+  p.turnEnded = true;
+  p.actions = 0;
+  if (p.hand.some((c) => c.code === C(6))) p.flags.game_xpPenalty = 2;
+  if (p.threats.includes(C(3))) p.physicalTrauma++;
+  location(s).clues += p.clues;
+  p.clues = 0;
+  p.resources = 0;
+  p.assets = [];
+  p.threats.forEach((c) => {
+    if (!card(c).subtype_code) s.encounterDiscard.push(c);
+  });
+  p.threats = [];
+  for (const en of s.enemies)
+    if (en.engaged && (!en.engagedWith || en.engagedWith === p.code)) {
+      en.engaged = false;
+      delete en.engagedWith;
+    }
+  log(
+    s,
+    `${card(p.code).name} ${status === "resigned" ? "resigns" : "is defeated"}.`,
+    "bad",
+  );
+  s.enemies = s.enemies.filter((en) => en.owner !== p.code);
+  const remaining = survivors(s);
+  if (!remaining.length) {
+    finish(s, status === "resigned" ? "resigned" : "defeat");
+    return;
+  }
+  if (s.leadInvestigator === p.code) s.leadInvestigator = remaining[0].code;
+  front(
+    s,
+    eff("engagement", { actor: remaining[0].code }),
+    eff("act2check", { actor: remaining[0].code }),
+  );
+  if (s.phase === "investigation" && s.turnInvestigator === p.code)
+    enqueue(s, eff("nextTurn", { actor: "scenario" }));
+}
 export const location = (s: GameState) =>
   s.locations.find((l) => l.code === s.player.location)!;
 export const engaged = (s: GameState) =>
-  s.enemies.filter((e) => e.engaged && !e.exhausted);
+  s.enemies.filter(
+    (e) =>
+      e.engaged &&
+      (!e.engagedWith || e.engagedWith === s.player.code) &&
+      !e.exhausted,
+  );
 export const availableConnections = (s: GameState, from = s.player.location) =>
   (CONNECTIONS[from] || []).filter((c) =>
     s.locations.some((l) => l.code === c && l.active),
@@ -97,15 +207,24 @@ export function stats(s: GameState, skill: Skill, kind = "") {
     if (has(s, C(115))) n++;
   }
   if (skill === "combat" && has(s, C(18))) n++;
+  if (skill === "agility" && has(s, C(46))) n++;
   if (skill === "willpower" && has(s, C(115))) n++;
   return n;
 }
 export function createGame(
   difficulty: Difficulty = "standard",
   seed = Date.now() >>> 0 || 1,
+  investigatorCodes: string[] = [C(4)],
 ): GameState {
+  if (
+    investigatorCodes.length < 1 ||
+    investigatorCodes.length > 3 ||
+    new Set(investigatorCodes).size !== investigatorCodes.length ||
+    investigatorCodes.some((c) => !STARTER_DECKS[c])
+  )
+    throw new Error("Choose 1–3 different supported investigators.");
   const s: GameState = {
-    version: 1,
+    version: 2,
     id: `case-${seed}`,
     seed: seed || 1,
     nextId: 1,
@@ -113,13 +232,21 @@ export function createGame(
     status: "mulligan",
     phase: "investigation",
     round: 1,
-    actions: 3,
-    actionsTaken: 0,
     act: 1,
     agenda: 1,
     doom: 0,
     player: {
-      code: C(4),
+      code: investigatorCodes[0],
+      actions: 3,
+      actionsTaken: 0,
+      turnEnded: false,
+      turnStarted: false,
+      mulliganDone: false,
+      status: "active",
+      flags: {},
+      xp: 0,
+      physicalTrauma: 0,
+      mentalTrauma: 0,
       location: C(113),
       resources: 5,
       clues: 0,
@@ -131,11 +258,15 @@ export function createGame(
       assets: [],
       threats: [],
     },
+    companions: [],
+    partyOrder: [...investigatorCodes],
+    leadInvestigator: investigatorCodes[0],
+    turnInvestigator: investigatorCodes[0],
     locations: [113, 117, 116, 118, 119, 120].map((n) => ({
       code: C(n),
       revealed: n === 113,
       active: n === 113,
-      clues: n === 113 ? 2 : 0,
+      clues: n === 113 ? 2 * investigatorCodes.length : 0,
       fire: false,
       reduction: 0,
     })),
@@ -159,17 +290,22 @@ export function createGame(
       result: null,
     },
   };
-  s.player.deck = shuffle(
-    s,
-    JOE_DECK.map((c) => instance(s, c)),
-  );
-  const setAside: Instance[] = [];
-  while (s.player.hand.length < 5) {
-    const c = s.player.deck.shift()!;
-    if (card(c.code).subtype_code) setAside.push(c);
-    else s.player.hand.push(c);
+  s.companions = investigatorCodes
+    .slice(1)
+    .map((c) => ({ ...structuredClone(s.player), code: c }));
+  for (const p of party(s)) {
+    p.deck = shuffle(
+      s,
+      STARTER_DECKS[p.code].map((c) => instance(s, c)),
+    );
+    const setAside: Instance[] = [];
+    while (p.hand.length < 5) {
+      const c = p.deck.shift()!;
+      if (card(c.code).subtype_code) setAside.push(c);
+      else p.hand.push(c);
+    }
+    p.deck = shuffle(s, [...p.deck, ...setAside]);
   }
-  s.player.deck = shuffle(s, [...s.player.deck, ...setAside]);
   s.encounterDeck = shuffle(
     s,
     [
@@ -185,10 +321,11 @@ export function createGame(
   return s;
 }
 function checkDefeat(s: GameState) {
-  if (s.player.damage >= 7 || s.player.horror >= 7) {
-    if (s.player.damage >= 7) s.campaign.physicalTrauma++;
-    if (s.player.horror >= 7) s.campaign.mentalTrauma++;
-    finish(s, "defeat");
+  if (s.player.status !== "active") return;
+  if (s.player.damage >= health(s) || s.player.horror >= sanity(s)) {
+    if (s.player.damage >= health(s)) s.player.physicalTrauma++;
+    if (s.player.horror >= sanity(s)) s.player.mentalTrauma++;
+    elimination(s, "defeated");
   }
 }
 function victoryXP(s: GameState) {
@@ -205,24 +342,32 @@ function finish(s: GameState, result: string) {
   s.decision = null;
   s.queue = [];
   s.campaign.result = result;
-  const penalty = s.player.hand.some((c) => c.code === C(6)) ? 2 : 0;
   const success = result === "saved" || result === "pursuer";
-  s.campaign.xp = Math.max(
-    0,
-    victoryXP(s) + (success ? 3 : 2) + (result === "saved" ? 1 : 0) - penalty,
-  );
+  const earned =
+    victoryXP(s) + (success ? 3 : 2) + (result === "saved" ? 1 : 0);
+  const bearer =
+    party(s).find((p) => p.assets.some((a) => a.code === C(115))) || s.player;
+  for (const p of party(s)) {
+    const penalty =
+      p.flags.game_xpPenalty || (p.hand.some((c) => c.code === C(6)) ? 2 : 0);
+    p.xp = Math.max(0, earned - Number(penalty));
+    if (p.status === "active" && p.threats.includes(C(3))) p.physicalTrauma++;
+    if (result === "saved") p.physicalTrauma++;
+    else p.mentalTrauma++;
+  }
+  s.campaign.xp = s.player.xp;
+  s.campaign.physicalTrauma = s.player.physicalTrauma;
+  s.campaign.mentalTrauma = s.player.mentalTrauma;
   if (success)
     s.campaign.notes.push(
       "The investigators defeated their masked pursuer.",
-      "Joe Diamond is the bearer of Dr. Henry Armitage.",
+      `${card(bearer.code).name} is the bearer of Dr. Henry Armitage.`,
     );
-  if (result === "saved") {
-    s.campaign.physicalTrauma++;
-    s.campaign.notes.push("The investigators saved Miskatonic University.");
-  } else {
-    s.campaign.mentalTrauma++;
-    s.campaign.notes.push("Miskatonic University burned.");
-  }
+  s.campaign.notes.push(
+    result === "saved"
+      ? "The investigators saved Miskatonic University."
+      : "Miskatonic University burned.",
+  );
   log(
     s,
     result === "saved"
@@ -235,13 +380,21 @@ function discardEnemy(s: GameState, e: Enemy, defeated = false, credit = true) {
   s.enemies = s.enemies.filter((x) => x.id !== e.id);
   if (defeated && card(e.code).victory) {
     if (!s.victory.includes(e.code)) s.victory.push(e.code);
-  } else s.encounterDiscard.push(e.code);
+  } else if (e.owner)
+    party(s)
+      .find((p) => p.code === e.owner)
+      ?.discard.push({ id: e.id, code: e.code });
+  else s.encounterDiscard.push(e.code);
   if (!defeated) return;
   log(s, `${card(e.code).name} is defeated.`, "good");
   const follow: Effect[] = [];
   if (e.code === C(123)) follow.push(eff("doom", { amount: 1 }));
-  if (e.code === C(132) && e.location === s.player.location)
-    follow.push(eff("damage", { horror: 1 }));
+  if (e.code === C(132))
+    follow.push(
+      ...survivors(s)
+        .filter((p) => p.location === e.location)
+        .map((p) => eff("damage", { horror: 1, actor: p.code })),
+    );
   if (e.code === C(114) && s.act === 4) follow.push(eff("victory"));
   const logan = has(s, C(18));
   if (credit && logan && !logan.exhausted)
@@ -252,7 +405,16 @@ function enemyDamage(s: GameState, id: string, n: number, credit = true) {
   const e = activeEnemy(s, id);
   if (!e) return;
   e.damage += n;
-  if (e.damage >= (card(e.code).health || 1)) discardEnemy(s, e, true, credit);
+  if (credit && n > 0 && s.player.threats.includes(C(3))) {
+    s.player.flags.game_harmsWay =
+      Number(s.player.flags.game_harmsWay || 0) + 1;
+    if (Number(s.player.flags.game_harmsWay) >= 3) {
+      s.player.threats = s.player.threats.filter((c) => c !== C(3));
+      s.player.discard.push(instance(s, C(3)));
+    }
+    front(s, eff("damage", { damage: 1 }));
+  }
+  if (e.damage >= enemyHealth(s, e)) discardEnemy(s, e, true, credit);
 }
 function discardAsset(s: GameState, id: string, defeated = false) {
   const a = asset(s, id);
@@ -309,7 +471,7 @@ function discover(s: GameState, n: number, target = s.player.location) {
   if (s.player.threats.includes(C(125))) front(s, eff("damage", { horror: 1 }));
   if (target === C(118))
     front(s, eff("discardChoice", { title: "Science Hall", amount: 1 }));
-  if (target === C(119) && !s.flags.observatory) {
+  if (target === C(119) && !s.player.flags.observatory) {
     front(
       s,
       eff("optionalDraw", {
@@ -324,14 +486,27 @@ function revealLocation(s: GameState, c: string) {
   const l = s.locations.find((l) => l.code === c)!;
   if (!l.revealed) {
     l.revealed = true;
-    l.clues = card(c).clues || 0;
+    l.clues =
+      (card(c).clues || 0) *
+      (card(c).clues_per_investigator === false ? 1 : partySize(s));
     log(s, `Discovered ${card(c).name}.`, "story");
   }
 }
 function move(s: GameState, target: string) {
   s.player.location = target;
   revealLocation(s, target);
-  s.enemies.filter((e) => e.engaged).forEach((e) => (e.location = target));
+  s.enemies
+    .filter(
+      (e) => e.engaged && (!e.engagedWith || e.engagedWith === s.player.code),
+    )
+    .forEach((e) => {
+      e.location = target;
+      e.engagedWith = s.player.code;
+    });
+  if (s.player.threats.includes(C(104)) && !s.player.flags.woundedMove) {
+    s.player.flags.woundedMove = true;
+    front(s, eff("damage", { damage: 1 }));
+  }
   log(s, `Moved to ${card(target).name}.`);
   front(s, eff("engagement"), eff("act2check"));
 }
@@ -353,11 +528,12 @@ function spawn(s: GameState, c: string, target = s.player.location) {
     location: target,
     damage: 0,
     exhausted: false,
-    engaged: target === s.player.location,
+    engaged: false,
+    owner: card(c).subtype_code ? s.player.code : undefined,
   };
   s.enemies.push(e);
   log(s, `${card(c).name} appears at ${card(target).name}.`, "bad");
-  if (e.engaged) front(s, eff("gatherIntel"));
+  front(s, eff("engagement"), eff("gatherIntel"));
 }
 function fire(s: GameState) {
   const eligible = s.locations.filter((l) => l.active && !l.fire);
@@ -399,12 +575,15 @@ function advanceAgenda(s: GameState) {
   if (s.agenda === 2)
     front(
       s,
-      eff("test", {
-        skill: "willpower",
-        difficulty: 3,
-        title: "Past Curfew",
-        source: "agenda1",
-      }),
+      ...survivors(s).map((p) =>
+        eff("test", {
+          actor: p.code,
+          skill: "willpower",
+          difficulty: 3,
+          title: "Past Curfew",
+          source: "agenda1",
+        }),
+      ),
     );
   if (s.agenda === 3) {
     if (s.fireSetAside > 1) {
@@ -413,28 +592,34 @@ function advanceAgenda(s: GameState) {
     }
     front(
       s,
-      eff("test", {
-        skill: "agility",
-        difficulty: 3,
-        title: "Lit Up",
-        source: "agenda2",
-      }),
+      ...survivors(s).map((p) =>
+        eff("test", {
+          actor: p.code,
+          skill: "agility",
+          difficulty: 3,
+          title: "Lit Up",
+          source: "agenda2",
+        }),
+      ),
     );
   }
   if (s.agenda === 4) {
-    s.campaign.physicalTrauma++;
+    for (const p of survivors(s)) {
+      p.physicalTrauma++;
+      p.status = "defeated";
+      p.turnEnded = true;
+    }
     finish(s, "overrun");
   }
 }
 function advanceAct(s: GameState) {
   if (s.act === 1) {
-    s.player.clues -= 2;
+    // Clues were paid as a group before advancing.
     s.act = 2;
-    s.enemies.forEach((e) => s.encounterDiscard.push(e.code));
-    s.enemies = [];
+    for (const en of [...s.enemies]) discardEnemy(s, en);
     for (const c of [C(117), C(116)])
       s.locations.find((l) => l.code === c)!.active = true;
-    location(s).fire = true;
+    s.locations.find((l) => l.code === C(113))!.fire = true;
     s.fireSetAside = Math.max(0, s.fireSetAside - 1);
     s.encounterDiscard.push(...Array(s.fireSetAside).fill(C(129)));
     s.fireSetAside = 0;
@@ -446,9 +631,8 @@ function advanceAct(s: GameState) {
     );
   } else if (s.act === 2) {
     s.act = 3;
-    s.enemies.forEach((e) => {
-      if (e.code !== C(114)) s.encounterDiscard.push(e.code);
-    });
+    for (const en of [...s.enemies])
+      if (en.code !== C(114)) discardEnemy(s, en);
     s.enemies = [];
     s.victory = s.victory.filter((c) => c !== C(114));
     const room = s.locations.find((l) => l.code === C(113))!;
@@ -463,7 +647,7 @@ function advanceAct(s: GameState) {
       "story",
     );
   } else if (s.act === 3) {
-    s.player.clues -= 3;
+    // Clues were paid by investigators at Orne Library.
     s.act = 4;
     const armitage: Asset = {
       ...instance(s, C(115)),
@@ -473,17 +657,18 @@ function advanceAct(s: GameState) {
       horror: 0,
     };
     s.player.assets.push(armitage);
+    front(s, eff("chooseArmitage"));
     spawn(s, C(114), C(116));
-    s.locations.find((l) => l.code === C(116))!.clues += 3;
-    const d = s.encounterDeck.indexOf(C(129)),
-      x = s.encounterDiscard.indexOf(C(129));
-    if (d >= 0) {
-      s.encounterDeck.splice(d, 1);
-      shuffle(s, s.encounterDeck);
-      front(s, eff("fire"));
-    } else if (x >= 0) {
-      s.encounterDiscard.splice(x, 1);
-      front(s, eff("fire"));
+    s.locations.find((l) => l.code === C(116))!.clues += 3 * partySize(s);
+    for (let i = 0; i < partySize(s); i++) {
+      const d = s.encounterDeck.indexOf(C(129)),
+        x = s.encounterDiscard.indexOf(C(129));
+      if (d >= 0) {
+        s.encounterDeck.splice(d, 1);
+        shuffle(s, s.encounterDeck);
+      } else if (x >= 0) s.encounterDiscard.splice(x, 1);
+      else break;
+      front(s, eff("fire", { actor: s.leadInvestigator }));
     }
     log(
       s,
@@ -661,7 +846,489 @@ function drain(s: GameState) {
   while (s.queue.length && !s.decision && !s.test && s.status === "playing") {
     if (++iterations > 500) throw new Error("Effect loop exceeded safe bound");
     const e = s.queue.shift()!;
+    if (e.actor && e.actor !== "scenario") focus(s, e.actor);
+    if (
+      e.actor !== "scenario" &&
+      s.player.status !== "active" &&
+      ![
+        "nextTurn",
+        "investigationEnd",
+        "enemyPhase",
+        "enemyAttacks",
+        "upkeep",
+        "roundEnd",
+        "newRound",
+        "investigation",
+        "finish",
+        "act2check",
+        "engagement",
+        "advanceAct",
+        "doom",
+      ].includes(e.kind)
+    )
+      continue;
     switch (e.kind) {
+      case "resumeTest":
+        s.test = e.data!.test as unknown as Test;
+        break;
+      case "restoreTurn":
+        break;
+      case "daniela": {
+        const en = activeEnemy(s, e.id);
+        if (
+          !en ||
+          s.player.code !== C(1) ||
+          s.player.flags.daniela ||
+          en.location !== s.player.location
+        )
+          break;
+        const weapons = s.player.assets.filter(
+          (a) =>
+            [C(2), C(19), C(20), C(77), C(86)].includes(a.code) &&
+            (a.code !== C(19) || a.uses > 0),
+        );
+        choice(
+          s,
+          "Daniela strikes back",
+          `An enemy attacked an investigator here. Fight ${card(en.code).name} without spending an action (once per round).`,
+          [
+            option("basic", "Fight · bare hands", [
+              eff("flag", { source: "daniela" }),
+              eff("perform", { title: "fight", target: en.id }),
+            ]),
+            ...weapons.map((a) =>
+              option(a.id, `Fight · ${card(a.code).name}`, [
+                eff("flag", { source: "daniela" }),
+                eff("perform", { title: "fight", target: en.id, source: a.id }),
+              ]),
+            ),
+            option("skip", "Decline", []),
+          ],
+        );
+        break;
+      }
+      case "elderDamage":
+        if (s.enemies.some((en) => en.location === s.player.location))
+          choice(
+            s,
+            "Daniela’s elder sign",
+            "Deal 1 damage to an enemy at your location.",
+            s.enemies
+              .filter((en) => en.location === s.player.location)
+              .map((en) =>
+                option(en.id, card(en.code).name, [
+                  eff("enemyDamage", { id: en.id, amount: 1 }),
+                ]),
+              ),
+          );
+        break;
+      case "covert": {
+        const a = asset(s, e.id);
+        if (a && !a.exhausted)
+          choice(
+            s,
+            "Covert Ops",
+            "Exhaust Covert Ops after evading to draw a card or move.",
+            [
+              option("draw", "Draw 1 card", [
+                eff("exhaust", { id: a.id }),
+                eff("draw"),
+              ]),
+              ...availableConnections(s).map((c) =>
+                option(c, `Move to ${card(c).name}`, [
+                  eff("exhaust", { id: a.id }),
+                  eff("move", { target: c }),
+                ]),
+              ),
+              option("skip", "Decline", []),
+            ],
+          );
+        break;
+      }
+      case "assetReward": {
+        const a = asset(s, e.id);
+        if (a && !a.exhausted)
+          choice(
+            s,
+            card(a.code).name,
+            `Exhaust this asset to ${e.source === "gain" ? "gain a resource" : "draw a card"}.`,
+            [
+              option("use", "Use ability", [
+                eff("exhaust", { id: a.id }),
+                eff(e.source!, { amount: e.amount }),
+              ]),
+              option("skip", "Decline", []),
+            ],
+          );
+        break;
+      }
+      case "operativeAttack": {
+        const en = activeEnemy(s, e.id);
+        if (en) {
+          en.exhausted = false;
+          en.engaged = true;
+          en.engagedWith = s.player.code;
+          front(s, eff("attack", { id: en.id }));
+        }
+        break;
+      }
+      case "autoEvade":
+        choice(
+          s,
+          "Breaking and Entering",
+          "You succeeded by at least 2. You may automatically evade an enemy here.",
+          [
+            ...s.enemies
+              .filter((en) => en.location === s.player.location)
+              .map((en) =>
+                option(en.id, `Evade ${card(en.code).name}`, [
+                  eff("evadeEnemy", { id: en.id }),
+                ]),
+              ),
+            option("skip", "Decline", []),
+          ],
+        );
+        break;
+      case "evadeEnemy":
+        evadeEnemy(s, e.id!);
+        break;
+      case "freeMove":
+        choice(
+          s,
+          "Slip into the shadows",
+          "You may disengage from every enemy and move to a connecting location.",
+          [
+            ...availableConnections(s).map((c) =>
+              option(c, `Move to ${card(c).name}`, [
+                eff("disengage"),
+                eff("move", { target: c }),
+              ]),
+            ),
+            option("stay", "Stay here", []),
+          ],
+        );
+        break;
+      case "aleks": {
+        const a = asset(s, e.id);
+        if (!a) break;
+        choice(
+          s,
+          "Aleksey Saburov",
+          "At the beginning of your turn, heal 1 damage or horror from Aleksey.",
+          [
+            ...(a.damage
+              ? [
+                  option("damage", "Heal 1 damage", [
+                    eff("healAsset", { id: a.id, damage: 1 }),
+                  ]),
+                ]
+              : []),
+            ...(a.horror
+              ? [
+                  option("horror", "Heal 1 horror", [
+                    eff("healAsset", { id: a.id, horror: 1 }),
+                  ]),
+                ]
+              : []),
+            option("skip", "Decline", []),
+          ],
+        );
+        break;
+      }
+      case "healAsset": {
+        const a = party(s)
+          .flatMap((p) => p.assets)
+          .find((a) => a.id === e.id);
+        if (a) {
+          a.damage = Math.max(0, a.damage - (e.damage || 0));
+          a.horror = Math.max(0, a.horror - (e.horror || 0));
+        }
+        break;
+      }
+      case "bandage": {
+        const a = asset(s, e.id),
+          target =
+            party(s).find((p) => p.code === e.target) ||
+            party(s)
+              .flatMap((p) => p.assets)
+              .find((a) => a.id === e.target);
+        if (a && a.uses > 0 && target && target.damage > 0)
+          choice(
+            s,
+            "Bandages",
+            `Spend 1 supply to heal 1 damage from ${card(target.code).name}.`,
+            [
+              option("heal", "Use Bandages", [
+                eff("supply", { id: a.id }),
+                eff("healCard", { target: e.target }),
+              ]),
+              option("skip", "Decline", []),
+            ],
+          );
+        break;
+      }
+      case "healCard": {
+        const target =
+          party(s).find((p) => p.code === e.target) ||
+          party(s)
+            .flatMap((p) => p.assets)
+            .find((a) => a.id === e.target);
+        if (target) target.damage = Math.max(0, target.damage - 1);
+        break;
+      }
+      case "supply": {
+        const a = asset(s, e.id);
+        if (a) useSupply(s, a);
+        break;
+      }
+      case "hunterInstinct": {
+        const a = has(s, C(74));
+        const eligible = s.player.discard.filter(
+          (c) =>
+            card(c.code).type_code === "event" &&
+            !card(c.code).xp &&
+            !card(c.code).subtype_code,
+        );
+        if (a && a.uses > 0 && !a.exhausted && eligible.length)
+          choice(
+            s,
+            "Hunter’s Instinct",
+            "After engaging an enemy, exhaust this asset and spend 1 supply to recover a level 0 event.",
+            [
+              ...eligible.map((c) =>
+                option(c.id, card(c.code).name, [
+                  eff("exhaust", { id: a.id }),
+                  eff("supply", { id: a.id }),
+                  eff("recover", { id: c.id }),
+                ]),
+              ),
+              option("skip", "Decline", []),
+            ],
+          );
+        break;
+      }
+      case "recover": {
+        const i = s.player.discard.findIndex((c) => c.id === e.id);
+        if (i >= 0) s.player.hand.push(...s.player.discard.splice(i, 1));
+        break;
+      }
+      case "lookFound": {
+        const c = s.player.hand.find((c) => c.code === C(78));
+        if (c && s.player.resources >= 2 && location(s).clues)
+          choice(
+            s,
+            "Look what I found!",
+            "After failing an investigation by 2 or less, pay 2 resources to discover 2 clues.",
+            [
+              option("play", "Play · discover 2 clues", [
+                eff("payEvent", { id: c.id, amount: 2 }),
+                eff("discover", { amount: 2 }),
+              ]),
+              option("skip", "Decline", []),
+            ],
+          );
+        break;
+      }
+      case "cleaverBonus":
+        choice(
+          s,
+          "Meat Cleaver",
+          "Take 1 horror to deal 1 additional damage with this attack?",
+          [
+            option("horror", "Take 1 horror · +1 damage", [
+              eff("damage", { horror: 1 }),
+              eff("weaponTest", { target: e.target, id: e.id, amount: 1 }),
+            ]),
+            option("skip", "Attack normally", [
+              eff("weaponTest", { target: e.target, id: e.id }),
+            ]),
+          ],
+        );
+        break;
+      case "weaponTest": {
+        const en = activeEnemy(s, e.target),
+          a = asset(s, e.id);
+        if (!en || !a) break;
+        const bonus = sanity(s) - s.player.horror <= 3 ? 2 : 1;
+        testStart(
+          s,
+          "fight",
+          "combat",
+          card(en.code).enemy_fight || 0,
+          `Fight ${card(en.code).name}`,
+          en.id,
+          a.id,
+          bonus,
+        );
+        s.test!.extraDamage = e.amount || 0;
+        break;
+      }
+      case "cleaverHeal":
+        if (!activeEnemy(s, e.id) && s.player.horror > 0)
+          choice(
+            s,
+            "Meat Cleaver",
+            "After defeating an enemy, you may heal 1 horror.",
+            [
+              option("heal", "Heal 1 horror", [eff("heal", { horror: 1 })]),
+              option("skip", "Decline", []),
+            ],
+          );
+        break;
+      case "chooseKitSkill":
+        choice(
+          s,
+          "Thieves’ Kit",
+          "Choose the skill for this investigation.",
+          (["intellect", "agility"] as Skill[]).map((skill) =>
+            option(skill, `${skill} (${stats(s, skill, "investigate")})`, [
+              eff("kitTest", { id: e.id, target: e.target, skill }),
+            ]),
+          ),
+        );
+        break;
+      case "kitTest":
+        testStart(
+          s,
+          "investigate",
+          e.skill!,
+          Math.max(
+            0,
+            (card(e.target!).shroud || 0) -
+              s.locations.find((l) => l.code === e.target)!.reduction,
+          ),
+          `Investigate ${card(e.target!).name}`,
+          e.target,
+          e.id,
+        );
+        break;
+      case "paintTown": {
+        const top = s.encounterDeck
+          .slice(0, 9)
+          .filter(
+            (c) =>
+              card(c).type_code === "enemy" &&
+              !card(c).traits?.includes("Elite"),
+          );
+        if (top.length)
+          choice(
+            s,
+            "Paint the Town Red",
+            "Draw one of these non-Elite enemies and gain resources equal to its printed health.",
+            [...new Set(top)].map((c) =>
+              option(c, `${card(c).name} · ${card(c).health} resources`, [
+                eff("drawSearchedEnemy", { code: c }),
+              ]),
+            ),
+          );
+        else {
+          shuffle(s, s.encounterDeck);
+          log(s, "No non-Elite enemy found. Shuffle the encounter deck.");
+        }
+        break;
+      }
+      case "drawSearchedEnemy": {
+        const i = s.encounterDeck.indexOf(e.code!);
+        if (i >= 0) s.encounterDeck.splice(i, 1);
+        shuffle(s, s.encounterDeck);
+        s.player.resources += card(e.code!).health || 0;
+        encounter(s, e.code!);
+        break;
+      }
+      case "prestidigitation": {
+        const eligible = s.player.hand.filter(
+          (c) =>
+            card(c.code).type_code === "asset" &&
+            card(c.code).traits?.includes("Item") &&
+            Math.max(0, (card(c.code).cost || 0) - 2) <= s.player.resources &&
+            (!card(c.code).is_unique ||
+              !survivors(s).some((p) =>
+                p.assets.some((a) => a.code === c.code),
+              )),
+        );
+        if (eligible.length)
+          choice(
+            s,
+            "Prestidigitation",
+            "Play an Item with a 2-resource discount. Return an Item you control to your hand at the end of this turn.",
+            eligible.map((c) =>
+              option(
+                c.id,
+                `${card(c.code).name} · ${Math.max(0, (card(c.code).cost || 0) - 2)} resources`,
+                [eff("discountEquip", { id: c.id })],
+              ),
+            ),
+          );
+        break;
+      }
+      case "discountEquip": {
+        const c = handCard(s, e.id);
+        if (c) {
+          spend(s, Math.max(0, (card(c.code).cost || 0) - 2));
+          s.player.flags.prestidigitation = true;
+          front(s, eff("equip", { id: c.id }));
+        }
+        break;
+      }
+      case "returnItem": {
+        const items = s.player.assets.filter((a) =>
+          card(a.code).traits?.includes("Item"),
+        );
+        if (items.length)
+          choice(
+            s,
+            "Prestidigitation · curtain call",
+            "Return an Item asset you control to your hand.",
+            items.map((a) =>
+              option(a.id, card(a.code).name, [
+                eff("returnAsset", { id: a.id }),
+              ]),
+            ),
+          );
+        break;
+      }
+      case "returnAsset": {
+        const a = asset(s, e.id);
+        if (a) {
+          s.player.assets = s.player.assets.filter((x) => x.id !== a.id);
+          s.player.hand.push({ id: a.id, code: a.code });
+        }
+        break;
+      }
+      case "returnShove": {
+        const c = s.player.discard.find((c) => c.code === C(79));
+        if (c) front(s, eff("recover", { id: c.id }));
+        break;
+      }
+      case "chooseArmitage": {
+        const current = party(s).find((p) =>
+          p.assets.some((a) => a.code === C(115)),
+        );
+        if (current && survivors(s).length > 1)
+          choice(
+            s,
+            "Dr. Henry Armitage",
+            "Choose the investigator who will take control of Dr. Armitage.",
+            survivors(s).map((p) =>
+              option(p.code, card(p.code).name, [
+                eff("giveArmitage", { target: p.code }),
+              ]),
+            ),
+          );
+        break;
+      }
+      case "giveArmitage": {
+        const from = party(s).find((p) =>
+            p.assets.some((a) => a.code === C(115)),
+          ),
+          to = party(s).find((p) => p.code === e.target);
+        if (from && to && from !== to) {
+          const a = from.assets.find((a) => a.code === C(115))!;
+          from.assets = from.assets.filter((x) => x.id !== a.id);
+          to.assets.push(a);
+        }
+        break;
+      }
       case "drawOne": {
         if (!s.player.deck.length) {
           if (!s.player.discard.length) break;
@@ -670,7 +1337,12 @@ function drain(s: GameState) {
           break;
         }
         const c = s.player.deck.shift()!;
-        if (c.code === C(100)) {
+        if ([C(3), C(103), C(104)].includes(c.code)) {
+          s.player.threats.push(c.code);
+          log(s, `Revelation: ${card(c.code).name}.`, "bad");
+        } else if (c.code === C(9)) {
+          spawn(s, c.code);
+        } else if (c.code === C(100)) {
           s.player.discard.push(c);
           log(
             s,
@@ -749,12 +1421,48 @@ function drain(s: GameState) {
         }
         for (const id of defeated) discardAsset(s, id, true);
         checkDefeat(s);
+        if (s.player.status === "active")
+          for (const [id, n] of Object.entries(allocations))
+            if (n.damage > 0) {
+              const target = id === "self" ? s.player.code : id;
+              if (
+                id !== "self" &&
+                !s.player.assets.some(
+                  (a) => a.id === id && card(a.code).traits?.includes("Ally"),
+                )
+              )
+                continue;
+              front(
+                s,
+                ...survivors(s)
+                  .filter((p) => p.location === s.player.location)
+                  .flatMap((p) =>
+                    p.assets
+                      .filter((a) => a.code === C(73) && a.uses > 0)
+                      .map((a) =>
+                        eff("bandage", { actor: p.code, id: a.id, target }),
+                      ),
+                  ),
+                eff("restoreTurn", { actor: s.player.code }),
+              );
+            }
         break;
       }
       case "attack": {
         const enemy = activeEnemy(s, e.id);
         if (!enemy || enemy.exhausted) break;
-        log(s, `${card(enemy.code).name} attacks.`, "bad");
+        log(
+          s,
+          `${card(enemy.code).name} attacks ${card(s.player.code).name}.`,
+          "bad",
+        );
+        s.player.flags[`attacked_${enemy.id}`] = true;
+        const daniela = survivors(s).find(
+          (p) =>
+            p.code === C(1) &&
+            p.location === s.player.location &&
+            !p.flags.daniela,
+        );
         front(
           s,
           eff("damage", {
@@ -765,6 +1473,12 @@ function drain(s: GameState) {
             ? [eff("discardAssetChoice")]
             : []),
           eff("lessonLearned"),
+          ...(daniela
+            ? [
+                eff("daniela", { actor: daniela.code, id: enemy.id }),
+                eff("restoreTurn", { actor: s.player.code }),
+              ]
+            : []),
         );
         break;
       }
@@ -803,19 +1517,58 @@ function drain(s: GameState) {
         break;
       }
       case "payEvent":
-        s.player.resources -= e.amount || 0;
+        spend(s, e.amount || 0);
         removeHand(s, e.id!);
         break;
       case "engagement":
-        s.enemies
-          .filter((en) => en.location === s.player.location && !en.exhausted)
-          .forEach((en) => (en.engaged = true));
+        for (const en of s.enemies) {
+          if (en.exhausted || en.engaged) continue;
+          let targets = survivors(s).filter((p) => p.location === en.location);
+          if (en.code === C(9))
+            targets = targets.filter((p) => p.code === C(7));
+          if (en.code === C(114) && targets.length) {
+            const min = Math.min(
+              ...targets.map((p) => card(p.code).skill_agility || 0),
+            );
+            targets = targets.filter(
+              (p) => (card(p.code).skill_agility || 0) === min,
+            );
+          }
+          if (targets.length === 1) {
+            en.engaged = true;
+            en.engagedWith = targets[0].code;
+            front(s, eff("hunterInstinct", { actor: targets[0].code }));
+          } else if (targets.length > 1) {
+            choice(
+              s,
+              "Choose engagement",
+              `${card(en.code).name} must engage an investigator here.`,
+              targets.map((p) =>
+                option(p.code, card(p.code).name, [
+                  eff("assignEngagement", { id: en.id, target: p.code }),
+                  eff("engagement"),
+                ]),
+              ),
+            );
+            break;
+          }
+        }
         break;
+      case "assignEngagement": {
+        const en = activeEnemy(s, e.id);
+        if (en) {
+          en.engaged = true;
+          en.engagedWith = e.target;
+          front(s, eff("hunterInstinct", { actor: e.target }));
+        }
+        break;
+      }
       case "move":
         move(s, e.target!);
         break;
       case "act2check":
-        if (s.act === 2 && s.player.location === C(116)) advanceAct(s);
+        if (s.act === 2 && survivors(s).every((p) => p.location === C(116)))
+          advanceAct(s);
         break;
       case "fire":
         fire(s);
@@ -830,7 +1583,7 @@ function drain(s: GameState) {
           const i = s.encounterDiscard.lastIndexOf(C(129));
           if (i >= 0) {
             s.encounterDiscard.splice(i, 1);
-            front(s, eff("fire"));
+            front(s, eff("fire", { actor: s.leadInvestigator }));
           }
         }
         advanceAgenda(s);
@@ -957,7 +1710,7 @@ function drain(s: GameState) {
         break;
       }
       case "joe":
-        if (!s.flags.joe) {
+        if (s.player.code === C(4) && !s.player.flags.joe) {
           choice(
             s,
             "A detective’s intuition",
@@ -973,7 +1726,7 @@ function drain(s: GameState) {
         }
         break;
       case "flag":
-        s.flags[e.source!] = true;
+        s.player.flags[e.source!] = true;
         break;
       case "flashlight": {
         const a = asset(s, e.id);
@@ -1031,7 +1784,15 @@ function drain(s: GameState) {
         );
         break;
       case "disengage":
-        s.enemies.forEach((e) => (e.engaged = false));
+        s.enemies
+          .filter(
+            (e) =>
+              e.engaged && (!e.engagedWith || e.engagedWith === s.player.code),
+          )
+          .forEach((e) => {
+            e.engaged = false;
+            delete e.engagedWith;
+          });
         break;
       case "forbidden":
         if ((e.amount || 0) > 0)
@@ -1093,47 +1854,156 @@ function drain(s: GameState) {
         break;
       case "removeThreat":
         s.player.threats = s.player.threats.filter((c) => c !== e.code);
-        s.encounterDiscard.push(e.code!);
+        if (card(e.code!).subtype_code)
+          s.player.discard.push(instance(s, e.code!));
+        else s.encounterDiscard.push(e.code!);
+        break;
+      case "nextTurn": {
+        const next = survivors(s).find((p) => !p.turnEnded);
+        if (next) {
+          focus(s, next.code);
+          s.turnInvestigator = next.code;
+          log(s, `${card(next.code).name} takes the next turn.`, "story");
+        } else front(s, eff("investigationEnd", { actor: "scenario" }));
+        break;
+      }
+      case "investigationEnd": {
+        s.phase = "enemy";
+        const effects: Effect[] = [];
+        for (const p of survivors(s))
+          if (s.locations.find((l) => l.code === p.location)?.fire) {
+            effects.push(eff("fireDamage", { actor: p.code }));
+          }
+        effects.push(
+          eff("fireEnemies", { actor: "scenario" }),
+          eff("enemyPhase", { actor: "scenario" }),
+        );
+        front(s, ...effects);
+        break;
+      }
+      case "fireDamage":
+        for (const a of [...s.player.assets])
+          if (card(a.code).health) {
+            a.damage++;
+            if (a.damage >= card(a.code).health!) discardAsset(s, a.id, true);
+          }
+        front(s, eff("damage", { damage: 1, direct: true }));
+        break;
+      case "fireEnemies":
+        for (const en of [...s.enemies])
+          if (
+            s.locations.find((l) => l.code === en.location)?.fire &&
+            !card(en.code).traits?.includes("Elite")
+          )
+            enemyDamage(s, en.id, 1, false);
         break;
       case "enemyPhase":
+        focus(s, s.leadInvestigator);
         s.phase = "enemy";
         log(s, "Enemy phase. Hunters close in.");
-        for (const en of s.enemies) {
-          if (
-            !en.exhausted &&
-            !en.engaged &&
-            card(en.code).text?.includes("Hunter") &&
-            en.location !== s.player.location
-          ) {
-            const next = availableConnections(s, en.location).sort(
-              (a, b) =>
-                distance(s, a, s.player.location) -
-                distance(s, b, s.player.location),
-            )[0];
-            if (next) en.location = next;
-            if (en.location === s.player.location) {
-              en.engaged = true;
-              front(s, eff("gatherIntel"));
-            }
-          }
+        front(
+          s,
+          ...s.enemies
+            .filter(
+              (en) =>
+                !en.exhausted &&
+                !en.engaged &&
+                card(en.code).text?.includes("Hunter"),
+            )
+            .map((en) => eff("hunt", { id: en.id })),
+          eff("engagement"),
+          eff("enemyAttacks", { actor: "scenario" }),
+        );
+        break;
+      case "hunt": {
+        const en = activeEnemy(s, e.id);
+        if (!en || en.exhausted || en.engaged) break;
+        let targets = survivors(s).filter(
+          (p) => en.code !== C(9) || p.code === C(7),
+        );
+        const min = Math.min(
+          ...targets.map((p) => distance(s, en.location, p.location)),
+        );
+        targets = targets.filter(
+          (p) => distance(s, en.location, p.location) === min,
+        );
+        if (en.code === C(114) && targets.length) {
+          const agi = Math.min(
+            ...targets.map((p) => card(p.code).skill_agility || 0),
+          );
+          targets = targets.filter(
+            (p) => (card(p.code).skill_agility || 0) === agi,
+          );
         }
-        s.queue.push(
-          ...engaged(s).map((en) =>
-            eff("attack", { id: en.id, source: "enemy" }),
-          ),
-          eff("upkeep"),
+        if (!targets.length || min === 0 || !Number.isFinite(min)) break;
+        const steps = availableConnections(s, en.location).filter((c) =>
+          targets.some((p) => distance(s, c, p.location) === min - 1),
+        );
+        if (steps.length === 1)
+          front(s, eff("enemyMove", { id: en.id, target: steps[0] }));
+        else if (steps.length > 1)
+          choice(
+            s,
+            "Hunter movement",
+            `${card(en.code).name} has equally short routes. Choose its destination.`,
+            steps.map((c) =>
+              option(c, card(c).name, [
+                eff("enemyMove", { id: en.id, target: c }),
+              ]),
+            ),
+          );
+        break;
+      }
+      case "enemyMove": {
+        const en = activeEnemy(s, e.id);
+        if (en) {
+          en.location = e.target!;
+          front(
+            s,
+            ...survivors(s)
+              .filter((p) => p.location === en.location)
+              .map((p) => eff("gatherIntel", { actor: p.code })),
+          );
+        }
+        break;
+      }
+      case "enemyAttacks":
+        front(
+          s,
+          ...s.enemies
+            .filter((en) => en.engaged && !en.exhausted)
+            .map((en) =>
+              eff("attack", {
+                id: en.id,
+                source: "enemy",
+                actor: en.engagedWith || s.player.code,
+              }),
+            ),
+          eff("upkeep", { actor: "scenario" }),
         );
         break;
       case "upkeep":
         s.phase = "upkeep";
-        s.enemies.forEach((e) => {
-          e.exhausted = false;
-          if (e.location === s.player.location) e.engaged = true;
-        });
-        s.player.assets.forEach((a) => (a.exhausted = false));
-        s.player.resources++;
-        log(s, "Upkeep: ready cards, draw a card, gain a resource.");
-        front(s, eff("draw"), eff("handLimit"), eff("roundEnd"));
+        for (const en of s.enemies) {
+          if (en.skipReady) en.skipReady = false;
+          else en.exhausted = false;
+        }
+        for (const p of survivors(s))
+          p.assets.forEach((a) => (a.exhausted = false));
+        log(
+          s,
+          "Upkeep: each investigator readies cards, draws a card, and gains a resource.",
+        );
+        front(
+          s,
+          eff("engagement"),
+          ...survivors(s).flatMap((p) => [
+            eff("draw", { actor: p.code }),
+            eff("gain", { amount: 1, actor: p.code }),
+            eff("handLimit", { actor: p.code }),
+          ]),
+          eff("roundEnd", { actor: "scenario" }),
+        );
         break;
       case "handLimit": {
         const limit = 8 + (has(s, C(32)) ? 2 : 0);
@@ -1147,51 +2017,81 @@ function drain(s: GameState) {
           );
         break;
       }
-      case "roundEnd":
+      case "roundEnd": {
         s.phase = "roundEnd";
-        if (
-          (s.act === 1 && s.player.clues >= 2) ||
-          (s.act === 3 && s.player.location === C(120) && s.player.clues >= 3)
-        )
+        focus(s, s.leadInvestigator);
+        const at = s.act === 3 ? C(120) : undefined;
+        const cost = (s.act === 1 ? 2 : 3) * partySize(s);
+        if ([1, 3].includes(s.act) && groupClues(s, at) >= cost)
           choice(
             s,
             "Advance the act?",
-            `Spend ${s.act === 1 ? 2 : 3} clues to continue the story.`,
+            `Spend ${cost} clues as a group${at ? " at Orne Library" : ""} to continue the story.`,
             [
               option("advance", "Spend clues & advance", [
+                eff("payGroup", { amount: cost, source: at }),
                 eff("advanceAct"),
-                eff("newRound"),
+                eff("newRound", { actor: "scenario" }),
               ]),
-              option("wait", "Wait until next round", [eff("newRound")]),
+              option("wait", "Wait until next round", [
+                eff("newRound", { actor: "scenario" }),
+              ]),
             ],
           );
-        else front(s, eff("newRound"));
+        else front(s, eff("newRound", { actor: "scenario" }));
         break;
+      }
+      case "payGroup":
+        spendGroupClues(s, e.amount!, e.source);
+        break;
+      case "contributeClue": {
+        const p = party(s).find((p) => p.code === e.target)!;
+        if (p.clues > 0) {
+          p.clues--;
+          front(
+            s,
+            eff("payGroup", { amount: e.amount! - 1, source: e.source }),
+          );
+        }
+        break;
+      }
       case "advanceAct":
         advanceAct(s);
         break;
       case "newRound":
         s.round++;
-        s.flags = {
-          ...Object.fromEntries(
-            Object.entries(s.flags).filter(([k]) => k.startsWith("game_")),
-          ),
-        };
+        s.flags = Object.fromEntries(
+          Object.entries(s.flags).filter(([k]) => k.startsWith("game_")),
+        );
+        for (const p of survivors(s)) {
+          p.flags = Object.fromEntries(
+            Object.entries(p.flags).filter(([k]) => k.startsWith("game_")),
+          );
+          p.actions = 3;
+          p.actionsTaken = 0;
+          p.turnEnded = false;
+          p.turnStarted = false;
+        }
         s.locations.forEach((l) => (l.reduction = 0));
         s.phase = "mythos";
-        s.actions = 3;
-        s.actionsTaken = 0;
+        focus(s, s.leadInvestigator);
         log(s, `Round ${s.round}. The mythos stirs.`, "story");
         front(
           s,
-          eff("doom", { amount: 1 }),
-          eff("encounter"),
-          eff("investigation"),
+          eff("doom", { amount: 1, actor: s.leadInvestigator }),
+          ...survivors(s).map((p) => eff("encounter", { actor: p.code })),
+          eff("investigation", { actor: "scenario" }),
         );
         break;
       case "investigation":
         s.phase = "investigation";
-        log(s, "Investigation phase. You have 3 actions.");
+        focus(s, s.leadInvestigator);
+        s.turnInvestigator = s.player.code;
+        log(
+          s,
+          "Investigation phase. Choose which investigator takes the first turn.",
+          "story",
+        );
         break;
       case "perform":
         perform(s, e);
@@ -1277,6 +2177,15 @@ function drain(s: GameState) {
         break;
     }
   }
+  if (
+    !s.queue.length &&
+    !s.test &&
+    !s.decision &&
+    s.status === "playing" &&
+    s.phase === "investigation" &&
+    survivors(s).some((p) => p.code === s.turnInvestigator && !p.turnEnded)
+  )
+    focus(s, s.turnInvestigator);
 }
 function equip(s: GameState, id: string) {
   const c = handCard(s, id);
@@ -1330,6 +2239,11 @@ function perform(s: GameState, e: Effect) {
       )!;
       const a = asset(s, source);
       let bonus = 0;
+      if (a?.code === C(49)) {
+        a.uses--;
+        front(s, eff("chooseKitSkill", { id: a.id, target: l.code }));
+        break;
+      }
       if (a) {
         if (a.uses > 0 && [C(31), C(33)].includes(a.code)) a.uses--;
         if (a.code === C(31)) a.exhausted = true;
@@ -1351,16 +2265,20 @@ function perform(s: GameState, e: Effect) {
       const en = activeEnemy(s, target);
       if (!en) break;
       const a = asset(s, source);
-      if (a?.code === C(19)) a.uses--;
+      if (a && [C(19), C(45)].includes(a.code)) a.uses--;
+      if (a?.code === C(77)) {
+        front(s, eff("cleaverBonus", { id: a.id, target: en.id }));
+        break;
+      }
       testStart(
         s,
         "fight",
-        "combat",
+        a?.code === C(45) ? "agility" : "combat",
         card(en.code).enemy_fight || 0,
         `Fight ${card(en.code).name}`,
         en.id,
         source,
-        a ? 1 : 0,
+        a?.code === C(2) ? 2 : a?.code === C(45) ? 0 : a ? 1 : 0,
       );
       break;
     }
@@ -1384,9 +2302,11 @@ function perform(s: GameState, e: Effect) {
       if (en) {
         const enters = en.location !== s.player.location;
         en.engaged = true;
+        en.engagedWith = s.player.code;
         en.location = s.player.location;
         if (enters) front(s, eff("gatherIntel"));
         log(s, `Engaged ${card(en.code).name}.`);
+        front(s, eff("hunterInstinct"));
       }
       break;
     }
@@ -1404,25 +2324,57 @@ function perform(s: GameState, e: Effect) {
       );
       break;
     case "rest":
-      s.flags.game_dormRest = true;
+      s.player.flags.game_dormRest = true;
       s.player.damage = Math.max(0, s.player.damage - 1);
       s.player.horror = Math.max(0, s.player.horror - 1);
       log(s, "Rested in the dormitories: heal 1 damage and 1 horror.", "good");
       break;
     case "library":
-      s.flags.game_library = true;
+      s.player.flags.game_library = true;
       draw(s, 3);
       break;
     case "removeThreat":
       front(s, eff("removeThreat", { code: target }));
       break;
     case "resign":
-      finish(s, "resigned");
+      elimination(s, "resigned");
       break;
     case "clueDamage":
-      s.player.clues--;
-      enemyDamage(s, target!, 1);
+      front(
+        s,
+        eff("payGroup", { amount: partySize(s) }),
+        eff("enemyDamage", { id: target, amount: partySize(s) }),
+      );
       break;
+    case "olivier":
+      has(s, C(46))!.exhausted = true;
+      move(s, target!);
+      break;
+    case "wrench": {
+      has(s, C(2))!.exhausted = true;
+      const en = activeEnemy(s, target)!;
+      en.engaged = true;
+      en.engagedWith = s.player.code;
+      front(s, eff("hunterInstinct"), eff("attack", { id: en.id }));
+      break;
+    }
+    case "jumpsuit": {
+      discardAsset(s, has(s, C(75))!.id);
+      const eligible = s.player.discard.filter(
+        (c) =>
+          card(c.code).type_code === "asset" &&
+          /Tool|Weapon/.test(card(c.code).traits || ""),
+      );
+      choice(
+        s,
+        "Jumpsuit",
+        "Recover a Tool or Weapon from your discard pile.",
+        eligible.map((c) =>
+          option(c.id, card(c.code).name, [eff("recover", { id: c.id })]),
+        ),
+      );
+      break;
+    }
     case "play": {
       const c = handCard(s, target);
       if (!c) break;
@@ -1481,6 +2433,43 @@ function perform(s: GameState, e: Effect) {
             );
           break;
         }
+        case "12050":
+          testStart(
+            s,
+            "investigate",
+            "intellect",
+            Math.max(
+              0,
+              (card(s.player.location).shroud || 0) - location(s).reduction,
+            ),
+            "Breaking and Entering",
+            s.player.location,
+            "breaking",
+            stats(s, "agility"),
+          );
+          break;
+        case "12051":
+          front(s, eff("paintTown"));
+          break;
+        case "12052":
+          front(s, eff("prestidigitation"));
+          break;
+        case "12079":
+          choice(
+            s,
+            "Shove off!",
+            "Choose an engaged enemy to evade.",
+            engaged(s).map((en) =>
+              option(en.id, card(en.code).name, [
+                eff("perform", {
+                  title: "evade",
+                  target: en.id,
+                  source: "shove",
+                }),
+              ]),
+            ),
+          );
+          break;
         case "12006":
           break;
       }
@@ -1496,6 +2485,8 @@ export function canAct(
 ): string | null {
   if (
     s.status !== "playing" ||
+    s.player.status !== "active" ||
+    s.player.turnEnded ||
     s.phase !== "investigation" ||
     s.test ||
     s.decision ||
@@ -1503,10 +2494,21 @@ export function canAct(
   )
     return "Finish the current resolution first.";
   const fast =
-    kind === "clueDamage" ||
-    (kind === "move" && s.player.location === C(116) && !s.flags.quad);
-  const cost = kind === "library" || kind === "removeThreat" ? 2 : fast ? 0 : 1;
-  if (s.actions < cost)
+    ["clueDamage", "olivier", "jumpsuit", "wrench"].includes(kind) ||
+    (kind === "move" &&
+      partySize(s) <= 2 &&
+      s.player.location === C(116) &&
+      !s.flags.quad);
+  const cost =
+    kind === "library" || kind === "removeThreat"
+      ? 2
+      : fast ||
+          (kind === "evade" &&
+            s.player.code === C(7) &&
+            !s.player.flags.extraEvade)
+        ? 0
+        : 1;
+  if (s.player.actions < cost)
     return `You need ${cost} action${cost === 1 ? "" : "s"}.`;
   if (kind === "investigate") {
     const l = s.locations.find((l) => l.code === (target || s.player.location));
@@ -1519,13 +2521,13 @@ export function canAct(
     }
     if (source) {
       const a = asset(s, source);
-      if (!a || ![C(31), C(33), C(88)].includes(a.code))
+      if (!a || ![C(31), C(33), C(49), C(88)].includes(a.code))
         return "This asset cannot investigate.";
       if (a.code === C(33) && !availableConnections(s).includes(l.code))
         return "Local Map requires a revealed connecting location.";
       if (a.code === C(31) && a.exhausted)
         return "Fingerprint Kit is exhausted.";
-      if ([C(31), C(33)].includes(a.code) && a.uses <= 0)
+      if ([C(31), C(33), C(49)].includes(a.code) && a.uses <= 0)
         return "This asset has no uses left.";
     }
   }
@@ -1541,18 +2543,28 @@ export function canAct(
       )
     )
       return "That enemy is at another location.";
-    if (kind === "evade" && (!en.engaged || en.exhausted))
+    if (
+      kind === "evade" &&
+      (!en.engaged ||
+        (en.engagedWith && en.engagedWith !== s.player.code) ||
+        en.exhausted)
+    )
       return "You can only evade an enemy engaged with you.";
-    if (kind === "engage" && en.engaged)
+    if (
+      kind === "engage" &&
+      en.engaged &&
+      (!en.engagedWith || en.engagedWith === s.player.code)
+    )
       return "That enemy is already engaged with you.";
     if (kind === "parley" && en.code !== C(123))
       return "Only Bystanders can be parleyed with here.";
-    if (kind === "clueDamage" && (s.act !== 4 || s.player.clues < 1))
-      return "Blaze of Glory requires 1 clue.";
+    if (kind === "clueDamage" && (s.act !== 4 || groupClues(s) < partySize(s)))
+      return `Blaze of Glory requires ${partySize(s)} group clues.`;
     if (kind === "fight" && source) {
       const a = asset(s, source);
-      if (!a || ![C(19), C(20)].includes(a.code)) return "Choose a weapon.";
-      if (a.code === C(19) && a.uses <= 0)
+      if (!a || ![C(2), C(19), C(20), C(45), C(77), C(86)].includes(a.code))
+        return "Choose a weapon.";
+      if ([C(19), C(45)].includes(a.code) && a.uses <= 0)
         return "The M1911 is out of ammunition.";
     }
   }
@@ -1562,18 +2574,46 @@ export function canAct(
     return "There is no fire here.";
   if (
     kind === "rest" &&
-    (s.player.location !== C(117) || s.flags.game_dormRest)
+    (s.player.location !== C(117) || s.player.flags.game_dormRest)
   )
     return "Rest is only available once per game in the Dormitories.";
   if (
     kind === "library" &&
-    (s.player.location !== C(120) || s.flags.game_library)
+    (s.player.location !== C(120) || s.player.flags.game_library)
   )
     return "The library action is only available once per game.";
-  if (kind === "removeThreat" && !s.player.threats.includes(target || ""))
+  if (
+    kind === "removeThreat" &&
+    (!s.player.threats.includes(target || "") ||
+      ![C(125), C(103), C(104)].includes(target || ""))
+  )
     return "This threat is not in play.";
   if (kind === "resign" && s.act !== 4)
     return "Resigning becomes available during Act 4.";
+  if (
+    kind === "olivier" &&
+    (!has(s, C(46)) ||
+      has(s, C(46))!.exhausted ||
+      !availableConnections(s).includes(target || ""))
+  )
+    return "Choose a connecting location and a ready Olivier Bishop.";
+  if (
+    kind === "jumpsuit" &&
+    (!has(s, C(75)) ||
+      !s.player.discard.some(
+        (c) =>
+          card(c.code).type_code === "asset" &&
+          /Tool|Weapon/.test(card(c.code).traits || ""),
+      ))
+  )
+    return "Jumpsuit needs a Tool or Weapon in your discard pile.";
+  if (
+    kind === "wrench" &&
+    (!has(s, C(2)) ||
+      has(s, C(2))!.exhausted ||
+      activeEnemy(s, target)?.location !== s.player.location)
+  )
+    return "Choose a ready Wrench and an enemy here.";
   return null;
 }
 export function canPlay(s: GameState, id: string): string | null {
@@ -1582,6 +2622,8 @@ export function canPlay(s: GameState, id: string): string | null {
   const def = card(c.code);
   if (
     s.status !== "playing" ||
+    s.player.status !== "active" ||
+    s.player.turnEnded ||
     s.phase !== "investigation" ||
     s.test ||
     s.decision
@@ -1589,26 +2631,55 @@ export function canPlay(s: GameState, id: string): string | null {
     return "Finish the current resolution first.";
   if (def.type_code === "skill")
     return "Commit this card during a matching skill test.";
-  if ([C(22), C(36)].includes(c.code))
+  if ([C(22), C(36), C(78)].includes(c.code))
     return "This event will be offered automatically at its reaction window.";
   if (!["asset", "event"].includes(def.type_code))
     return "This card cannot be played.";
   if (s.player.resources < (def.cost || 0)) return "Not enough resources.";
   const fast = def.text?.startsWith("Fast.");
-  if (!fast && s.actions < 1) return "No actions remaining.";
-  if (c.code === C(24) && s.actionsTaken > 0)
+  if (!fast && s.player.actions < 1) return "No actions remaining.";
+  if (c.code === C(24) && s.player.actionsTaken > 0)
     return "Play only as your first action.";
   if ([C(24), C(38)].includes(c.code) && location(s).clues === 0)
     return "No clues at this location.";
-  if (c.code === C(37) && !engaged(s).length)
+  if ([C(37), C(79)].includes(c.code) && !engaged(s).length)
     return "No engaged enemy to evade.";
-  if (def.is_unique && s.player.assets.some((a) => a.code === c.code))
+  if (
+    def.is_unique &&
+    survivors(s).some((p) => p.assets.some((a) => a.code === c.code))
+  )
     return "A unique copy is already in play.";
+  if ([C(48), C(74)].includes(c.code) && has(s, c.code))
+    return "Limit 1 per investigator.";
+  if (c.code === C(50) && !location(s).clues)
+    return "No clues at this location.";
+  if (
+    c.code === C(52) &&
+    !s.player.hand.some(
+      (x) =>
+        x.id !== id &&
+        card(x.code).type_code === "asset" &&
+        card(x.code).traits?.includes("Item") &&
+        Math.max(0, (card(x.code).cost || 0) - 2) <= s.player.resources - 1 &&
+        (!card(x.code).is_unique ||
+          !survivors(s).some((p) => p.assets.some((a) => a.code === x.code))),
+    )
+  )
+    return "No affordable Item in your hand.";
   return null;
 }
 export function commitValue(s: GameState, id: string) {
-  const c = handCard(s, id);
-  if (!c || !s.test || card(c.code).subtype_code) return 0;
+  const owner = commitOwner(s, id),
+    c = committedCard(s, id);
+  if (
+    !c ||
+    !owner ||
+    owner.status !== "active" ||
+    owner.location !== s.player.location ||
+    !s.test ||
+    card(c.code).subtype_code
+  )
+    return 0;
   return (
     (card(c.code)[`skill_${s.test.skill}`] || 0) +
     (card(c.code).skill_wild || 0)
@@ -1632,7 +2703,7 @@ function reveal(s: GameState) {
     t.tokens.push(token);
     if (token === "auto_fail") break;
     if (token === "elder_sign") {
-      mod += 1;
+      mod += s.player.code === C(7) ? 0 : 1;
       break;
     }
     if (token === "skull") {
@@ -1662,11 +2733,27 @@ function reveal(s: GameState) {
     t.success ? "good" : "bad",
   );
 }
+function attackDamage(s: GameState, t: Test) {
+  const weapon = asset(s, t.source);
+  const bonus =
+    weapon?.code === C(19) ||
+    (weapon?.code === C(2) && s.player.flags[`attacked_${t.target}`]) ||
+    (weapon?.code === C(45) && activeEnemy(s, t.target)?.exhausted);
+  return 1 + (bonus ? 1 : 0) + (t.extraDamage || 0);
+}
 function resolve(s: GameState) {
   const t = s.test!;
   const success = t.success!;
-  const committed = t.committed.map((id) => handCard(s, id)!).filter(Boolean);
-  t.committed.forEach((id) => removeHand(s, id));
+  const committed = t.committed
+    .map((id) => committedCard(s, id)!)
+    .filter(Boolean);
+  t.committed.forEach((id) => {
+    const owner = commitOwner(s, id);
+    if (owner) {
+      const i = owner.hand.findIndex((c) => c.id === id);
+      owner.discard.push(...owner.hand.splice(i, 1));
+    }
+  });
   s.test = null;
   const effects: Effect[] = [];
   if (success) {
@@ -1687,14 +2774,15 @@ function resolve(s: GameState) {
           effects.push(eff("flashlight", { id: a.id, target: t.target }));
         if (a?.code === C(33))
           effects.push(eff("localMapMove", { id: a.id, target: t.target }));
+        if (a?.code === C(49)) effects.push(eff("gain", { amount: 1 }));
+        if (t.source === "breaking" && (t.margin || 0) >= 2)
+          effects.push(eff("autoEvade"));
         break;
       }
       case "fight": {
         const a = asset(s, t.source);
-        let damage =
-          1 +
-          (a?.code === C(19) ? 1 : 0) +
-          committed.filter((c) => c.code === C(25)).length;
+        const damage =
+          attackDamage(s, t) + committed.filter((c) => c.code === C(25)).length;
         if (
           a?.code === C(20) &&
           !a.exhausted &&
@@ -1710,18 +2798,35 @@ function resolve(s: GameState) {
               eff("enemyDamage", { id: t.target, amount: damage }),
             ]),
           ]);
-        } else
-          effects.push(eff("enemyDamage", { id: t.target, amount: damage }));
+        } else if (a?.code === C(86))
+          choice(
+            s,
+            "Broken Bottle",
+            "Discard Broken Bottle to deal 1 additional damage?",
+            [
+              option("discard", `Discard · deal ${damage + 1} damage`, [
+                eff("discardAsset", { id: a.id }),
+                eff("enemyDamage", { id: t.target, amount: damage + 1 }),
+              ]),
+              option("keep", `Keep · deal ${damage} damage`, [
+                eff("enemyDamage", { id: t.target, amount: damage }),
+              ]),
+            ],
+          );
+        else effects.push(eff("enemyDamage", { id: t.target, amount: damage }));
+        if (a?.code === C(77))
+          effects.push(eff("cleaverHeal", { id: t.target }));
         break;
       }
       case "evade": {
-        const en = activeEnemy(s, t.target);
-        if (en) {
-          en.engaged = false;
-          en.exhausted = true;
-          log(s, `${card(en.code).name} is evaded.`, "good");
-        }
+        evadeEnemy(
+          s,
+          t.target!,
+          committed.some((c) => c.code === C(80)),
+        );
         if (t.source === "cracks") effects.push(eff("cracksMove"));
+        if (t.source === "shove")
+          effects.push(eff("enemyDamage", { id: t.target, amount: 1 }));
         break;
       }
       case "parley": {
@@ -1736,12 +2841,16 @@ function resolve(s: GameState) {
         break;
     }
     for (const c of committed)
-      if ([C(92), C(93)].includes(c.code)) effects.push(eff("draw"));
-    if (t.tokens.includes("elder_sign"))
+      if ([C(91), C(92), C(93)].includes(c.code)) effects.push(eff("draw"));
+    if (t.tokens.includes("elder_sign") && s.player.code === C(4))
       effects.push(eff("draw"), eff("gain", { amount: 1 }));
   } else {
     if (t.kind === "fight") {
       const en = activeEnemy(s, t.target);
+      if (en?.engagedWith && en.engagedWith !== s.player.code) {
+        const damage = attackDamage(s, t);
+        effects.push(eff("damage", { actor: en.engagedWith, damage }));
+      }
       if (en && !en.exhausted && card(en.code).text?.includes("Retaliate"))
         effects.push(eff("attack", { id: en.id, source: "retaliate" }));
     }
@@ -1781,17 +2890,84 @@ function resolve(s: GameState) {
       }
     }
   }
+  if (!success && t.kind === "investigate" && Math.abs(t.margin || 0) <= 2)
+    effects.push(eff("lookFound"));
+  if (!success && t.source === "shove") s.player.flags.shove = true;
+  if (success && (t.margin || 0) >= 2) {
+    const a = has(s, C(44));
+    if (a && !a.exhausted)
+      effects.push(eff("assetReward", { id: a.id, source: "draw", amount: 1 }));
+    if (committed.some((c) => c.code === C(53)))
+      effects.push(eff("cracksMove"));
+  }
+  if (t.tokens.includes("elder_sign")) {
+    if (s.player.code === C(1)) effects.push(eff("elderDamage"));
+    if (s.player.code === C(7))
+      effects.push(eff("freeMove", { source: "disengage" }));
+  }
   front(s, ...effects);
 }
 function hardDifficulty(s: GameState) {
   return s.difficulty === "hard" || s.difficulty === "expert";
 }
+function beginTurn(s: GameState) {
+  if (s.player.turnStarted) return;
+  s.player.turnStarted = true;
+  s.turnInvestigator = s.player.code;
+  const a = has(s, C(72));
+  if (a && (a.damage || a.horror)) front(s, eff("aleks", { id: a.id }));
+}
+function spend(s: GameState, n: number) {
+  s.player.resources -= n;
+  if (n > 0 && s.player.threats.includes(C(103)))
+    front(s, eff("damage", { damage: 1 }));
+}
+function useSupply(s: GameState, a: Asset) {
+  a.uses--;
+  if (a.uses <= 0 && [C(73), C(74)].includes(a.code)) discardAsset(s, a.id);
+}
+export const commitOwner = (s: GameState, id: string) =>
+  party(s).find((p) => p.hand.some((c) => c.id === id));
+const committedCard = (s: GameState, id: string) =>
+  commitOwner(s, id)?.hand.find((c) => c.id === id);
+function refreshTest(s: GameState) {
+  const t = s.test!;
+  t.margin =
+    (t.tokens.includes("auto_fail")
+      ? 0
+      : Math.max(0, testValue(s) + t.modifier)) - t.difficulty;
+  t.success = !t.tokens.includes("auto_fail") && t.margin >= 0;
+}
+function evadeEnemy(s: GameState, id: string, slippery = false) {
+  const en = activeEnemy(s, id);
+  if (!en) return;
+  en.engaged = false;
+  delete en.engagedWith;
+  en.exhausted = true;
+  if (slippery && !card(en.code).traits?.includes("Elite")) en.skipReady = true;
+  log(s, `${card(en.code).name} is evaded.`, "good");
+  const follow: Effect[] = [];
+  if (en.code === C(9)) {
+    if (s.player.clues) follow.push(eff("dropClue"));
+    else follow.push(eff("operativeAttack", { id: en.id }));
+  }
+  const ops = has(s, C(8)),
+    fingers = has(s, C(48));
+  if (ops && !ops.exhausted) follow.push(eff("covert", { id: ops.id }));
+  if (fingers && !fingers.exhausted)
+    follow.push(
+      eff("assetReward", { id: fingers.id, amount: 1, source: "gain" }),
+    );
+  front(s, ...follow);
+}
 function actionCost(s: GameState, n: number, safe: boolean) {
-  const first = s.actionsTaken === 0;
-  s.actions -= n;
-  s.actionsTaken += n;
+  const first = s.player.actionsTaken === 0;
+  beginTurn(s);
+  s.player.actions -= n;
+  s.player.actionsTaken += n;
   if (!safe && !(has(s, C(115)) && first))
-    s.queue.push(
+    enqueue(
+      s,
       ...engaged(s).map((en) =>
         eff("attack", { id: en.id, source: "opportunity" }),
       ),
@@ -1801,6 +2977,15 @@ export function reduceGame(state: GameState, action: Action): GameState {
   const s = structuredClone(state);
   s.error = null;
   if (action.type === "clearError") return s;
+  if (action.type === "switchInvestigator") {
+    if (canSwitch(s, action.code)) {
+      focus(s, action.code);
+      s.turnInvestigator = action.code;
+    } else
+      s.error =
+        "Finish this investigator’s turn and any pending choice before changing seats.";
+    return s;
+  }
   if (action.type === "mulligan") {
     if (s.status !== "mulligan") return state;
     const ids = [...new Set(action.ids)].filter((id) =>
@@ -1815,8 +3000,15 @@ export function reduceGame(state: GameState, action: Action): GameState {
       else s.player.hand.push(c);
     }
     s.player.deck = shuffle(s, [...s.player.deck, ...old, ...weak]);
-    s.status = "playing";
-    log(s, "Opening hand ready. Begin your investigation.", "story");
+    s.player.mulliganDone = true;
+    log(s, `${card(s.player.code).name} is ready.`, "story");
+    const next = party(s).find((p) => !p.mulliganDone);
+    if (next) focus(s, next.code);
+    else {
+      s.status = "playing";
+      focus(s, s.leadInvestigator);
+      log(s, "Opening hands ready. Begin your investigation.", "story");
+    }
     return s;
   }
   if (action.type === "choose") {
@@ -1829,21 +3021,38 @@ export function reduceGame(state: GameState, action: Action): GameState {
     return s;
   }
   if (action.type === "commit") {
-    if (!s.test || s.test.stage !== "commit") return state;
+    if (!s.test) return state;
+    const late = s.test.stage === "revealed";
+    if (
+      late &&
+      (committedCard(s, action.id)?.code !== C(81) ||
+        commitOwner(s, action.id)?.code !== s.player.code ||
+        s.test.committed.includes(action.id))
+    )
+      return state;
     if (s.test.committed.includes(action.id)) {
       s.test.committed = s.test.committed.filter((id) => id !== action.id);
       return s;
     }
     if (commitValue(s, action.id) <= 0) return state;
-    const c = handCard(s, action.id)!;
+    const c = committedCard(s, action.id)!;
+    const owner = commitOwner(s, action.id)!;
+    if (
+      owner.code !== s.player.code &&
+      s.test.committed.some((id) => commitOwner(s, id)?.code === owner.code)
+    ) {
+      s.error = "Each assisting investigator may commit at most one card.";
+      return s;
+    }
     if (
       card(c.code).text?.includes("Max 1 committed") &&
-      s.test.committed.some((id) => handCard(s, id)?.code === c.code)
+      s.test.committed.some((id) => committedCard(s, id)?.code === c.code)
     ) {
       s.error = "Only one copy may be committed to this test.";
       return s;
     }
     s.test.committed.push(action.id);
+    if (late) refreshTest(s);
     return s;
   }
   if (action.type === "boost") {
@@ -1852,14 +3061,28 @@ export function reduceGame(state: GameState, action: Action): GameState {
     const a = asset(s, action.id);
     const valid =
       (a?.code === C(17) && ["combat", "agility"].includes(s.test.skill)) ||
-      (a?.code === C(35) && ["intellect", "willpower"].includes(s.test.skill));
+      (a?.code === C(35) &&
+        ["intellect", "willpower"].includes(s.test.skill)) ||
+      (a?.code === C(47) && ["intellect", "agility"].includes(s.test.skill)) ||
+      (a?.code === C(76) && ["willpower", "agility"].includes(s.test.skill));
     if (!valid) return state;
-    s.player.resources--;
     s.test.bonus +=
       (a?.code === C(17) && ["fight", "evade"].includes(s.test.kind)) ||
-      (a?.code === C(35) && ["investigate", "parley"].includes(s.test.kind))
+      (a?.code === C(35) && ["investigate", "parley"].includes(s.test.kind)) ||
+      (a?.code === C(47) && ["evade", "parley"].includes(s.test.kind)) ||
+      (a?.code === C(76) &&
+        ["treachery", "extinguish", "parley"].includes(s.test.kind))
         ? 2
         : 1;
+    const obligations = s.player.threats.includes(C(103));
+    if (obligations) {
+      const paused = s.test;
+      s.test = null;
+      // Resume this test before any effects that were waiting for it to finish.
+      front(s, eff("resumeTest", { data: { test: paused } }));
+    }
+    spend(s, 1);
+    if (obligations) drain(s);
     return s;
   }
   if (action.type === "reveal") {
@@ -1882,9 +3105,13 @@ export function reduceGame(state: GameState, action: Action): GameState {
     const c = handCard(s, action.id)!;
     const d = card(c.code);
     const fast = !!d.text?.startsWith("Fast.");
-    s.player.resources -= d.cost || 0;
-    actionCost(s, fast ? 0 : 1, fast || [C(24), C(37)].includes(c.code));
-    s.queue.push(eff("perform", { title: "play", target: action.id }));
+    spend(s, d.cost || 0);
+    actionCost(
+      s,
+      fast ? 0 : 1,
+      fast || [C(24), C(37), C(50), C(51), C(79)].includes(c.code),
+    );
+    enqueue(s, eff("perform", { title: "play", target: action.id }));
     drain(s);
     return s;
   }
@@ -1905,6 +3132,9 @@ export function reduceGame(state: GameState, action: Action): GameState {
         "removeThreat",
         "resign",
         "clueDamage",
+        "olivier",
+        "jumpsuit",
+        "wrench",
       ].includes(action.kind)
     )
       return state;
@@ -1914,19 +3144,32 @@ export function reduceGame(state: GameState, action: Action): GameState {
       return s;
     }
     const fast =
-      action.kind === "clueDamage" ||
-      (action.kind === "move" && s.player.location === C(116) && !s.flags.quad);
+      ["clueDamage", "olivier", "jumpsuit", "wrench"].includes(action.kind) ||
+      (action.kind === "move" &&
+        partySize(s) <= 2 &&
+        s.player.location === C(116) &&
+        !s.flags.quad);
     if (action.kind === "move" && fast) s.flags.quad = true;
     const safe =
       fast ||
       ["fight", "evade", "parley", "resign"].includes(action.kind) ||
       (action.kind === "engage" && s.player.location === C(113));
+    const extraEvade =
+      action.kind === "evade" &&
+      s.player.code === C(7) &&
+      !s.player.flags.extraEvade;
+    if (extraEvade) s.player.flags.extraEvade = true;
     actionCost(
       s,
-      fast ? 0 : ["library", "removeThreat"].includes(action.kind) ? 2 : 1,
+      fast || extraEvade
+        ? 0
+        : ["library", "removeThreat"].includes(action.kind)
+          ? 2
+          : 1,
       safe,
     );
-    s.queue.push(
+    enqueue(
+      s,
       eff("perform", {
         title: action.kind,
         target: action.target,
@@ -1939,28 +3182,20 @@ export function reduceGame(state: GameState, action: Action): GameState {
   if (action.type === "endTurn") {
     if (
       s.status !== "playing" ||
+      s.player.status !== "active" ||
+      s.player.turnEnded ||
       s.phase !== "investigation" ||
       s.test ||
       s.decision
     )
       return state;
-    s.actions = 0;
-    const burn: Effect[] = [];
-    if (location(s).fire) {
-      burn.push(eff("damage", { damage: 1, direct: true }));
-      for (const a of [...s.player.assets])
-        if (card(a.code).health) {
-          a.damage++;
-          if (a.damage >= card(a.code).health!) discardAsset(s, a.id, true);
-        }
-    }
-    for (const en of [...s.enemies])
-      if (
-        s.locations.find((l) => l.code === en.location)?.fire &&
-        !card(en.code).traits?.includes("Elite")
-      )
-        enemyDamage(s, en.id, 1, false);
-    s.queue.push(...burn, eff("enemyPhase"));
+    beginTurn(s);
+    s.player.actions = 0;
+    s.player.turnEnded = true;
+    const returns: Effect[] = [];
+    if (s.player.flags.prestidigitation) returns.push(eff("returnItem"));
+    if (s.player.flags.shove) returns.push(eff("returnShove"));
+    enqueue(s, ...returns, eff("nextTurn", { actor: "scenario" }));
     drain(s);
     return s;
   }
@@ -1971,7 +3206,20 @@ export function gameSummary(s: GameState) {
     status: s.status,
     round: s.round,
     phase: s.phase,
-    actions: s.actions,
+    actions: s.player.actions,
+    activeInvestigator: s.player.code,
+    party: party(s).map((p) => ({
+      code: p.code,
+      name: card(p.code).name,
+      location: p.location,
+      actions: p.actions,
+      resources: p.resources,
+      clues: p.clues,
+      health: health(s, p) - p.damage,
+      sanity: sanity(s, p) - p.horror,
+      status: p.status,
+      turnEnded: p.turnEnded,
+    })),
     act: s.act,
     agenda: s.agenda,
     doom: s.doom,
@@ -1979,8 +3227,10 @@ export function gameSummary(s: GameState) {
       location: card(s.player.location).name,
       resources: s.player.resources,
       clues: s.player.clues,
-      health: 7 - s.player.damage,
-      sanity: 7 - s.player.horror,
+      code: s.player.code,
+      name: card(s.player.code).name,
+      health: health(s) - s.player.damage,
+      sanity: sanity(s) - s.player.horror,
       hand: s.player.hand.map((c) => ({
         id: c.id,
         name: card(c.code).name,

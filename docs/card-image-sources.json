@@ -1,34 +1,10 @@
 {
   "source": "https://arkhamdb.com",
-  "retrievedAt": "2026-09-23",
+  "retrievedAt": "2026-09-23T18:26:43.491Z",
   "images": [
     {
-      "code": "12008",
-      "url": "https://arkhamdb.com/bundles/cards/12008.jpg"
-    },
-    {
-      "code": "12020",
-      "url": "https://arkhamdb.com/bundles/cards/12020.jpg"
-    },
-    {
-      "code": "12009",
-      "url": "https://arkhamdb.com/bundles/cards/12009.jpg"
-    },
-    {
-      "code": "12004",
-      "url": "https://arkhamdb.com/bundles/cards/12004.png"
-    },
-    {
-      "code": "12005",
-      "url": "https://arkhamdb.com/bundles/cards/12005.jpg"
-    },
-    {
-      "code": "12007",
-      "url": "https://arkhamdb.com/bundles/cards/12007.png"
-    },
-    {
-      "code": "12006",
-      "url": "https://arkhamdb.com/bundles/cards/12006.jpg"
+      "code": "12001",
+      "url": "https://arkhamdb.com/bundles/cards/12001.png"
     },
     {
       "code": "12002",
@@ -39,9 +15,246 @@
       "url": "https://arkhamdb.com/bundles/cards/12003.jpg"
     },
     {
-      "code": "12001",
-      "url": "https://arkhamdb.com/bundles/cards/12001.png"
+      "code": "12004",
+      "url": "https://arkhamdb.com/bundles/cards/12004.png"
+    },
+    {
+      "code": "12005",
+      "url": "https://arkhamdb.com/bundles/cards/12005.jpg"
+    },
+    {
+      "code": "12006",
+      "url": "https://arkhamdb.com/bundles/cards/12006.jpg"
+    },
+    {
+      "code": "12007",
+      "url": "https://arkhamdb.com/bundles/cards/12007.png"
+    },
+    {
+      "code": "12008",
+      "url": "https://arkhamdb.com/bundles/cards/12008.jpg"
+    },
+    {
+      "code": "12009",
+      "url": "https://arkhamdb.com/bundles/cards/12009.jpg"
+    },
+    {
+      "code": "12016",
+      "url": "https://arkhamdb.com/bundles/cards/12016.jpg"
+    },
+    {
+      "code": "12017",
+      "url": "https://arkhamdb.com/bundles/cards/12017.jpg"
+    },
+    {
+      "code": "12018",
+      "url": "https://arkhamdb.com/bundles/cards/12018.jpg"
+    },
+    {
+      "code": "12019",
+      "url": "https://arkhamdb.com/bundles/cards/12019.jpg"
+    },
+    {
+      "code": "12020",
+      "url": "https://arkhamdb.com/bundles/cards/12020.jpg"
+    },
+    {
+      "code": "12021",
+      "url": "https://arkhamdb.com/bundles/cards/12021.jpg"
+    },
+    {
+      "code": "12022",
+      "url": "https://arkhamdb.com/bundles/cards/12022.jpg"
+    },
+    {
+      "code": "12023",
+      "url": "https://arkhamdb.com/bundles/cards/12023.jpg"
+    },
+    {
+      "code": "12024",
+      "url": "https://arkhamdb.com/bundles/cards/12024.jpg"
+    },
+    {
+      "code": "12025",
+      "url": "https://arkhamdb.com/bundles/cards/12025.jpg"
+    },
+    {
+      "code": "12030",
+      "url": "https://arkhamdb.com/bundles/cards/12030.jpg"
+    },
+    {
+      "code": "12031",
+      "url": "https://arkhamdb.com/bundles/cards/12031.jpg"
+    },
+    {
+      "code": "12032",
+      "url": "https://arkhamdb.com/bundles/cards/12032.jpg"
+    },
+    {
+      "code": "12033",
+      "url": "https://arkhamdb.com/bundles/cards/12033.jpg"
+    },
+    {
+      "code": "12034",
+      "url": "https://arkhamdb.com/bundles/cards/12034.jpg"
+    },
+    {
+      "code": "12035",
+      "url": "https://arkhamdb.com/bundles/cards/12035.jpg"
+    },
+    {
+      "code": "12036",
+      "url": "https://arkhamdb.com/bundles/cards/12036.jpg"
+    },
+    {
+      "code": "12037",
+      "url": "https://arkhamdb.com/bundles/cards/12037.jpg"
+    },
+    {
+      "code": "12038",
+      "url": "https://arkhamdb.com/bundles/cards/12038.jpg"
+    },
+    {
+      "code": "12044",
+      "url": "https://arkhamdb.com/bundles/cards/12044.jpg"
+    },
+    {
+      "code": "12045",
+      "url": "https://arkhamdb.com/bundles/cards/12045.jpg"
+    },
+    {
+      "code": "12046",
+      "url": "https://arkhamdb.com/bundles/cards/12046.jpg"
+    },
+    {
+      "code": "12047",
+      "url": "https://arkhamdb.com/bundles/cards/12047.jpg"
+    },
+    {
+      "code": "12048",
+      "url": "https://arkhamdb.com/bundles/cards/12048.jpg"
+    },
+    {
+      "code": "12049",
+      "url": "https://arkhamdb.com/bundles/cards/12049.jpg"
+    },
+    {
+      "code": "12072",
+      "url": "https://arkhamdb.com/bundles/cards/12072.jpg"
+    },
+    {
+      "code": "12073",
+      "url": "https://arkhamdb.com/bundles/cards/12073.jpg"
+    },
+    {
+      "code": "12074",
+      "url": "https://arkhamdb.com/bundles/cards/12074.jpg"
+    },
+    {
+      "code": "12086",
+      "url": "https://arkhamdb.com/bundles/cards/12086.jpg"
+    },
+    {
+      "code": "12088",
+      "url": "https://arkhamdb.com/bundles/cards/12088.jpg"
+    },
+    {
+      "code": "12089",
+      "url": "https://arkhamdb.com/bundles/cards/12089.jpg"
+    },
+    {
+      "code": "12091",
+      "url": "https://arkhamdb.com/bundles/cards/12091.jpg"
+    },
+    {
+      "code": "12092",
+      "url": "https://arkhamdb.com/bundles/cards/12092.jpg"
+    },
+    {
+      "code": "12093",
+      "url": "https://arkhamdb.com/bundles/cards/12093.jpg"
+    },
+    {
+      "code": "12094",
+      "url": "https://arkhamdb.com/bundles/cards/12094.jpg"
+    },
+    {
+      "code": "12113",
+      "url": "https://arkhamdb.com/bundles/cards/12113.jpg"
+    },
+    {
+      "code": "12114",
+      "url": "https://arkhamdb.com/bundles/cards/12114.jpg"
+    },
+    {
+      "code": "12115",
+      "url": "https://arkhamdb.com/bundles/cards/12115.jpg"
+    },
+    {
+      "code": "12116",
+      "url": "https://arkhamdb.com/bundles/cards/12116.jpg"
+    },
+    {
+      "code": "12117",
+      "url": "https://arkhamdb.com/bundles/cards/12117.jpg"
+    },
+    {
+      "code": "12118",
+      "url": "https://arkhamdb.com/bundles/cards/12118.jpg"
+    },
+    {
+      "code": "12119",
+      "url": "https://arkhamdb.com/bundles/cards/12119.jpg"
+    },
+    {
+      "code": "12120",
+      "url": "https://arkhamdb.com/bundles/cards/12120.jpg"
     }
   ],
-  "notes": "Remote image requests timed out after the initial batch. Remaining cards retain legible source-text frames; four additional publisher preview image files are tracked in art-sources.json."
+  "failed": [
+    {
+      "code": "12039",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12050",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12051",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12052",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12053",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12075",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12076",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12077",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12078",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12079",
+      "error": "The operation was aborted due to timeout"
+    },
+    {
+      "code": "12080",
+      "error": "The operation was aborted due to timeout"
+    }
+  ]
 }

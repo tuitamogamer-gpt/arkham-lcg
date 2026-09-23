@@ -17,6 +17,8 @@ export interface Card {
   xp?: number;
   slot?: string;
   health?: number;
+  health_per_investigator?: boolean;
+  clues_per_investigator?: boolean;
   sanity?: number;
   skill_willpower?: number;
   skill_intellect?: number;
@@ -53,6 +55,9 @@ export interface Enemy extends Instance {
   damage: number;
   exhausted: boolean;
   engaged: boolean;
+  engagedWith?: string;
+  skipReady?: boolean;
+  owner?: string;
 }
 export interface Location {
   code: string;
@@ -65,6 +70,7 @@ export interface Location {
 // Effects are serializable commands so pending windows survive save/reload.
 export interface Effect {
   kind: string;
+  actor?: string;
   code?: string;
   id?: string;
   target?: string;
@@ -104,6 +110,30 @@ export interface Test {
   modifier: number;
   success?: boolean;
   margin?: number;
+  extraDamage?: number;
+}
+export interface Investigator {
+  code: string;
+  location: string;
+  resources: number;
+  clues: number;
+  damage: number;
+  horror: number;
+  hand: Instance[];
+  deck: Instance[];
+  discard: Instance[];
+  assets: Asset[];
+  threats: string[];
+  actions: number;
+  actionsTaken: number;
+  turnEnded: boolean;
+  turnStarted: boolean;
+  mulliganDone: boolean;
+  status: "active" | "defeated" | "resigned";
+  flags: Record<string, boolean | number>;
+  xp: number;
+  physicalTrauma: number;
+  mentalTrauma: number;
 }
 export interface LogEntry {
   id: number;
@@ -112,7 +142,7 @@ export interface LogEntry {
   tone: "neutral" | "good" | "bad" | "story";
 }
 export interface GameState {
-  version: 1;
+  version: 2;
   id: string;
   seed: number;
   nextId: number;
@@ -120,24 +150,14 @@ export interface GameState {
   status: "mulligan" | "playing" | "resolution";
   phase: "investigation" | "enemy" | "upkeep" | "mythos" | "roundEnd";
   round: number;
-  actions: number;
-  actionsTaken: number;
   act: number;
   agenda: number;
   doom: number;
-  player: {
-    code: string;
-    location: string;
-    resources: number;
-    clues: number;
-    damage: number;
-    horror: number;
-    hand: Instance[];
-    deck: Instance[];
-    discard: Instance[];
-    assets: Asset[];
-    threats: string[];
-  };
+  player: Investigator;
+  companions: Investigator[];
+  partyOrder: string[];
+  leadInvestigator: string;
+  turnInvestigator: string;
   locations: Location[];
   enemies: Enemy[];
   encounterDeck: string[];
@@ -160,6 +180,7 @@ export interface GameState {
   };
 }
 export type Action =
+  | { type: "switchInvestigator"; code: string }
   | { type: "mulligan"; ids: string[] }
   | { type: "act"; kind: string; target?: string; source?: string }
   | { type: "play"; id: string }

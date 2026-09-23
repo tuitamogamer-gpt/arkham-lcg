@@ -15,22 +15,25 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 ## Playable now
 
-- Solo **Spreading Flames**, using **Joe Diamond (12004)** and the official **33-card starter deck** from the 2026 rulebook.
+- **Spreading Flames** with **1–3 investigators controlled by one person**: Joe Diamond (12004), Daniela Reyes (12001), and Trish Scarborough (12007), each using their exact official **33-card starter deck**.
+- Choose the party and lead investigator, mulligan each hand, then select a ready investigator to take a complete turn. Each seat keeps its own actions, hand, resources, assets, clues, injuries, weaknesses and once-per-round abilities.
+- Shared rounds, one encounter per investigator, party-scaled clues and boss health, group clue contributions, nearby skill assistance, owned enemy engagements and friendly fire. Defeated or resigned investigators leave while the others continue.
 - One-time opening mulligan; three-action turns; resources, draw, movement, investigation, combat, evasion and parley.
 - Skill-card commitment; optional resource boosts; seeded chaos bag draws without replacement within a test; skull, tablet, elder thing, elder sign and auto-fail effects; all four difficulties.
 - Starter asset/event/skill effects, weapon ammo, exhausted assets, slots, discard/search, signature weakness, basic weakness and optional reactions.
 - All first-scenario encounters, fire, hunters, attacks of opportunity, retaliate, doomed, enemy/upkeep/mythos phases, hand limits, damage/horror assignment.
 - Four acts, three agendas, campus reveal progression, Servant of Flame, Dr. Armitage, victory/defeat/resignation, XP, trauma and campaign records.
-- Local autosave, save export/import, preservation of pending tests and choices, mobile layout, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
+- Local autosave, save export/import, preservation of pending tests and choices, automatic migration of older Joe-only saves, mobile layout, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
+- Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
 - Searchable archive of **196 normalized 2026 card definitions**; all five investigator dossiers.
 
 ## Scope and next milestones
 
-This is a **first playable vertical slice**, not a completed implementation of the whole core set. The other four investigators, Smoke and Mirrors, Queen of Ash, multiplayer, custom deckbuilding and campaign upgrades are not playable. The UI explicitly labels that coverage. Completing the whole core set remains the project goal.
+This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. Dexter Drake, Isabelle Barnes, Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
 
-The engine implements this fixed solo card pool, rather than a general Arkham rules interpreter. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Simultaneous forced triggers currently resolve in a deterministic order rather than letting the player reorder them. Cosmetic map-location art uses the original campus illustration; it is not a scan of the official location card. Card detail views use locally cached original scans where available, alongside the current source text.
+The engine scripts these three fixed starter decks. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Simultaneous forced triggers currently resolve in a deterministic order rather than letting the player reorder them. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback. The remaining investigator automatically becomes lead if the lead is eliminated; with two survivors, the first in party order becomes lead.
 
-The next rule-completeness pass should add general timing windows and ordering for simultaneous triggers before enabling additional decks or multiplayer. Next content milestones: remaining 2026 investigators with their exact starter decks, then Scenario II (including suspect codex branches) and Scenario III, then the campaign upgrade screen.
+The next rule-completeness pass should add general timing windows, selection of a replacement lead, and ordering for simultaneous triggers. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen.
 
 ## Data sources
 
@@ -52,17 +55,17 @@ The sync script requests API metadata and always reconciles it with current repo
 Official references:
 
 - [2026 release announcement](https://www.arkhamhorror.com/news/ah-tcg-new-core-set-now-available/)
-- [2026 rulebook](https://images-cdn.fantasyflightgames.com/filer_public/0e/d0/0ed09507-1705-47ed-a630-cd15885cabb0/ahc100_rulebook-web.pdf), including Joe’s starter list (p. 26).
+- [2026 rulebook](https://images-cdn.fantasyflightgames.com/filer_public/0e/d0/0ed09507-1705-47ed-a630-cd15885cabb0/ahc100_rulebook-web.pdf), including Daniela, Joe, and Trish’s starter lists (pp. 25–27).
 - [Brethren of Ash campaign guide](https://images-cdn.fantasyflightgames.com/filer_public/f0/22/f022ac7c-9c30-4521-ac16-1f74f00e1d31/ahc100_campaign_guide-web.pdf), setup and resolutions (pp. 2–4).
 
 ## Architecture and verification
 
 - `src/game/engine.ts`: pure serializable state transitions, pending decisions, and effect queue. No React dependency; deterministic random seed is part of a save.
-- `src/game/data.ts`: normalized catalog, exact starter list, chaos bags and map connections.
-- `src/game/storage.ts`: guarded local storage and portable JSON saves.
+- `src/game/data.ts`: normalized catalog, three exact starter lists, chaos bags and map connections.
+- `src/game/storage.ts`: guarded local storage, portable party saves, and v1-to-v2 migration.
 - `src/components/`: game table, campaign home, archive, investigator files and shared dialogs.
 - `tests/`: rules regressions and save validation.
-- `scripts/browser-check.mjs`: real Chromium interaction checks and desktop/mobile captures.
+- `scripts/browser-check.mjs` and `scripts/party-browser-check.mjs`: real Chromium interaction checks and desktop/mobile captures.
 - `window.render_game_to_text()`: concise observable game state for automation.
 - `window.advanceTime(ms)`: deterministic compatibility hook; game state changes only on user actions.
 
@@ -71,11 +74,13 @@ npm test
 npm run build
 # With the dev server running:
 node scripts/browser-check.mjs
+DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
+BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
 ```
 
-Browser artifacts are written under ignored `output/browser/`. They include a pending-test reload, turn progression, archive filters, save export, and mobile overflow checks. Scenario-chain tests use controlled fixtures and do not claim to establish full-game balance or exhaust every possible card interaction.
+Browser artifacts are written under ignored `output/browser/` and `output/party-browser/`. They include all three seats through a complete round, assisted-test reload, archive filters, save export, keyboard seats, and desktop map/controls checks at 1280, 1440 and 1920 pixels. Desktop is the current design priority; omit `DESKTOP_ONLY` to also run the earlier mobile coverage. Scenario-chain tests use controlled fixtures and do not claim to establish full-game balance or exhaust every possible card interaction.
 
 ## Deployment
 
@@ -83,4 +88,4 @@ The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.co
 
 ## Art and attribution
 
-This is an independent fan project, not an official Fantasy Flight Games product. Arkham Horror, its cards, text and the official card images remain the property of their respective owners. Preview image source URLs are in `docs/art-sources.json`; downloaded ArkhamDB scans and unavailable images are recorded in `docs/card-image-sources.json`. Refresh them with `node scripts/cache-card-art.mjs` after a card sync. The campus illustration was created with the built-in image generation tool; its prompt and saved location are in `docs/art-direction.md`. Typography: Cormorant Garamond and DM Sans. Icons: Phosphor.
+This is an independent fan project, not an official Fantasy Flight Games product. Arkham Horror, its cards, text and the official card images remain the property of their respective owners. Preview image source URLs are in `docs/art-sources.json`; downloaded ArkhamDB scans and unavailable images are recorded in `docs/card-image-sources.json`. Refresh them with `node scripts/cache-card-art.mjs` after a card sync, optionally selecting a comma-separated `CARD_CODES` list. The campus illustration was created with the built-in image generation tool; its prompt and saved location are in `docs/art-direction.md`. Typography: Cinzel, Cormorant Garamond and DM Sans. Icons: Phosphor.

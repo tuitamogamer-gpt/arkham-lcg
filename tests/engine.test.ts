@@ -85,7 +85,7 @@ test("deterministic setup, correct opening economy, no opening weaknesses, first
   assert.equal(a.encounterDeck.length, 24);
   assert.equal(a.player.resources, 5);
   assert.equal(a.doom, 0);
-  assert.equal(a.actions, 3);
+  assert.equal(a.player.actions, 3);
   assert.ok(a.player.hand.every((c) => !card(c.code).subtype_code));
 });
 test("mulligan replaces once, preserves exact deck contents, and cannot redraw set-aside cards", () => {
@@ -107,7 +107,7 @@ test("failed actions do not mutate resources, actions or input state", () => {
   const before = structuredClone(s);
   const r = reduceGame(s, { type: "act", kind: "move", target: C(120) });
   assert.ok(r.error);
-  assert.equal(r.actions, 3);
+  assert.equal(r.player.actions, 3);
   assert.deepEqual(s, before);
   assert.equal(r.player.location, C(113));
 });
@@ -118,7 +118,7 @@ test("resource action and Emergency Cache have correct action and resource costs
   assert.equal(s.player.resources, 6);
   s = reduceGame(s, { type: "play", id: "h0" });
   assert.equal(s.player.resources, 9);
-  assert.equal(s.actions, 1);
+  assert.equal(s.player.actions, 1);
   assert.equal(s.player.discard[0].code, C(89));
 });
 test("tie succeeds, Deduction adds a clue, Joe optional reaction is offered once per round", () => {
@@ -135,14 +135,14 @@ test("tie succeeds, Deduction adds a clue, Joe optional reaction is offered once
   assert.equal(s.decision?.title, "A detective’s intuition");
   s = reduceGame(s, { type: "choose", id: "draw" });
   s = settle(s);
-  assert.equal(s.flags.joe, true);
+  assert.equal(s.player.flags.joe, true);
   assert.ok(s.player.discard.some((c) => c.code === C(39)));
 });
 test("auto-fail uses zero effective skill when calculating failure margin", () => {
   let s = game();
   s.bag = ["auto_fail"];
   s.encounterDeck = [C(130)];
-  s.actions = 0;
+  s.player.actions = 0;
   s = reduceGame(s, { type: "endTurn" });
   s = reduceGame(s, { type: "choose", id: "willpower" });
   s = reduceGame(s, { type: "reveal" });
@@ -181,10 +181,10 @@ test("skill commits enforce matching icons, max one copy, and discard on failure
 test("fast Magnifying Glass plays with no remaining actions and boosts only investigations", () => {
   let s = game();
   hand(s, 34);
-  s.actions = 0;
+  s.player.actions = 0;
   assert.equal(canPlay(s, "h0"), null);
   s = reduceGame(s, { type: "play", id: "h0" });
-  assert.equal(s.actions, 0);
+  assert.equal(s.player.actions, 0);
   assert.equal(stats(s, "intellect"), 4);
   assert.equal(stats(s, "intellect", "investigate"), 5);
   assert.equal(s.player.resources, 4);
@@ -214,7 +214,7 @@ test("asset slot replacement pauses for a choice and preserves costs", () => {
   );
   assert.equal(s.player.assets[1].uses, 4);
   assert.equal(s.player.resources, 2);
-  assert.equal(s.actions, 2);
+  assert.equal(s.player.actions, 2);
 });
 test("M1911 + Vicious Blow deals three damage and spends exactly one ammo", () => {
   let s = game();
@@ -227,7 +227,7 @@ test("M1911 + Vicious Blow deals three damage and spends exactly one ammo", () =
   s = settle(s);
   assert.equal(s.enemies.length, 0);
   assert.equal(s.player.assets[0].uses, 3);
-  assert.equal(s.actions, 2);
+  assert.equal(s.player.actions, 2);
 });
 test("Machete bonus requires exactly one engaged enemy and exhausts only on accepted success", () => {
   let s = game();
@@ -305,9 +305,9 @@ test("reaching the quad advances act 2 and reveals campus paths; quad move is fr
   assert.equal(s.act, 3);
   assert.equal(s.locations.filter((l) => l.active).length, 5);
   assert.ok(!s.locations[0].active);
-  const actions = s.actions;
+  const actions = s.player.actions;
   s = reduceGame(s, { type: "act", kind: "move", target: C(118) });
-  assert.equal(s.actions, actions);
+  assert.equal(s.player.actions, actions);
   assert.ok(s.flags.quad);
   assert.equal(s.player.location, C(118));
 });
@@ -364,7 +364,7 @@ test("end turn runs enemy, upkeep and mythos phases once and restores 3 actions"
   s = attempt(s, { type: "endTurn" });
   assert.equal(s.round, 2);
   assert.equal(s.phase, "investigation");
-  assert.equal(s.actions, 3);
+  assert.equal(s.player.actions, 3);
   assert.equal(s.player.resources, 6);
   assert.equal(s.player.hand.length, 6);
   assert.equal(s.doom, 1);
@@ -407,7 +407,7 @@ test("full scripted act chain ends in victory with correct saved university outc
   assert.equal(s.act, 4);
   assert.ok(s.player.assets.some((a) => a.code === C(115)));
   assert.equal(s.locations.find((l) => l.code === C(116))!.clues, 3);
-  s.actions = 3;
+  s.player.actions = 3;
   s = attempt(s, { type: "act", kind: "move", target: C(116) });
   s.player.clues = 5;
   for (let i = 0; i < 5; i++)
@@ -472,5 +472,5 @@ test("Dr. Armitage prevents opportunity attacks on a two-action first action", (
   s.player.threats = [C(125)];
   s = attempt(s, { type: "act", kind: "removeThreat", target: C(125) });
   assert.equal(s.player.damage, 0);
-  assert.equal(s.actions, 1);
+  assert.equal(s.player.actions, 1);
 });
