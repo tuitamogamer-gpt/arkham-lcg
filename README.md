@@ -23,7 +23,9 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - Starter asset/event/skill effects, weapon ammo, exhausted assets, slots, discard/search, signature weakness, basic weakness and optional reactions.
 - All first-scenario encounters, fire, hunters, attacks of opportunity, retaliate, doomed, enemy/upkeep/mythos phases, hand limits, damage/horror assignment.
 - Four acts, three agendas, campus reveal progression, Servant of Flame, Dr. Armitage, victory/defeat/resignation, XP, trauma and campaign records.
-- Local autosave, save export/import, preservation of pending tests and choices, automatic migration of older Joe-only saves, mobile layout, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
+- **Player-controlled event progression**: every visible scripted step pauses with its source card, affected investigator, and before/after changes. Attacks and encounter revelations wait for confirmation before their effects resolve. Phase transitions, draws, injuries, and reactions unfold step by step, with no timers or autoplay.
+- Inspect the table or cards while paused; review the most recent 500 events in the read-only event history. Closing a checkpoint only minimizes it. Unrelated actions and stale confirmations cannot skip it.
+- Local autosave, save export/import, preservation of pending events, tests and choices, automatic migration of older solo and party saves, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
 - Searchable archive of **196 normalized 2026 card definitions**; all five investigator dossiers.
 
@@ -31,7 +33,7 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. Dexter Drake, Isabelle Barnes, Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
 
-The engine scripts these three fixed starter decks. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Simultaneous forced triggers currently resolve in a deterministic order rather than letting the player reorder them. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback. The remaining investigator automatically becomes lead if the lead is eliminated; with two survivors, the first in party order becomes lead.
+The engine scripts these three fixed starter decks. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Event checkpoints control progression and present results; they do not introduce additional rules timing windows or undo effects. Simultaneous forced triggers currently resolve in a deterministic order rather than letting the player reorder them. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback. The remaining investigator automatically becomes lead if the lead is eliminated; with two survivors, the first in party order becomes lead.
 
 The next rule-completeness pass should add general timing windows, selection of a replacement lead, and ordering for simultaneous triggers. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen.
 
@@ -61,11 +63,13 @@ Official references:
 ## Architecture and verification
 
 - `src/game/engine.ts`: pure serializable state transitions, pending decisions, and effect queue. No React dependency; deterministic random seed is part of a save.
+- `src/game/presentation.ts`: public-state changes, source-card attribution, event history and confirmation checkpoints. Hidden future draws are excluded from presentation snapshots.
 - `src/game/data.ts`: normalized catalog, three exact starter lists, chaos bags and map connections.
-- `src/game/storage.ts`: guarded local storage, portable party saves, and v1-to-v2 migration.
+- `src/game/storage.ts`: guarded local storage, portable version 3 saves, and migration of version 1 and 2 saves without changing the storage key.
 - `src/components/`: game table, campaign home, archive, investigator files and shared dialogs.
-- `tests/`: rules regressions and save validation.
+- `tests/`: rules regressions, save validation and explicit checkpoint tests. Existing rules tests acknowledge presentation checkpoints through `tests/helpers.ts`; pacing tests exercise the reducer directly.
 - `scripts/browser-check.mjs` and `scripts/party-browser-check.mjs`: real Chromium interaction checks and desktop/mobile captures.
+- `scripts/pacing-browser-check.mjs`: explicit confirmation, table/card/history inspection, phase progression, saved pauses and desktop layout checks. Older broad browser flows explicitly acknowledge checkpoints with `scripts/browser-pacing.mjs`.
 - `window.render_game_to_text()`: concise observable game state for automation.
 - `window.advanceTime(ms)`: deterministic compatibility hook; game state changes only on user actions.
 
@@ -75,12 +79,14 @@ npm run build
 # With the dev server running:
 node scripts/browser-check.mjs
 DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
+node --import tsx scripts/pacing-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
+BASE_URL=https://arkham-lcg.vercel.app node --import tsx scripts/pacing-browser-check.mjs
 ```
 
-Browser artifacts are written under ignored `output/browser/` and `output/party-browser/`. They include all three seats through a complete round, assisted-test reload, archive filters, save export, keyboard seats, and desktop map/controls checks at 1280, 1440 and 1920 pixels. Desktop is the current design priority; omit `DESKTOP_ONLY` to also run the earlier mobile coverage. Scenario-chain tests use controlled fixtures and do not claim to establish full-game balance or exhaust every possible card interaction.
+Browser artifacts are written under ignored `output/browser/`, `output/party-browser/` and `output/pacing-browser/`. They include all three seats through a complete round, assisted-test reload, archive filters, save export, keyboard seats, and desktop map/controls checks at 1280, 1440 and 1920 pixels. Pacing checks also cover attacks announced before injuries, encounters revealed before their effects, independently resolved party encounters, and restored pending events after reload and import. Desktop is the current design priority; omit `DESKTOP_ONLY` to also run the earlier mobile coverage. Scenario-chain tests use controlled fixtures and do not claim to establish full-game balance or exhaust every possible card interaction.
 
 ## Deployment
 

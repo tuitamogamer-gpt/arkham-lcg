@@ -141,8 +141,25 @@ export interface LogEntry {
   text: string;
   tone: "neutral" | "good" | "bad" | "story";
 }
+export interface EventChange {
+  label: string;
+  before: string;
+  after: string;
+}
+export interface VisibleEvent {
+  id: number;
+  round: number;
+  phase: GameState["phase"];
+  actor: string;
+  title: string;
+  description: string;
+  card?: string;
+  tone: "neutral" | "good" | "bad" | "story";
+  changes: EventChange[];
+  continueLabel: string;
+}
 export interface GameState {
-  version: 2;
+  version: 3;
   id: string;
   seed: number;
   nextId: number;
@@ -166,6 +183,9 @@ export interface GameState {
   flags: Record<string, boolean | number>;
   bag: string[];
   queue: Effect[];
+  event: VisibleEvent | null;
+  eventHistory: VisibleEvent[];
+  eventSerial: number;
   decision: Decision | null;
   test: Test | null;
   log: LogEntry[];
@@ -180,6 +200,7 @@ export interface GameState {
   };
 }
 export type Action =
+  | { type: "continue"; eventId: number }
   | { type: "switchInvestigator"; code: string }
   | { type: "mulligan"; ids: string[] }
   | { type: "act"; kind: string; target?: string; source?: string }

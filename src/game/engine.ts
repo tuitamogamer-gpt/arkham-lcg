@@ -1,4 +1,5 @@
 import { BAGS, CONNECTIONS, STARTER_DECKS, card, code } from "./data";
+import { visibleSnapshot, presentEffect, presentAction } from "./presentation";
 import type {
   Action,
   Asset,
@@ -94,6 +95,7 @@ export function canSwitch(s: GameState, c: string): boolean {
     s.phase === "investigation" &&
     !s.test &&
     !s.decision &&
+    !s.event &&
     !s.queue.length &&
     (!s.player.turnStarted ||
       s.player.turnEnded ||
@@ -224,7 +226,7 @@ export function createGame(
   )
     throw new Error("Choose 1–3 different supported investigators.");
   const s: GameState = {
-    version: 2,
+    version: 3,
     id: `case-${seed}`,
     seed: seed || 1,
     nextId: 1,
@@ -277,6 +279,9 @@ export function createGame(
     flags: {},
     bag: [...BAGS[difficulty]],
     queue: [],
+    event: null,
+    eventHistory: [],
+    eventSerial: 0,
     decision: null,
     test: null,
     log: [],
@@ -468,7 +473,8 @@ function discover(s: GameState, n: number, target = s.player.location) {
     `Discovered ${found} clue${found === 1 ? "" : "s"} at ${card(target).name}.`,
     "good",
   );
-  if (s.player.threats.includes(C(125))) front(s, eff("damage", { horror: 1 }));
+  if (s.player.threats.includes(C(125)))
+    front(s, eff("damage", { horror: 1, source: C(125) }));
   if (target === C(118))
     front(s, eff("discardChoice", { title: "Science Hall", amount: 1 }));
   if (target === C(119) && !s.player.flags.observatory) {
@@ -505,7 +511,7 @@ function move(s: GameState, target: string) {
     });
   if (s.player.threats.includes(C(104)) && !s.player.flags.woundedMove) {
     s.player.flags.woundedMove = true;
-    front(s, eff("damage", { damage: 1 }));
+    front(s, eff("damage", { damage: 1, source: C(104) }));
   }
   log(s, `Moved to ${card(target).name}.`);
   front(s, eff("engagement"), eff("act2check"));
@@ -643,7 +649,7 @@ function advanceAct(s: GameState) {
     for (const l of s.locations) if (l.code !== C(113)) l.active = true;
     log(
       s,
-      "You escape the dorms. Search the campus and bring 3 clues to Orne Library.",
+      `You escape the dorms. Search the campus and bring ${3 * partySize(s)} group clues to Orne Library.`,
       "story",
     );
   } else if (s.act === 3) {
@@ -785,7 +791,7 @@ function damageWindow(s: GameState, e: Effect) {
     (e.data?.allocations || {}) as Allocation,
   );
   if (!dmg && !hor) {
-    front(s, eff("applyDamage", { data: { allocations } }));
+    front(s, eff("applyDamage", { source: e.source, data: { allocations } }));
     return;
   }
   const type = dmg > 0 ? "damage" : "horror";
@@ -806,6 +812,7 @@ function damageWindow(s: GameState, e: Effect) {
         damage: type === "damage" ? 0 : dmg,
         horror: type === "horror" ? 0 : hor,
         direct: e.direct,
+        source: e.source,
         data: { allocations },
       }),
     );
@@ -820,6 +827,7 @@ function damageWindow(s: GameState, e: Effect) {
         damage: dmg - (type === "damage" ? 1 : 0),
         horror: hor - (type === "horror" ? 1 : 0),
         direct: e.direct,
+        source: e.source,
         data: { allocations: next },
       }),
     ];
@@ -829,7 +837,11 @@ function damageWindow(s: GameState, e: Effect) {
     `Assign ${dmg ? `${dmg} damage` : ""}${dmg && hor ? " and " : ""}${hor ? `${hor} horror` : ""}`,
     "Choose where each point goes. All assigned damage and horror are applied together.",
     [
-      option("self", `Joe Diamond · take 1 ${type}`, assign("self")),
+      option(
+        "self",
+        `${card(s.player.code).name} · take 1 ${type}`,
+        assign("self"),
+      ),
       ...eligible.map((a) =>
         option(
           a.id,
@@ -843,7 +855,13 @@ function damageWindow(s: GameState, e: Effect) {
 }
 function drain(s: GameState) {
   let iterations = 0;
-  while (s.queue.length && !s.decision && !s.test && s.status === "playing") {
+  while (
+    s.queue.length &&
+    !s.event &&
+    !s.decision &&
+    !s.test &&
+    s.status === "playing"
+  ) {
     if (++iterations > 500) throw new Error("Effect loop exceeded safe bound");
     const e = s.queue.shift()!;
     if (e.actor && e.actor !== "scenario") focus(s, e.actor);
@@ -867,6 +885,7 @@ function drain(s: GameState) {
       ].includes(e.kind)
     )
       continue;
+    const before = visibleSnapshot(s);
     switch (e.kind) {
       case "resumeTest":
         s.test = e.data!.test as unknown as Test;
@@ -1232,7 +1251,8 @@ function drain(s: GameState) {
         if (i >= 0) s.encounterDeck.splice(i, 1);
         shuffle(s, s.encounterDeck);
         s.player.resources += card(e.code!).health || 0;
-        encounter(s, e.code!);
+        log(s, `Encounter revealed: ${card(e.code!).name}.`, "bad");
+        front(s, eff("revelation", { code: e.code }));
         break;
       }
       case "prestidigitation": {
@@ -1333,10 +1353,16 @@ function drain(s: GameState) {
         if (!s.player.deck.length) {
           if (!s.player.discard.length) break;
           s.player.deck = shuffle(s, s.player.discard.splice(0));
+          e.title = "Deck reshuffled";
+          log(
+            s,
+            `${card(s.player.code).name} has an empty deck. Reshuffle their discard pile, then take 1 horror before drawing.`,
+          );
           front(s, eff("damage", { horror: 1 }), eff("drawOne"));
           break;
         }
         const c = s.player.deck.shift()!;
+        e.code = c.code;
         if ([C(3), C(103), C(104)].includes(c.code)) {
           s.player.threats.push(c.code);
           log(s, `Revelation: ${card(c.code).name}.`, "bad");
@@ -1466,6 +1492,7 @@ function drain(s: GameState) {
         front(
           s,
           eff("damage", {
+            source: enemy.code,
             damage: card(enemy.code).enemy_damage || 0,
             horror: card(enemy.code).enemy_horror || 0,
           }),
@@ -1579,6 +1606,11 @@ function drain(s: GameState) {
         break;
       case "doom":
         s.doom += e.amount || 1;
+        log(
+          s,
+          `Place ${e.amount || 1} doom. The agenda has ${s.doom} of ${[3, 5, 10][s.agenda - 1]} doom.`,
+          "bad",
+        );
         if (s.agenda === 3) {
           const i = s.encounterDiscard.lastIndexOf(C(129));
           if (i >= 0) {
@@ -1591,8 +1623,19 @@ function drain(s: GameState) {
       case "encounter":
         if (!s.encounterDeck.length) {
           s.encounterDeck = shuffle(s, s.encounterDiscard.splice(0));
+          log(
+            s,
+            "The encounter deck is empty. Reshuffle the encounter discard pile.",
+          );
         }
-        if (s.encounterDeck.length) encounter(s, s.encounterDeck.shift()!);
+        if (s.encounterDeck.length) {
+          e.code = s.encounterDeck.shift()!;
+          log(s, `Encounter revealed: ${card(e.code).name}.`, "bad");
+          front(s, eff("revelation", { code: e.code }));
+        }
+        break;
+      case "revelation":
+        encounter(s, e.code!);
         break;
       case "test":
         testStart(
@@ -1882,12 +1925,18 @@ function drain(s: GameState) {
         break;
       }
       case "fireDamage":
+        e.code = C(129);
+        log(
+          s,
+          `Fire at ${card(s.player.location).name} burns ${card(s.player.code).name} and each of their assets with health for 1 damage.`,
+          "bad",
+        );
         for (const a of [...s.player.assets])
           if (card(a.code).health) {
             a.damage++;
             if (a.damage >= card(a.code).health!) discardAsset(s, a.id, true);
           }
-        front(s, eff("damage", { damage: 1, direct: true }));
+        front(s, eff("damage", { damage: 1, direct: true, source: C(129) }));
         break;
       case "fireEnemies":
         for (const en of [...s.enemies])
@@ -2176,9 +2225,11 @@ function drain(s: GameState) {
         finish(s, e.source!);
         break;
     }
+    presentEffect(s, before, e);
   }
   if (
     !s.queue.length &&
+    !s.event &&
     !s.test &&
     !s.decision &&
     s.status === "playing" &&
@@ -2488,6 +2539,7 @@ export function canAct(
     s.player.status !== "active" ||
     s.player.turnEnded ||
     s.phase !== "investigation" ||
+    s.event ||
     s.test ||
     s.decision ||
     s.queue.length
@@ -2625,6 +2677,7 @@ export function canPlay(s: GameState, id: string): string | null {
     s.player.status !== "active" ||
     s.player.turnEnded ||
     s.phase !== "investigation" ||
+    s.event ||
     s.test ||
     s.decision
   )
@@ -2920,7 +2973,7 @@ function beginTurn(s: GameState) {
 function spend(s: GameState, n: number) {
   s.player.resources -= n;
   if (n > 0 && s.player.threats.includes(C(103)))
-    front(s, eff("damage", { damage: 1 }));
+    front(s, eff("damage", { damage: 1, source: C(103) }));
 }
 function useSupply(s: GameState, a: Asset) {
   a.uses--;
@@ -2974,6 +3027,23 @@ function actionCost(s: GameState, n: number, safe: boolean) {
     );
 }
 export function reduceGame(state: GameState, action: Action): GameState {
+  if (action.type === "continue") {
+    // An old click must never acknowledge a newer event.
+    if (!state.event || action.eventId !== state.event.id) return state;
+    const s = structuredClone(state);
+    s.event = null;
+    s.error = null;
+    drain(s);
+    return s;
+  }
+  if (state.event && action.type !== "clearError") return state;
+  const before = visibleSnapshot(state);
+  const result = reduceCore(state, action);
+  if (result !== state)
+    presentAction(result, before, action, state.eventSerial);
+  return result;
+}
+function reduceCore(state: GameState, action: Action): GameState {
   const s = structuredClone(state);
   s.error = null;
   if (action.type === "clearError") return s;
@@ -3254,6 +3324,9 @@ export function gameSummary(s: GameState) {
       : null,
     campaign: s.campaign,
     error: s.error,
+    event: s.event,
+    eventHistoryCount: s.eventHistory.length,
+    paused: !!s.event || !!s.test || !!s.decision,
     coordinateSystem:
       "DOM layout; map percentages measured from top-left, x right, y down",
   };

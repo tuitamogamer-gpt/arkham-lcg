@@ -6,6 +6,7 @@ import {
   CaretRight,
   Check,
   CheckCircle,
+  ClockCounterClockwise,
   Coins,
   Drop,
   Fire,
@@ -55,12 +56,14 @@ export function Game({
   inspect,
   onHome,
   onExport,
+  onHistory,
 }: {
   game: GameState;
   dispatch: (a: Action) => void;
   inspect: (c: string) => void;
   onHome: () => void;
   onExport: () => void;
+  onHistory: () => void;
 }) {
   const roster = party(s),
     member = card(s.player.code);
@@ -125,6 +128,7 @@ export function Game({
   const loc = location(s);
   const near = availableConnections(s);
   const locked =
+    !!s.event ||
     !!s.test ||
     !!s.decision ||
     s.status !== "playing" ||
@@ -249,6 +253,10 @@ export function Game({
           <h1>Spreading Flames</h1>
         </div>
         <div className="game-header-actions">
+          <button className="history-trigger" onClick={onHistory}>
+            <ClockCounterClockwise size={17} />
+            Event history
+          </button>
           <span className="autosaved">
             <CheckCircle size={14} /> Autosaved
           </span>
@@ -432,13 +440,13 @@ export function Game({
                     top: `${pos(l.code)[1]}%`,
                   }}
                   onClick={() =>
-                    near.includes(l.code)
+                    near.includes(l.code) && !locked
                       ? a("move", l.code)
                       : l.revealed && inspect(l.code)
                   }
-                  disabled={locked}
+                  disabled={locked && !l.revealed}
                   aria-label={
-                    near.includes(l.code)
+                    near.includes(l.code) && !locked
                       ? `Move to ${card(l.code).name}`
                       : `Inspect ${card(l.code).name}`
                   }
@@ -962,7 +970,9 @@ export function Game({
           <div className="game-log">
             <div className="zone-heading">
               <h3>The chronicle</h3>
-              <span>LIVE</span>
+              <button onClick={onHistory}>
+                {s.event ? "PAUSED" : "HISTORY"}
+              </button>
             </div>
             <div className="log-entries" aria-live="polite">
               {s.log
@@ -1021,7 +1031,7 @@ export function Game({
           </div>
         </Modal>
       )}
-      {s.test && (
+      {s.test && !s.event && (
         <Modal title={s.test.title}>
           <div className="modal-intro">
             <div className="eyebrow">
@@ -1166,7 +1176,7 @@ export function Game({
           )}
         </Modal>
       )}
-      {s.decision && !s.test && (
+      {s.decision && !s.test && !s.event && (
         <Modal title={s.decision.title}>
           <div className="modal-intro">
             <div className="eyebrow">{member.name} · The choice is yours</div>

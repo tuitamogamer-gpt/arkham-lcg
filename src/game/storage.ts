@@ -1,4 +1,4 @@
-import type { GameState } from "./types";
+import type { GameState, VisibleEvent } from "./types";
 import { card, STARTER_DECKS } from "./data";
 export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
 const integer = (n: unknown, min = 0, max = 100000): n is number =>
@@ -25,13 +25,37 @@ const effects = (xs: unknown): boolean =>
       typeof e.kind === "string" &&
       (!e.code || (typeof e.code === "string" && !!card(e.code))),
   );
+const phases = ["investigation", "enemy", "upkeep", "mythos", "roundEnd"];
+function validEvent(x: unknown, party: string[]): x is VisibleEvent {
+  if (!record(x)) return false;
+  return (
+    integer(x.id, 1, 1000000) &&
+    integer(x.round, 1, 999) &&
+    phases.includes(String(x.phase)) &&
+    (x.actor === "scenario" || party.includes(String(x.actor))) &&
+    [x.title, x.description, x.continueLabel].every(
+      (t) => typeof t === "string" && t.length <= 10000,
+    ) &&
+    (!x.card || (typeof x.card === "string" && !!card(x.card))) &&
+    ["neutral", "good", "bad", "story"].includes(String(x.tone)) &&
+    Array.isArray(x.changes) &&
+    x.changes.length <= 256 &&
+    x.changes.every(
+      (c) =>
+        record(c) &&
+        [c.label, c.before, c.after].every(
+          (t) => typeof t === "string" && t.length <= 1000,
+        ),
+    )
+  );
+}
 export function validSave(x: unknown): x is GameState {
   try {
     if (!record(x)) return false;
     const s = x as unknown as GameState,
       p = s.player;
     if (
-      s.version !== 2 ||
+      s.version !== 3 ||
       !record(p) ||
       !STARTER_DECKS[p.code] ||
       typeof s.id !== "string"
@@ -44,6 +68,22 @@ export function validSave(x: unknown): x is GameState {
     )
       return false;
     const party = [p, ...s.companions];
+    if (
+      !integer(s.eventSerial, 0, 1000000) ||
+      !Array.isArray(s.eventHistory) ||
+      s.eventHistory.length > 500 ||
+      !s.eventHistory.every(
+        (e) => validEvent(e, s.partyOrder) && e.id <= s.eventSerial,
+      ) ||
+      new Set(s.eventHistory.map((e) => e.id)).size !== s.eventHistory.length ||
+      !(
+        s.event === null ||
+        (validEvent(s.event, s.partyOrder) &&
+          s.event.id === s.eventSerial &&
+          s.eventHistory.some((e) => e.id === s.event!.id))
+      )
+    )
+      return false;
     if (
       party.length < 1 ||
       party.length > 3 ||
@@ -291,6 +331,12 @@ export function decodeSave(value: unknown): GameState | null {
         x.enemies.forEach((e) => {
           if (record(e) && e.engaged) e.engagedWith = p.code;
         });
+    }
+    if (record(x) && x.version === 2) {
+      x.version = 3;
+      x.event = null;
+      x.eventHistory = [];
+      x.eventSerial = 0;
     }
     return validSave(x) ? x : null;
   } catch {

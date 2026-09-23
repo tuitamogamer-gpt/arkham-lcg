@@ -30,6 +30,7 @@ import {
 } from "./components/Common";
 import { Home } from "./components/Home";
 import { Game } from "./components/Game";
+import { EventController, EventJournal } from "./components/Events";
 import { BAGS, card, CARD_ART, PLAYABLE_INVESTIGATORS } from "./game/data";
 type Page = "home" | "investigators" | "archive" | "guide" | "game";
 declare global {
@@ -70,13 +71,13 @@ function Guide() {
           ],
           [
             "05",
-            "The clock never stops.",
+            "The round unfolds in phases.",
             "After every investigator has finished their turn, hunters move and engaged enemies attack their targets. Upkeep readies cards, draws a card, and grants a resource for each investigator. The next mythos phase adds one doom and draws one encounter per investigator. The first round skips mythos.",
           ],
           [
             "06",
-            "Live with your choices.",
-            "Defeat is part of the story. Scenario outcomes record experience and trauma in your campaign log. Your game saves locally after every choice—even in the middle of a skill test. Export it to keep a portable copy.",
+            "You control the pace.",
+            "Read each event, its card, and the before-and-after changes, then choose Continue when you are ready. Attacks and encounters wait for confirmation before resolving. View table keeps the game paused; Event history lets you revisit recent events. Your save preserves the exact pause, test, or choice. Scenario outcomes record experience and trauma in your campaign log.",
           ],
         ].map(([n, title, text]) => (
           <article key={n}>
@@ -148,6 +149,7 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
   const [scenario, setScenario] = useState<number | null>(null);
   const [settings, setSettings] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [sound, setSound] = useState(false);
   const [notice, setNotice] = useState("");
   const soundRef = useRef<AudioContext | null>(null);
@@ -400,9 +402,21 @@ export default function App() {
             inspect={setInspect}
             onHome={() => navigate("home")}
             onExport={() => exportSave(game)}
+            onHistory={() => setHistoryOpen(true)}
           />
         )}
       </div>
+      {page === "game" && game && (
+        <EventController
+          game={game}
+          dispatch={dispatch}
+          inspect={setInspect}
+          obscured={!!inspect || settings || setup || historyOpen}
+        />
+      )}
+      {page === "game" && game && historyOpen && (
+        <EventJournal game={game} onClose={() => setHistoryOpen(false)} />
+      )}
       {setup && (
         <Modal
           title="Begin your investigation"

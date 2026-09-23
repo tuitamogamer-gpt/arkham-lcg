@@ -1,3 +1,4 @@
+import { clickAndAcknowledge } from "./browser-pacing.mjs";
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
@@ -29,47 +30,60 @@ async function settle() {
     const s = await state();
     if (s.status === "resolution") break;
     if (s.test)
-      await page
-        .getByRole("button", {
+      await clickAndAcknowledge(
+        page.getByRole("button", {
           name:
             s.test.stage === "commit"
               ? "Draw from the chaos bag"
               : "Resolve the test",
-        })
-        .click();
+        }),
+        page,
+      );
     else if (s.decision) {
       const choice =
         s.decision.choices.find((c) =>
           ["skip", "keep", "stay", "wait", "doom"].includes(c.id),
         ) || s.decision.choices[0];
-      await page
-        .locator(".decision-list>button")
-        .filter({ hasText: choice.label })
-        .click();
+      await clickAndAcknowledge(
+        page.locator(".decision-list>button").filter({ hasText: choice.label }),
+        page,
+      );
     } else break;
   }
 }
 await page.goto(baseUrl);
 await shot("01-home");
-await page
-  .getByRole("button", { name: "Begin your investigation", exact: true })
-  .click();
-await page
-  .getByRole("button", { name: "Select Daniela Reyes", exact: true })
-  .click();
-await page
-  .getByRole("button", { name: "Select Trish Scarborough", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Begin your investigation", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Select Daniela Reyes", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Select Trish Scarborough", exact: true }),
+  page,
+);
 assert.equal(
   await page.locator('.investigator-choice[aria-pressed="true"]').count(),
   3,
 );
-await page.getByRole("button", { name: "easy", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "easy", exact: true }),
+  page,
+);
 await shot("02-party-setup");
-await page.getByRole("button", { name: "Enter Miskatonic University" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Enter Miskatonic University" }),
+  page,
+);
 for (const c of ["12004", "12001", "12007"]) {
   assert.equal((await state()).activeInvestigator, c);
-  await page.getByRole("button", { name: "Keep hand & begin" }).click();
+  await clickAndAcknowledge(
+    page.getByRole("button", { name: "Keep hand & begin" }),
+    page,
+  );
 }
 await page.keyboard.press("3");
 assert.equal((await state()).activeInvestigator, "12007");
@@ -78,26 +92,45 @@ assert.equal((await state()).activeInvestigator, "12004");
 assert.equal((await state()).party.length, 3);
 assert.equal((await state()).locations[0].clues, 6);
 await shot("03-three-investigators");
-await page
-  .getByRole("button", { name: "Control Daniela Reyes", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Control Daniela Reyes", exact: true }),
+  page,
+);
 assert.equal((await state()).activeInvestigator, "12001");
-await page.getByRole("button", { name: "Resource", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Resource", exact: true }),
+  page,
+);
 assert.ok(
   await page
     .getByRole("button", { name: "Control Joe Diamond", exact: true })
     .isDisabled(),
 );
-await page.getByRole("button", { name: "Resource", exact: true }).click();
-await page.getByRole("button", { name: "Resource", exact: true }).click();
-await page.getByRole("button", { name: "End turn", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Resource", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Resource", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "End turn", exact: true }),
+  page,
+);
 assert.equal((await state()).activeInvestigator, "12004");
 assert.equal((await state()).round, 1);
 for (const c of ["12004", "12007"]) {
   assert.equal((await state()).activeInvestigator, c);
   for (let i = 0; i < 3; i++)
-    await page.getByRole("button", { name: "Resource", exact: true }).click();
-  await page.getByRole("button", { name: "End turn", exact: true }).click();
+    await clickAndAcknowledge(
+      page.getByRole("button", { name: "Resource", exact: true }),
+      page,
+    );
+  await clickAndAcknowledge(
+    page.getByRole("button", { name: "End turn", exact: true }),
+    page,
+  );
   await settle();
 }
 assert.equal((await state()).round, 2);
@@ -120,10 +153,14 @@ await page.evaluate(
   fixture,
 );
 await page.reload();
-await page
-  .getByRole("button", { name: "Continue investigation", exact: true })
-  .click();
-await page.getByRole("button", { name: "Investigate", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Continue investigation", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Investigate", exact: true }),
+  page,
+);
 const ally = page
   .locator(".commit-list>button")
   .filter({ hasText: "Unexpected Courage" })
@@ -134,25 +171,36 @@ assert.ok((await state()).test.committed.includes("ally-skill"));
 await shot("05-team-skill-test");
 const before = await state();
 await page.reload();
-await page
-  .getByRole("button", { name: "Continue investigation", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Continue investigation", exact: true }),
+  page,
+);
 assert.deepEqual((await state()).test, before.test);
-await page.getByRole("button", { name: "Draw from the chaos bag" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Draw from the chaos bag" }),
+  page,
+);
 await shot("06-chaos-reveal");
-await page.getByRole("button", { name: "Resolve the test" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Resolve the test" }),
+  page,
+);
 await settle();
 assert.equal((await state()).player.clues, 1);
-await page
-  .getByRole("button", { name: "Settings & saves", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Settings & saves", exact: true }),
+  page,
+);
 const download = page.waitForEvent("download");
-await page
-  .getByRole("dialog")
-  .getByRole("button", { name: "Export saved game" })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("dialog").getByRole("button", { name: "Export saved game" }),
+  page,
+);
 await (await download).saveAs(`${out}/party-save.json`);
-await page.getByRole("button", { name: "Close dialog" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Close dialog" }),
+  page,
+);
 // Show later map with three separate locations, to inspect readability and pawns.
 fixture = createGame("easy", 7331, ["12004", "12001", "12007"]);
 while (fixture.status === "mulligan")
@@ -183,9 +231,10 @@ await page.evaluate(
   fixture,
 );
 await page.reload();
-await page
-  .getByRole("button", { name: "Continue investigation", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Continue investigation", exact: true }),
+  page,
+);
 await shot("07-expanded-map");
 for (const viewport of [
   { width: 1280, height: 800 },
@@ -230,9 +279,10 @@ for (const viewport of [
   await page.screenshot({ path: `${out}/desktop-${viewport.width}.png` });
 }
 await page.setViewportSize({ width: 1440, height: 1000 });
-await page
-  .getByRole("button", { name: "Control Trish Scarborough", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Control Trish Scarborough", exact: true }),
+  page,
+);
 await page.evaluate(() => scrollTo(0, 0));
 await shot("desktop-trish");
 // Desktop work is the current priority; preserve optional earlier mobile coverage.
@@ -256,23 +306,35 @@ if (!desktopOnly) {
     ),
     "mobile home overflow",
   );
-  await mobile
-    .getByRole("button", { name: "Begin your investigation", exact: true })
-    .click();
-  await mobile.getByRole("button", { name: "Select Daniela Reyes" }).click();
-  await mobile
-    .getByRole("button", { name: "Select Trish Scarborough" })
-    .click();
+  await clickAndAcknowledge(
+    mobile.getByRole("button", {
+      name: "Begin your investigation",
+      exact: true,
+    }),
+    mobile,
+  );
+  await clickAndAcknowledge(
+    mobile.getByRole("button", { name: "Select Daniela Reyes" }),
+    mobile,
+  );
+  await clickAndAcknowledge(
+    mobile.getByRole("button", { name: "Select Trish Scarborough" }),
+    mobile,
+  );
   await mobile.waitForTimeout(600);
   await mobile.screenshot({
     path: `${out}/09-setup-mobile.png`,
     fullPage: true,
   });
-  await mobile
-    .getByRole("button", { name: "Enter Miskatonic University" })
-    .click();
+  await clickAndAcknowledge(
+    mobile.getByRole("button", { name: "Enter Miskatonic University" }),
+    mobile,
+  );
   for (let i = 0; i < 3; i++)
-    await mobile.getByRole("button", { name: "Keep hand & begin" }).click();
+    await clickAndAcknowledge(
+      mobile.getByRole("button", { name: "Keep hand & begin" }),
+      mobile,
+    );
   assert.ok(
     await mobile.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -293,9 +355,10 @@ if (!desktopOnly) {
     fixture,
   );
   await mobile.reload();
-  await mobile
-    .getByRole("button", { name: "Continue investigation", exact: true })
-    .click();
+  await clickAndAcknowledge(
+    mobile.getByRole("button", { name: "Continue investigation", exact: true }),
+    mobile,
+  );
   await mobile.waitForTimeout(600);
   await mobile.screenshot({ path: `${out}/11-map-mobile.png`, fullPage: true });
   const mapGeometry = async () =>

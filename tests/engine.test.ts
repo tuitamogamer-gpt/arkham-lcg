@@ -1,3 +1,4 @@
+import { reduceGame } from "./helpers";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { BAGS, JOE_DECK, card, cards, code } from "../src/game/data";
@@ -5,7 +6,6 @@ import {
   canAct,
   canPlay,
   createGame,
-  reduceGame,
   stats,
   testValue,
 } from "../src/game/engine";

@@ -1,7 +1,8 @@
+import { reduceGame } from "./helpers";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { validSave } from "../src/game/storage";
-import { createGame, reduceGame } from "../src/game/engine";
+import { createGame } from "../src/game/engine";
 test("save validation accepts initial, active and pending-test states", () => {
   let s = createGame("standard", 34);
   assert.ok(validSave(JSON.parse(JSON.stringify(s))));

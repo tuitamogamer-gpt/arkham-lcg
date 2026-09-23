@@ -1,9 +1,9 @@
+import { reduceGame } from "./helpers";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { card, code as C, STARTER_DECKS } from "../src/game/data";
 import {
   createGame,
-  reduceGame,
   party,
   partySize,
   canSwitch,

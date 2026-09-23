@@ -1,3 +1,4 @@
+import { clickAndAcknowledge } from "./browser-pacing.mjs";
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
@@ -21,132 +22,190 @@ await page.goto(baseUrl);
 await page.evaluate(() => document.fonts.ready);
 await page.waitForTimeout(600);
 await screenshot("01-campaign-desktop");
-await page
-  .getByRole("button", { name: "Begin your investigation", exact: true })
-  .click();
-await page.getByRole("button", { name: "easy", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Begin your investigation", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "easy", exact: true }),
+  page,
+);
 await screenshot("02-setup");
-await page.getByRole("button", { name: "Enter Miskatonic University" }).click();
-await page.getByRole("dialog").locator(".card-face").first().click();
-await page.getByRole("button", { name: "Replace 1 & begin" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Enter Miskatonic University" }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("dialog").locator(".card-face").first(),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Replace 1 & begin" }),
+  page,
+);
 assert.equal((await state()).status, "playing");
 await screenshot("03-game-table");
-await page.getByRole("button", { name: "Investigate", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Investigate", exact: true }),
+  page,
+);
 const commits = page.locator(".commit-list>button");
 if (await commits.count()) await commits.first().click();
 await screenshot("04-skill-test");
 const beforeReload = await state();
 await page.reload();
-await page
-  .getByRole("button", { name: "Continue investigation", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Continue investigation", exact: true }),
+  page,
+);
 assert.deepEqual(
   (await state()).test,
   beforeReload.test,
   "test resumes with committed cards intact",
 );
-await page.getByRole("button", { name: "Draw from the chaos bag" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Draw from the chaos bag" }),
+  page,
+);
 assert.equal((await state()).test.stage, "revealed");
 await screenshot("05-chaos-token");
-await page.getByRole("button", { name: "Resolve the test" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Resolve the test" }),
+  page,
+);
 for (let i = 0; i < 30; i++) {
   const s = await state();
   if (s.test) {
-    await page
-      .getByRole("button", {
+    await clickAndAcknowledge(
+      page.getByRole("button", {
         name:
           s.test.stage === "commit"
             ? "Draw from the chaos bag"
             : "Resolve the test",
-      })
-      .click();
+      }),
+      page,
+    );
   } else if (s.decision) {
     const choice =
       s.decision.choices.find((c) =>
         ["skip", "keep", "stay", "doom"].includes(c.id),
       ) || s.decision.choices[0];
-    await page
-      .locator(".decision-list>button")
-      .filter({ hasText: choice.label })
-      .click();
+    await clickAndAcknowledge(
+      page.locator(".decision-list>button").filter({ hasText: choice.label }),
+      page,
+    );
   } else break;
 }
 assert.equal((await state()).actions, 2);
-await page.getByRole("button", { name: "Resource", exact: true }).click();
-await page.getByRole("button", { name: "Draw card", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Resource", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Draw card", exact: true }),
+  page,
+);
 for (let i = 0; i < 30; i++) {
   const s = await state();
   if (s.test) {
-    await page
-      .getByRole("button", {
+    await clickAndAcknowledge(
+      page.getByRole("button", {
         name:
           s.test.stage === "commit"
             ? "Draw from the chaos bag"
             : "Resolve the test",
-      })
-      .click();
+      }),
+      page,
+    );
   } else if (s.decision) {
-    await page.locator(".decision-list>button").first().click();
+    await clickAndAcknowledge(
+      page.locator(".decision-list>button").first(),
+      page,
+    );
   } else break;
 }
-await page.getByRole("button", { name: "End turn", exact: true }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "End turn", exact: true }),
+  page,
+);
 for (let i = 0; i < 40; i++) {
   const s = await state();
   if (s.test) {
-    await page
-      .getByRole("button", {
+    await clickAndAcknowledge(
+      page.getByRole("button", {
         name:
           s.test.stage === "commit"
             ? "Draw from the chaos bag"
             : "Resolve the test",
-      })
-      .click();
+      }),
+      page,
+    );
   } else if (s.decision) {
     const choice =
       s.decision.choices.find((c) =>
         ["skip", "keep", "stay", "doom", "horror"].includes(c.id),
       ) || s.decision.choices[0];
-    await page
-      .locator(".decision-list>button")
-      .filter({ hasText: choice.label })
-      .click();
+    await clickAndAcknowledge(
+      page.locator(".decision-list>button").filter({ hasText: choice.label }),
+      page,
+    );
   } else break;
 }
 assert.equal((await state()).round, 2);
 assert.equal((await state()).actions, 3);
 await screenshot("06-second-round");
-await page
-  .getByRole("button", { name: "Card archive", exact: false })
-  .first()
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Card archive", exact: false }).first(),
+  page,
+);
 await page.getByRole("textbox", { name: "Search cards" }).fill("Machete");
 assert.equal(await page.locator(".archive-grid .card-face").count(), 1);
-await page
-  .getByRole("button", { name: "Inspect Machete", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Inspect Machete", exact: true }),
+  page,
+);
 assert.match(await page.getByRole("dialog").innerText(), /exhaust Machete/);
-await page.getByRole("button", { name: "Close dialog" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Close dialog" }),
+  page,
+);
 await page.getByRole("textbox", { name: "Search cards" }).fill("");
 await page
   .getByRole("combobox", { name: "Filter by class" })
   .selectOption("seeker");
 assert.ok((await page.locator(".archive-grid .card-face").count()) > 5);
 await screenshot("07-card-archive");
-await page
-  .getByRole("button", { name: "Settings & saves", exact: true })
-  .click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Settings & saves", exact: true }),
+  page,
+);
 const downloadEvent = page.waitForEvent("download");
-await page.getByRole("button", { name: "Export saved game" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Export saved game" }),
+  page,
+);
 const downloaded = await downloadEvent;
 await downloaded.saveAs("output/browser/exported-save.json");
-await page.getByRole("button", { name: "Close dialog" }).click();
-await page.getByRole("button", { name: "Campaigns", exact: true }).click();
-await page.getByRole("button", { name: /Smoke and Mirrors/ }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Close dialog" }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Campaigns", exact: true }),
+  page,
+);
+await clickAndAcknowledge(
+  page.getByRole("button", { name: /Smoke and Mirrors/ }),
+  page,
+);
 assert.match(
   await page.getByRole("dialog").innerText(),
   /not|planned for a later build/,
 );
-await page.getByRole("button", { name: "Close dialog" }).click();
+await clickAndAcknowledge(
+  page.getByRole("button", { name: "Close dialog" }),
+  page,
+);
 const mobile = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,
@@ -167,13 +226,18 @@ await mobile.screenshot({
   path: "output/browser/08-campaign-mobile.png",
   fullPage: true,
 });
-await mobile
-  .getByRole("button", { name: "Begin your investigation", exact: true })
-  .click();
-await mobile
-  .getByRole("button", { name: "Enter Miskatonic University" })
-  .click();
-await mobile.getByRole("button", { name: "Keep hand & begin" }).click();
+await clickAndAcknowledge(
+  mobile.getByRole("button", { name: "Begin your investigation", exact: true }),
+  mobile,
+);
+await clickAndAcknowledge(
+  mobile.getByRole("button", { name: "Enter Miskatonic University" }),
+  mobile,
+);
+await clickAndAcknowledge(
+  mobile.getByRole("button", { name: "Keep hand & begin" }),
+  mobile,
+);
 assert.ok(
   await mobile.evaluate(
     () => document.documentElement.scrollWidth <= window.innerWidth,
