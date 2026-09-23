@@ -69,6 +69,49 @@ export function validSave(x: unknown): x is GameState {
       return false;
     const party = [p, ...s.companions];
     if (
+      (s.testInProgress !== undefined &&
+        typeof s.testInProgress !== "boolean") ||
+      (s.queuedTests !== undefined &&
+        (!Array.isArray(s.queuedTests) ||
+          s.queuedTests.length > 100 ||
+          !s.queuedTests.every(
+            (q) =>
+              record(q) &&
+              s.partyOrder.includes(q.actor) &&
+              record(q.test) &&
+              ["willpower", "intellect", "combat", "agility"].includes(
+                q.test.skill,
+              ) &&
+              [q.test.difficulty, q.test.base, q.test.bonus].every((n) =>
+                integer(n),
+              ) &&
+              typeof q.test.title === "string" &&
+              typeof q.test.kind === "string" &&
+              q.test.stage === "commit" &&
+              Array.isArray(q.test.committed) &&
+              q.test.committed.length === 0 &&
+              Array.isArray(q.test.tokens) &&
+              q.test.tokens.length === 0 &&
+              Number.isFinite(q.test.modifier),
+          )))
+    )
+      return false;
+    if (
+      (s.peril !== undefined && !s.partyOrder.includes(s.peril)) ||
+      (s.limbo !== undefined &&
+        (!instances(s.limbo) ||
+          !s.limbo.every((c) => s.partyOrder.includes(c.owner)) ||
+          new Set(s.limbo.map((c) => c.id)).size !== s.limbo.length ||
+          s.limbo.some((c) =>
+            party.some((p) =>
+              [...p.hand, ...p.deck, ...p.discard, ...p.assets].some(
+                (x) => x.id === c.id,
+              ),
+            ),
+          )))
+    )
+      return false;
+    if (
       !integer(s.eventSerial, 0, 1000000) ||
       !Array.isArray(s.eventHistory) ||
       s.eventHistory.length > 500 ||
@@ -246,6 +289,8 @@ export function validSave(x: unknown): x is GameState {
       return false;
     if (
       !record(s.campaign) ||
+      (s.campaign.armitageBearer !== undefined &&
+        !s.partyOrder.includes(s.campaign.armitageBearer)) ||
       !Array.isArray(s.campaign.notes) ||
       !s.campaign.notes.every((n) => typeof n === "string") ||
       ![
@@ -283,9 +328,15 @@ export function validSave(x: unknown): x is GameState {
           integer(n),
         ) ||
         !Array.isArray(s.test.committed) ||
-        !s.test.committed.every((id) =>
-          party.some((p) => p.hand.some((c) => c.id === id)),
+        !s.test.committed.every(
+          (id) =>
+            party.some((p) => p.hand.some((c) => c.id === id)) ||
+            s.limbo?.some((c) => c.id === id),
         ) ||
+        (s.test.addedSkill !== undefined &&
+          !["willpower", "intellect", "combat", "agility"].includes(
+            s.test.addedSkill,
+          )) ||
         !Array.isArray(s.test.tokens) ||
         !Number.isFinite(s.test.modifier))
     )
@@ -338,7 +389,32 @@ export function decodeSave(value: unknown): GameState | null {
       x.eventHistory = [];
       x.eventSerial = 0;
     }
-    return validSave(x) ? x : null;
+    if (!validSave(x)) return null;
+    // Older saves kept committed cards in hand and had no persistent test scope.
+    const pending = [
+      x.test,
+      ...x.queue
+        .filter((e) => e.kind === "resumeTest")
+        .map((e) => e.data?.test),
+    ].filter((t) => record(t) && Array.isArray(t.committed)) as {
+      committed: string[];
+    }[];
+    for (const t of pending)
+      for (const id of t.committed) {
+        const owner = [x.player, ...x.companions].find((p) =>
+          p.hand.some((c) => c.id === id),
+        );
+        if (!owner) continue;
+        const index = owner.hand.findIndex((c) => c.id === id);
+        const [c] = owner.hand.splice(index, 1);
+        (x.limbo ||= []).push({ ...c, owner: owner.code });
+      }
+    if (
+      x.testInProgress === undefined &&
+      (pending.length > 0 || x.queue.some((e) => e.kind === "endTest"))
+    )
+      x.testInProgress = true;
+    return x;
   } catch {
     return null;
   }

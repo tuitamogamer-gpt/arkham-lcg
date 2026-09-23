@@ -496,7 +496,10 @@ test("three investigators can pay the library objective, choose Armitage, and fi
   for (let i = 0; i < 5; i++)
     s = settle(
       reduceGame(s, { type: "act", kind: "clueDamage", target: boss.id }),
-      { "The masked pursuer falls": "save" },
+      {
+        "The masked pursuer falls": "save",
+        "Choose Armitage’s bearer": "12001",
+      },
     );
   assert.equal(s.status, "resolution");
   assert.equal(s.campaign.result, "saved");

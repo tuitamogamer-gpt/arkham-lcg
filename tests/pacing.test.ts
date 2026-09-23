@@ -210,7 +210,7 @@ test("draw events show only the card actually drawn, never the next card in the 
   assert.ok(!JSON.stringify(s.eventHistory).includes("12045"));
   assert.equal(s.player.deck[0].id, "future");
 });
-test("reshuffling an empty player deck pauses before its horror and replacement draw", () => {
+test("reshuffling pauses before the simultaneous replacement draw and horror", () => {
   let s = ready();
   s.player.deck = [];
   s.player.discard = [{ id: "replacement", code: C(89) }];
@@ -221,13 +221,10 @@ test("reshuffling an empty player deck pauses before its horror and replacement 
   assert.equal(s.player.horror, 0);
   assert.equal(s.player.hand.length, 0);
   s = next(s);
-  assert.equal(s.event?.title, "Damage and horror resolved");
+  assert.equal(s.event?.title, "Cards drawn and horror resolved");
   assert.equal(s.player.horror, 1);
-  assert.equal(s.player.hand.length, 0);
-  s = next(s);
-  assert.equal(s.event?.title, "Card drawn");
-  assert.equal(s.event?.card, C(89));
   assert.equal(s.player.hand[0].id, "replacement");
+  assert.ok(s.event?.changes.some((c) => c.label.includes("Emergency Cache")));
 });
 test("forced damage keeps its source card and pauses before resuming a boosted test", () => {
   let s = ready(["12007"]);
@@ -270,7 +267,7 @@ test("fire identifies its source and owner before injury and the enemy phase can
   s = next(s);
   assert.equal(s.event?.title, "Fire damage");
   assert.equal(s.event?.card, C(129));
-  assert.equal(s.event?.actor, "12001");
+  assert.equal(s.event?.actor, "scenario");
   assert.match(s.event!.description, /Daniela Reyes/);
   assert.equal(s.player.damage, 0);
   assert.equal(s.round, 1);

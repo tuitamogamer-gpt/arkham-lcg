@@ -38,6 +38,7 @@ export function visibleSnapshot(s: GameState) {
     enemies: s.enemies,
     locations: s.locations,
     logId: s.log.at(-1)?.id || 0,
+    limbo: s.limbo || [],
   });
 }
 export type VisibleSnapshot = ReturnType<typeof visibleSnapshot>;
@@ -102,7 +103,9 @@ export function visibleChanges(
             ? "In play"
             : p.discard.some((v) => v.id === c.id)
               ? "Discarded"
-              : "Leaves hand",
+              : s.limbo?.some((v) => v.id === c.id)
+                ? "Resolving (limbo)"
+                : "Leaves hand",
         ),
       );
     for (const c of p.threats.filter((c) => !prev.threats.includes(c)))
@@ -151,6 +154,18 @@ export function visibleChanges(
         change(`${name(p.code)} · ${name(a.code)}`, "In play", "Leaves play"),
       );
   }
+  for (const c of before.limbo)
+    if (
+      !after.limbo.some((x) => x.id === c.id) &&
+      after.party.some((p) => p.discard.some((x) => x.id === c.id))
+    )
+      changes.push(
+        change(
+          `${name(c.owner)} · ${name(c.code)}`,
+          "Resolving (limbo)",
+          "Discarded",
+        ),
+      );
   for (const l of after.locations) {
     const old = before.locations.find((v) => v.code === l.code)!;
     if (!old.active && l.active)
@@ -273,6 +288,12 @@ export function presentEffect(
     drawSearchedEnemy: "Encounter revealed",
     revelation: "Revelation resolves",
     drawOne: e.title || "Card drawn",
+    drawBatch: e.title || "Card drawn",
+    drawnCard: "Drawn card resolves",
+    endTest: "Skill test complete",
+    finishLimbo: "Event complete",
+    exhaustEnemy: "Enemy exhausts",
+    defeat: e.title || "Investigator defeated",
     attack:
       e.source === "enemy"
         ? "Enemy attack"
@@ -285,8 +306,11 @@ export function presentEffect(
     engagement: "Enemy engagement",
     assignEngagement: "Enemy engagement",
     damage: "Damage assignment",
-    applyDamage: "Damage and horror resolved",
+    applyDamage: e.data?.drawCards
+      ? "Cards drawn and horror resolved"
+      : "Damage and horror resolved",
     fireDamage: "Fire damage",
+    fireLocation: "Fire damage",
     enemyDamage: "Enemy damaged",
     fireEnemies: "Fire burns the enemies",
     fire: "Fire spreads",
@@ -387,6 +411,7 @@ export function presentEffect(
       "newRound",
       "investigation",
       "fireEnemies",
+      "fireLocation",
     ].includes(e.kind)
       ? "scenario"
       : s.player.code,

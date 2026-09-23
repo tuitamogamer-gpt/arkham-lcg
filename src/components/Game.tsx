@@ -40,6 +40,7 @@ import {
   enemyHealth,
   canSwitch,
   commitOwner,
+  commitCards,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
 import {
@@ -704,16 +705,29 @@ export function Game({
                     Wrench · provoke {card(e.code).name}
                   </Button>
                 ))}
-            {s.player.threats.map((c) => (
-              <Button
-                secondary
-                key={c}
-                disabled={!!canAct(s, "removeThreat", c)}
-                onClick={() => a("removeThreat", c)}
-              >
-                Remove {card(c).name} · 2 actions
-              </Button>
-            ))}
+            {roster
+              .filter(
+                (p) =>
+                  p.status === "active" && p.location === s.player.location,
+              )
+              .flatMap((p) =>
+                p.threats
+                  .filter((c) => ["12125", "12103", "12104"].includes(c))
+                  .map((c) => (
+                    <Button
+                      secondary
+                      key={`${p.code}-${c}`}
+                      disabled={!!canAct(s, "removeThreat", c, p.code)}
+                      onClick={() => a("removeThreat", c, p.code)}
+                    >
+                      Remove {card(c).name}
+                      {p.code !== s.player.code
+                        ? ` (${card(p.code).name})`
+                        : ""}{" "}
+                      · 2 actions
+                    </Button>
+                  )),
+              )}
           </div>
           {s.enemies.some(
             (e) =>
@@ -962,7 +976,7 @@ export function Game({
             <p>
               {s.player.actions === 0
                 ? "End this investigator’s turn to pass control. The enemy phase begins after everyone has finished."
-                : engaged(s).length
+                : engaged(s).some((e) => !e.exhausted)
                   ? "An enemy is engaged with you. Fight, evade, or parley before taking other actions to avoid its attack."
                   : actText[s.act - 1]}
             </p>
@@ -1056,8 +1070,12 @@ export function Game({
             <>
               <p className="test-instructions">
                 Commit matching cards to improve your odds. Committed cards are
-                discarded after the test. Each teammate at your location may
-                contribute one card.
+                discarded after the test.{" "}
+                {s.peril === s.player.code
+                  ? "Peril: teammates cannot play cards, trigger abilities, or help with this test."
+                  : s.peril
+                    ? `Peril: only ${card(s.peril).name} may trigger abilities while that encounter resolves.`
+                    : "Each teammate at your location may contribute one card."}
               </p>
               <div className="commit-list">
                 {roster
@@ -1065,7 +1083,7 @@ export function Game({
                     (p) =>
                       p.status === "active" && p.location === s.player.location,
                   )
-                  .flatMap((p) => p.hand)
+                  .flatMap((p) => commitCards(s, p))
                   .filter((c) => commitValue(s, c.id) > 0)
                   .map((c) => (
                     <button
@@ -1094,7 +1112,9 @@ export function Game({
               </div>
               {s.player.hand.every((c) => commitValue(s, c.id) === 0) && (
                 <p className="muted centered">
-                  No matching cards in your hand.
+                  {s.test.committed.length
+                    ? "No more matching cards in your hand."
+                    : "No matching cards in your hand."}
                 </p>
               )}
               <div className="boost-list">
@@ -1114,7 +1134,10 @@ export function Game({
                     <Button
                       key={a.id}
                       secondary
-                      disabled={s.player.resources < 1}
+                      disabled={
+                        s.player.resources < 1 ||
+                        (!!s.peril && s.peril !== s.player.code)
+                      }
                       onClick={() => dispatch({ type: "boost", id: a.id })}
                     >
                       {card(a.code).name} · pay 1 resource

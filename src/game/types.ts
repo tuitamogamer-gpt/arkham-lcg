@@ -105,6 +105,7 @@ export interface Test {
   target?: string;
   source?: string;
   committed: string[];
+  addedSkill?: Skill;
   stage: "commit" | "revealed";
   tokens: string[];
   modifier: number;
@@ -183,6 +184,11 @@ export interface GameState {
   flags: Record<string, boolean | number>;
   bag: string[];
   queue: Effect[];
+  // Optional for compatibility with saves made before the July-rules audit.
+  limbo?: (Instance & { owner: string })[];
+  peril?: string;
+  testInProgress?: boolean;
+  queuedTests?: { actor: string; test: Test }[];
   event: VisibleEvent | null;
   eventHistory: VisibleEvent[];
   eventSerial: number;
@@ -192,6 +198,7 @@ export interface GameState {
   error: string | null;
   victory: string[];
   campaign: {
+    armitageBearer?: string;
     notes: string[];
     xp: number;
     physicalTrauma: number;

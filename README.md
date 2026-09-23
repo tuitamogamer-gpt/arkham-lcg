@@ -33,9 +33,9 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. Dexter Drake, Isabelle Barnes, Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
 
-The engine scripts these three fixed starter decks. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Event checkpoints control progression and present results; they do not introduce additional rules timing windows or undo effects. Simultaneous forced triggers currently resolve in a deterministic order rather than letting the player reorder them. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback. The remaining investigator automatically becomes lead if the lead is eliminated; with two survivors, the first in party order becomes lead.
+The engine scripts these three fixed starter decks. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Event checkpoints control progression and present results; they do not introduce additional rules timing windows or undo effects. Enemy attack order and a replacement lead are chosen by the player. Simultaneous forced triggers and test results still resolve in a deterministic order. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback.
 
-The next rule-completeness pass should add general timing windows, selection of a replacement lead, and ordering for simultaneous triggers. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, 115 passing tests, and remaining rules gaps. The next rules pass should add general player windows, choice of simultaneous-trigger/result order, and complete encounter-deck reset boundaries. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen.
 
 ## Data sources
 
@@ -59,6 +59,7 @@ Official references:
 - [2026 release announcement](https://www.arkhamhorror.com/news/ah-tcg-new-core-set-now-available/)
 - [2026 rulebook](https://images-cdn.fantasyflightgames.com/filer_public/0e/d0/0ed09507-1705-47ed-a630-cd15885cabb0/ahc100_rulebook-web.pdf), including Daniela, Joe, and Trish’s starter lists (pp. 25–27).
 - [Brethren of Ash campaign guide](https://images-cdn.fantasyflightgames.com/filer_public/f0/22/f022ac7c-9c30-4521-ac16-1f74f00e1d31/ahc100_campaign_guide-web.pdf), setup and resolutions (pp. 2–4).
+- [Arkham Grimoire v1.1](https://images-cdn.fantasyflightgames.com/filer_public/b6/ac/b6ac3b87-f5af-4d4c-b036-f7c51ced063d/arkham_grimoire_v11_web_1.pdf), including July 2026 errata and FAQ.
 
 ## Architecture and verification
 
@@ -70,6 +71,7 @@ Official references:
 - `tests/`: rules regressions, save validation and explicit checkpoint tests. Existing rules tests acknowledge presentation checkpoints through `tests/helpers.ts`; pacing tests exercise the reducer directly.
 - `scripts/browser-check.mjs` and `scripts/party-browser-check.mjs`: real Chromium interaction checks and desktop/mobile captures.
 - `scripts/pacing-browser-check.mjs`: explicit confirmation, table/card/history inspection, phase progression, saved pauses and desktop layout checks. Older broad browser flows explicitly acknowledge checkpoints with `scripts/browser-pacing.mjs`.
+- `scripts/rules-browser-check.mjs`: multiplayer damage allocation, Peril, limbo/reload, attack ordering, elder-sign timing and queued-test checks.
 - `window.render_game_to_text()`: concise observable game state for automation.
 - `window.advanceTime(ms)`: deterministic compatibility hook; game state changes only on user actions.
 
@@ -80,6 +82,7 @@ npm run build
 node scripts/browser-check.mjs
 DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
 node --import tsx scripts/pacing-browser-check.mjs
+node --import tsx scripts/rules-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
