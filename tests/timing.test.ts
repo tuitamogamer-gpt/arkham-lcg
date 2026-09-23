@@ -260,6 +260,7 @@ test("multiple Fire locations resolve in the chosen order, before enemy phase", 
   s = reduceGame(s, { type: "continue", eventId: s.event!.id });
   assert.equal(member(s, D).damage, 1);
   assert.equal(member(s, J).damage, 0);
+  assert.equal(s.event?.actor, "scenario");
 });
 
 test("the lead orders simultaneous scenario Forced abilities for the affected investigator", () => {

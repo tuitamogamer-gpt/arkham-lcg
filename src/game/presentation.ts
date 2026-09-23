@@ -411,16 +411,17 @@ export function presentEffect(
                     : "Return to investigation",
     },
     true,
-    [
-      "investigationEnd",
-      "enemyPhase",
-      "upkeep",
-      "roundEnd",
-      "newRound",
-      "investigation",
-      "fireEnemies",
-      "fireLocation",
-    ].includes(e.kind)
+    e.actor === "scenario" ||
+      [
+        "investigationEnd",
+        "enemyPhase",
+        "upkeep",
+        "roundEnd",
+        "newRound",
+        "investigation",
+        "fireEnemies",
+        "fireLocation",
+      ].includes(e.kind)
       ? "scenario"
       : s.player.code,
   );
