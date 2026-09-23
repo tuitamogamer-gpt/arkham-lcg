@@ -37,7 +37,7 @@ This is a **playable first-scenario implementation**, not a completed implementa
 
 The engine scripts these three fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, **141 passing tests**, and the limits of that coverage. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, **142 passing tests**, and the limits of that coverage. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 

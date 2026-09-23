@@ -221,7 +221,11 @@ try {
   s.encounterDiscard = ["12129"];
   s.bag = ["elder_thing"];
   s = run(s, [{ kind: "encounter" }]);
+  // Simulate the previous production version's save format mid-encounter.
+  delete s.resolutionDepth;
+  s.queue = s.queue.filter((e) => e.kind !== "endResolution");
   await load(s);
+  assert.equal((await saved()).resolutionDepth, 1);
   await click(dialog().getByRole("button", { name: /willpower/ }));
   assert.equal((await saved()).encounterDeck.length, 0);
   await reload();

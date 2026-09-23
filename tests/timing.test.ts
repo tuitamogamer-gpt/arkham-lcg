@@ -528,3 +528,34 @@ test("a reaction that becomes affordable during another reaction remains availab
   assert.equal(s.player.resources, 1);
   assert.equal(s.decision?.title, "Lesson Learned");
 });
+
+test("older v3 encounter saves restore a boundary around their pending revelation and test", () => {
+  for (const pause of ["revealed", "test"]) {
+    let s = fixture([J]);
+    s.encounterDeck = [C(130)];
+    s.encounterDiscard = [C(129)];
+    if (pause === "revealed") {
+      s.encounterDeck = [];
+      s.queue = [{ kind: "revelation", code: C(130), actor: J }];
+    } else {
+      s = run(s, { kind: "encounter" });
+      s = choose(s, "willpower");
+    }
+    delete s.resolutionDepth;
+    s.queue = s.queue.filter((e) => e.kind !== "endResolution");
+    s = decodeSave(JSON.parse(JSON.stringify(s)))!;
+    assert.ok(s);
+    assert.equal(s.resolutionDepth, 1);
+    if (pause === "revealed") {
+      s = run(s, { kind: "restoreTurn" });
+      assert.equal(s.decision?.title, "Noxious Smoke");
+      s = choose(s, "willpower");
+    }
+    assert.deepEqual(s.encounterDeck, []);
+    assert.deepEqual(s.encounterDiscard, [C(129)]);
+    s = step(s, { type: "reveal" });
+    s = step(s, { type: "resolve" });
+    assert.deepEqual([...s.encounterDeck].sort(), [C(129), C(130)]);
+    assert.equal(s.resolutionDepth, 0);
+  }
+});

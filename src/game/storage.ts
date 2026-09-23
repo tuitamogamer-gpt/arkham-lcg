@@ -444,6 +444,20 @@ export function decodeSave(value: unknown): GameState | null {
       (pending.length > 0 || x.queue.some((e) => e.kind === "endTest"))
     )
       x.testInProgress = true;
+    // Pre-window v3 saves have no enclosing resolution marker. Restore that
+    // boundary around an already drawn encounter/event, so an empty deck is
+    // not shuffled before its pending revelation or test completes.
+    if (x.resolutionDepth === undefined) {
+      let after = -1;
+      x.queue.forEach((e, i) => {
+        if (["revelation", "endEncounter", "finishLimbo"].includes(e.kind))
+          after = i + 1;
+      });
+      if (after >= 0) {
+        x.resolutionDepth = 1;
+        x.queue.splice(after, 0, { kind: "endResolution", actor: "scenario" });
+      }
+    }
     return x;
   } catch {
     return null;
