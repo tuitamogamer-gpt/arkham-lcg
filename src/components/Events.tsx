@@ -106,8 +106,11 @@ export function EventController({
         <div className={`event-body ${source ? "has-card" : ""}`}>
           {source && (
             <aside className="event-source">
-              <CardFace c={source} onClick={() => inspect(source.code)} />
-              <span>{source.name}</span>
+              <CardFace
+                c={source}
+                compact
+                onClick={() => inspect(source.code)}
+              />
               <button onClick={() => inspect(source.code)}>
                 Inspect full card <Eye size={14} />
               </button>

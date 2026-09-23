@@ -1032,7 +1032,7 @@ export function Game({
         </Modal>
       )}
       {s.test && !s.event && (
-        <Modal title={s.test.title}>
+        <Modal title={s.test.title} compact>
           <div className="modal-intro">
             <div className="eyebrow">
               {member.name} · {s.test.skill} test
@@ -1177,7 +1177,7 @@ export function Game({
         </Modal>
       )}
       {s.decision && !s.test && !s.event && (
-        <Modal title={s.decision.title}>
+        <Modal title={s.decision.title} compact>
           <div className="modal-intro">
             <div className="eyebrow">{member.name} · The choice is yours</div>
             <h2>{s.decision.title}</h2>
@@ -1202,6 +1202,7 @@ export function Game({
       {endConfirm && (
         <Modal
           title="End investigation turn"
+          compact
           onClose={() => setEndConfirm(false)}
         >
           <div className="modal-intro">
@@ -1209,7 +1210,7 @@ export function Game({
             <h2>End your turn?</h2>
             <p>
               You have {s.player.actions} unused action
-              {s.player.actions === 1 ? "" : "s"}.
+              {s.player.actions === 1 ? "" : "s"}.{" "}
               {roster.some(
                 (p) =>
                   p.code !== s.player.code &&

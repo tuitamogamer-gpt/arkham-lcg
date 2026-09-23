@@ -62,3 +62,11 @@ Original prompt: I want to create fully playable and scripted Arkham Horror LCG.
 - Chromium checks passed attack/damage ordering, no timer progression, locked controls, paused table and card inspection, event history, phase checkpoints, encounter reveal before effects, reload, export/import, and independent party encounters. Continue remains visible at 1280×800 and 1440×1000; screenshots were visually reviewed. Existing solo and three-investigator desktop browser flows also passed after adapting their explicit confirmations.
 - The develop-web-game Playwright client ran and its capture was reviewed. TypeScript and production build pass. Further verification and deployment evidence are kept under ignored `output/` files.
 - Scope remains the scripted first scenario with Joe, Daniela and Trish. Presentation checkpoints do not add arbitrary fast-action timing windows, simultaneous-trigger ordering, later scenarios, or network play.
+
+## Compact desktop action dialogs — 23 September 2026
+
+- User found too much empty space in action popups. Reduced event windows from 920px to 760px wide, with 640px windows for events without a source card. Tightened header/body/footer spacing and reduced the card preview to 140×200px with full-card inspection available.
+- Removed the duplicate name below card previews and added a compact variant for skill tests, decisions and end-turn confirmations. Text and controls remain grouped, with content-driven heights.
+- Visual comparison: the damage result window is 452px tall instead of 646px (30% shorter). Resource results are 343px, choice windows 248px, and end-turn confirmation 229px. Encounter text and Continue fit at 1280×800 and 1440×1000.
+- Verified actual gameplay captures, card-text expansion, skill commitment/result, reactions and confirmations with no browser errors. Existing pacing browser checks and the develop-web-game client pass; TypeScript and production build pass. Release evidence is recorded under ignored `output/popup-layout/`.
+- Continue with the previously documented scenario/content milestones; desktop remains the current design priority.

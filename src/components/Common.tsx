@@ -67,11 +67,13 @@ export function Modal({
   title,
   onClose,
   wide = false,
+  compact = false,
 }: {
   children: ReactNode;
   title: string;
   onClose?: () => void;
   wide?: boolean;
+  compact?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -122,7 +124,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`modal ${wide ? "wide" : ""}`}
+        className={`modal ${wide ? "wide" : ""} ${compact ? "compact" : ""}`}
         ref={ref}
         tabIndex={-1}
       >

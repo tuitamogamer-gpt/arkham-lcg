@@ -1623,6 +1623,61 @@ select {
 .modal-footer {
   border-color: #a49b5c3b;
 }
+/* Action dialogs size to their content, keeping related controls close. */
+@media (min-width: 851px) {
+  .modal.compact {
+    padding: 24px;
+  }
+  .modal.compact .modal-intro {
+    margin: 0 0 16px;
+  }
+  .modal.compact .modal-intro h2 {
+    font-size: 31px;
+    margin: 8px 0;
+  }
+  .modal.compact .modal-intro p {
+    line-height: 1.65;
+    margin-top: 8px;
+  }
+  .modal.compact .modal-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+  .modal.compact .test-values {
+    padding: 12px 0;
+    margin: 12px 0;
+  }
+  .modal.compact .test-values strong {
+    font-size: 36px;
+  }
+  .modal.compact .commit-list {
+    margin: 10px 0 14px;
+  }
+  .modal.compact .commit-list:empty {
+    display: none;
+  }
+  .modal.compact .boost-list {
+    margin: 12px 0;
+  }
+  .modal.compact .token-reveal {
+    margin: 16px 0;
+  }
+  .modal.compact .test-outcome {
+    margin: 16px 0;
+  }
+  .modal.compact .test-outcome h2 {
+    font-size: 28px;
+  }
+  .modal.compact .test-footnote {
+    margin-top: 9px;
+  }
+  .modal.compact .decision-list {
+    gap: 8px;
+  }
+  .modal.compact .decision-list > button {
+    padding: 12px 14px;
+  }
+}
 .test-values {
   background: #0b1b11;
   border-color: #b5a65e40;
@@ -2967,10 +3022,13 @@ select {
   font-size: 10px;
 }
 .modal:has(.event-window) {
-  width: 920px;
+  width: 760px;
   max-width: calc(100vw - 70px);
   padding: 0;
   overflow: hidden;
+}
+.modal:has(.event-body:not(.has-card)) {
+  width: 640px;
 }
 .event-window {
   display: flex;
@@ -2979,12 +3037,12 @@ select {
   background: linear-gradient(125deg, #233226, #111f18);
 }
 .event-header {
-  padding: 26px 32px 21px;
+  padding: 18px 24px 15px;
   border-bottom: 1px solid #ad93503d;
 }
 .event-meta {
   display: flex;
-  gap: 18px;
+  gap: 14px;
   align-items: center;
   flex-wrap: wrap;
   color: #9da98e;
@@ -3001,42 +3059,37 @@ select {
 }
 .event-header h2 {
   color: #e6d7b4;
-  font-size: 39px;
+  font-size: 31px;
   line-height: 1.1;
-  margin: 14px 0 7px;
+  margin: 10px 0 5px;
 }
 .event-header > p {
   font-size: 12px;
   color: #bfae7e;
 }
 .event-body {
-  padding: 25px 32px;
+  padding: 18px 24px;
   overflow-y: auto;
   scrollbar-width: thin;
   min-height: 0;
 }
 .event-body.has-card {
   display: grid;
-  grid-template-columns: 215px minmax(0, 1fr);
-  gap: 30px;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
 }
 .event-source {
   display: flex;
   align-items: center;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
 }
 .event-source .card-face {
-  width: 210px;
-  height: 298px;
+  width: 140px;
+  height: 200px;
   flex-shrink: 0;
   box-shadow: 0 13px 27px #0007;
-}
-.event-source > span {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 22px;
-  color: #d6c79c;
-  text-align: center;
 }
 .event-source > button:last-child {
   display: flex;
@@ -3049,15 +3102,18 @@ select {
 .event-description {
   color: #d0ccb4;
   font-size: 14px;
-  line-height: 1.8;
-  margin-bottom: 18px;
+  line-height: 1.65;
+  margin-bottom: 12px;
+}
+.event-story > :last-child {
+  margin-bottom: 0;
 }
 .event-rules {
-  padding: 13px 15px;
+  padding: 10px 12px;
   background: #060e0a45;
   border: 1px solid #8f986036;
   border-radius: 3px;
-  margin: 16px 0;
+  margin: 12px 0;
 }
 .event-rules summary {
   color: #c6b685;
@@ -3067,16 +3123,16 @@ select {
 .event-rules p {
   white-space: pre-line;
   font-family: "Cormorant Garamond", serif;
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1.4;
   color: #c9c8b1;
-  margin: 12px 0 0;
+  margin: 10px 0 0;
 }
 .event-changes > .eyebrow {
   display: block;
   color: #bca675;
   font-size: 8px;
-  margin: 20px 0 8px;
+  margin: 14px 0 5px;
 }
 .event-change {
   display: grid;
@@ -3084,7 +3140,7 @@ select {
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid #9ba77424;
-  padding: 9px 0;
+  padding: 7px 0;
   font-size: 12px;
   line-height: 1.4;
   color: #aeb89d;
@@ -3110,7 +3166,7 @@ select {
   color: #e0d19f;
 }
 .event-footer {
-  padding: 20px 32px;
+  padding: 14px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3122,7 +3178,7 @@ select {
   display: block;
   font-size: 10px;
   color: #98a58c;
-  margin-bottom: 9px;
+  margin-bottom: 6px;
 }
 .event-table-button {
   color: #c2bd95;
@@ -3137,7 +3193,7 @@ select {
   gap: 16px;
   flex-shrink: 0;
   justify-content: center;
-  min-width: 225px;
+  min-width: 205px;
   font-size: 12px;
 }
 .event-awaiting {
@@ -3145,7 +3201,7 @@ select {
   gap: 10px;
   color: #a79d78;
   background: #98804b12;
-  padding: 13px;
+  padding: 10px 12px;
   font-size: 11px;
   line-height: 1.6;
 }
