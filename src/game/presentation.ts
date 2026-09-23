@@ -281,6 +281,12 @@ export function presentEffect(
     investigationEnd: "Investigation phase complete",
     enemyPhase: "Enemy phase",
     upkeep: "Upkeep phase",
+    readyCards: "Cards ready",
+    endResolution: "Encounter deck reshuffled",
+    resumeWindow:
+      s.test?.stage === "revealed"
+        ? "Chaos token revealed"
+        : "Fast ability resolved",
     roundEnd: "End of round",
     newRound: `Mythos · Round ${s.round}`,
     investigation: "Investigation phase",
@@ -392,15 +398,17 @@ export function presentEffect(
         ? "Resolve revelation"
         : e.kind === "attack"
           ? "Resolve attack"
-          : s.test
-            ? "Continue to skill test"
-            : s.decision
-              ? "Continue to choice"
-              : s.queue.length
-                ? "Continue to next event"
-                : s.status === "resolution"
-                  ? "View scenario resolution"
-                  : "Return to investigation",
+          : s.window
+            ? "Continue to Fast window"
+            : s.test
+              ? "Continue to skill test"
+              : s.decision
+                ? "Continue to choice"
+                : s.queue.length
+                  ? "Continue to next event"
+                  : s.status === "resolution"
+                    ? "View scenario resolution"
+                    : "Return to investigation",
     },
     true,
     [
@@ -437,7 +445,8 @@ export function presentAction(
   if (!changes.length && !notes.length && action.type !== "switchInvestigator")
     return;
   const title =
-    action.type === "reveal"
+    action.type === "reveal" ||
+    (action.type === "passWindow" && s.test?.stage === "revealed")
       ? "Chaos token revealed"
       : action.type === "resolve"
         ? "Skill test resolved"
@@ -453,7 +462,9 @@ export function presentAction(
                   ? `Action · ${action.kind}`
                   : action.type === "endTurn"
                     ? "Investigator turn complete"
-                    : "Card played";
+                    : action.type === "fast"
+                      ? "Fast ability resolved"
+                      : "Card played";
   rememberEvent(
     s,
     {
@@ -463,11 +474,13 @@ export function presentAction(
         `${name(s.player.code)} · ${title.toLowerCase()}.`,
       tone: "neutral",
       changes,
-      continueLabel: s.test
-        ? "Continue to skill test"
-        : s.decision
-          ? "Continue to choice"
-          : "Return to investigation",
+      continueLabel: s.window
+        ? "Continue to Fast window"
+        : s.test
+          ? "Continue to skill test"
+          : s.decision
+            ? "Continue to choice"
+            : "Return to investigation",
     },
     !s.test &&
       !s.decision &&

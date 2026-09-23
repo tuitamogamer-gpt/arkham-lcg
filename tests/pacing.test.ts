@@ -90,6 +90,9 @@ test("ending a turn pauses at phase boundaries before upkeep or the next mythos 
   assert.equal(s.player.resources, 5);
   assert.equal(s.player.deck.length, 1);
   s = next(s);
+  assert.equal(s.event?.title, "Cards ready");
+  assert.equal(s.player.deck.length, 1);
+  s = next(s);
   assert.equal(s.event?.title, "Card drawn");
   assert.equal(s.player.resources, 5);
   assert.equal(s.player.hand[0].code, C(89));
@@ -240,6 +243,9 @@ test("forced damage keeps its source card and pauses before resuming a boosted t
     },
   ];
   s = reduceGame(s, { type: "act", kind: "investigate" });
+  assert.equal(s.window?.timing, "beforeCommit");
+  while (s.event) s = next(s);
+  s = reduceGame(s, { type: "passWindow" });
   assert.equal(s.test?.stage, "commit");
   s = reduceGame(s, { type: "boost", id: "booster" });
   assert.equal(s.event?.title, "Damage and horror resolved");

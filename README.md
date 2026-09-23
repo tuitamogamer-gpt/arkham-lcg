@@ -20,6 +20,8 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - Shared rounds, one encounter per investigator, party-scaled clues and boss health, group clue contributions, nearby skill assistance, owned enemy engagements and friendly fire. Defeated or resigned investigators leave while the others continue.
 - One-time opening mulligan; three-action turns; resources, draw, movement, investigation, combat, evasion and parley.
 - Skill-card commitment; optional resource boosts; seeded chaos bag draws without replacement within a test; skull, tablet, elder thing, elder sign and auto-fail effects; all four difficulties.
+- Explicit Fast windows before/after commitment, after mythos encounters, between investigators' enemy attacks and before upkeep readying. Use **Fast abilities · all investigators** between actions. Legal options respect ownership, own-turn restrictions and Peril; passing continues the interrupted sequence.
+- Choose the order of simultaneous scripted Forced effects, Fire locations, Hunter movement, optional reactions and skill-test results. Scenario Forced effects retain priority over player Forced effects. Encounter-deck resets wait for the enclosing effect to finish.
 - Starter asset/event/skill effects, weapon ammo, exhausted assets, slots, discard/search, signature weakness, basic weakness and optional reactions.
 - All first-scenario encounters, fire, hunters, attacks of opportunity, retaliate, doomed, enemy/upkeep/mythos phases, hand limits, damage/horror assignment.
 - Four acts, three agendas, campus reveal progression, Servant of Flame, Dr. Armitage, victory/defeat/resignation, XP, trauma and campaign records.
@@ -33,9 +35,9 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. Dexter Drake, Isabelle Barnes, Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
 
-The engine scripts these three fixed starter decks. Player windows are provided for scripted reactions and skill boosts; arbitrary fast-card play at every timing window is not yet implemented. Event checkpoints control progression and present results; they do not introduce additional rules timing windows or undo effects. Enemy attack order and a replacement lead are chosen by the player. Simultaneous forced triggers and test results still resolve in a deterministic order. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback.
+The engine scripts these three fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, 115 passing tests, and remaining rules gaps. The next rules pass should add general player windows, choice of simultaneous-trigger/result order, and complete encounter-deck reset boundaries. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, **141 passing tests**, and the limits of that coverage. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 
@@ -68,10 +70,11 @@ Official references:
 - `src/game/data.ts`: normalized catalog, three exact starter lists, chaos bags and map connections.
 - `src/game/storage.ts`: guarded local storage, portable version 3 saves, and migration of version 1 and 2 saves without changing the storage key.
 - `src/components/`: game table, campaign home, archive, investigator files and shared dialogs.
-- `tests/`: rules regressions, save validation and explicit checkpoint tests. Existing rules tests acknowledge presentation checkpoints through `tests/helpers.ts`; pacing tests exercise the reducer directly.
+- `tests/`: rules regressions, save validation and explicit checkpoint tests. Legacy rules fixtures acknowledge checkpoints and pass Fast opportunities through `tests/helpers.ts`; timing and pacing tests exercise the reducer directly.
 - `scripts/browser-check.mjs` and `scripts/party-browser-check.mjs`: real Chromium interaction checks and desktop/mobile captures.
 - `scripts/pacing-browser-check.mjs`: explicit confirmation, table/card/history inspection, phase progression, saved pauses and desktop layout checks. Older broad browser flows explicitly acknowledge checkpoints with `scripts/browser-pacing.mjs`.
 - `scripts/rules-browser-check.mjs`: multiplayer damage allocation, Peril, limbo/reload, attack ordering, elder-sign timing and queued-test checks.
+- `scripts/timing-browser-check.mjs`: actual Fast choices, cross-investigator interruptions, ordered results/Forced effects/Fire, saved windows, encounter-reset boundaries, and compact desktop dialogs.
 - `window.render_game_to_text()`: concise observable game state for automation.
 - `window.advanceTime(ms)`: deterministic compatibility hook; game state changes only on user actions.
 
@@ -83,6 +86,7 @@ node scripts/browser-check.mjs
 DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
 node --import tsx scripts/pacing-browser-check.mjs
 node --import tsx scripts/rules-browser-check.mjs
+node --import tsx scripts/timing-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs

@@ -112,6 +112,18 @@ export interface Test {
   success?: boolean;
   margin?: number;
   extraDamage?: number;
+  commitClosed?: boolean;
+}
+export interface PlayerWindow {
+  timing: "phase" | "turn" | "beforeCommit" | "beforeToken";
+  title: string;
+  actor: string;
+  test?: Test;
+}
+export interface TimingGroup {
+  label: string;
+  priority: number;
+  effects: Effect[];
 }
 export interface Investigator {
   code: string;
@@ -189,6 +201,8 @@ export interface GameState {
   peril?: string;
   testInProgress?: boolean;
   queuedTests?: { actor: string; test: Test }[];
+  window?: PlayerWindow;
+  resolutionDepth?: number;
   event: VisibleEvent | null;
   eventHistory: VisibleEvent[];
   eventSerial: number;
@@ -207,6 +221,9 @@ export interface GameState {
   };
 }
 export type Action =
+  | { type: "openWindow" }
+  | { type: "passWindow" }
+  | { type: "fast"; id: string }
   | { type: "continue"; eventId: number }
   | { type: "switchInvestigator"; code: string }
   | { type: "mulligan"; ids: string[] }

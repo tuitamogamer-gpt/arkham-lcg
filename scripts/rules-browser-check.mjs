@@ -71,6 +71,10 @@ async function load(s) {
   await acknowledgeEvents(page);
 }
 const click = (locator) => clickAndAcknowledge(locator, page);
+async function orderResults() {
+  while ((await saved()).decision?.title === "Choose skill test result order")
+    await click(page.locator(".decision-list>button").first());
+}
 try {
   let s = fixture();
   member(s, "12001").assets.push({
@@ -159,6 +163,7 @@ try {
     page.getByRole("button", { name: "Draw from the chaos bag", exact: true }),
   );
   await click(page.getByRole("button", { name: /Resolve.*test/i }));
+  await orderResults();
   assert.ok(
     member(await saved(), "12007").discard.some((c) => c.id === "assist"),
   );
@@ -209,6 +214,7 @@ try {
     .getByRole("button", { name: "Continue investigation", exact: true })
     .click();
   await click(page.getByRole("button", { name: /Resolve.*test/i }));
+  await orderResults();
   assert.equal((await saved()).test.source, "agenda1");
   assert.ok(
     member(await saved(), "12001").discard.some((c) => c.id === "overpower"),

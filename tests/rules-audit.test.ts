@@ -79,6 +79,11 @@ function finishTest(s: GameState) {
   s = reduceGame(s, { type: "reveal" });
   return reduceGame(s, { type: "resolve" });
 }
+function orderResults(s: GameState) {
+  while (s.decision?.title === "Choose skill test result order")
+    s = choose(s, s.decision.choices[0].id);
+  return s;
+}
 
 test("Mutated! horror affects every investigator at the same location", () => {
   let s = ready();
@@ -209,6 +214,7 @@ test("committed cards leave the hand and cannot be reshuffled by their own draw"
   s = decodeSave(JSON.parse(JSON.stringify(s)))!;
   assert.ok(s?.test?.committed.includes(committed));
   s = finishTest(s);
+  s = orderResults(s);
   assert.ok(s.player.hand.some((c) => c.id === "only-discard"));
   assert.ok(s.player.discard.some((c) => c.id === committed));
   assert.ok(!s.player.hand.some((c) => c.id === committed));
@@ -295,9 +301,11 @@ test("Fire applies damage to investigators and assets together before Bandages r
   s = run(s, { kind: "fireDamage" });
   assert.equal(s.player.damage, 1);
   assert.equal(s.player.assets.find((a) => a.id === ally)?.damage, 1);
-  assert.equal(s.decision?.title, "Bandages");
+  assert.equal(s.decision?.title, "Choose damage effect order");
   assert.ok(
-    s.queue.some((e) => e.kind === "bandage" && e.target === ally),
+    s.decision?.choices.some((c) =>
+      c.effects.some((e) => e.kind === "bandage" && e.target === ally),
+    ),
     "ally damage also offers Bandages",
   );
   assert.equal(s.player.assets.find((a) => a.id === bandages)?.uses, 3);
@@ -312,7 +320,7 @@ test("Fire at a location damages the whole party and enemies before offering rea
   assert.ok(party(s).every((p) => p.damage === 1));
   assert.equal(member(s, D).assets.find((a) => a.id === ally)!.damage, 1);
   assert.equal(s.enemies.find((e) => e.id === target)?.damage, 1);
-  assert.equal(s.decision?.title, "Bandages");
+  assert.equal(s.decision?.title, "Choose damage effect order");
 });
 
 test("group horror is assigned to all investigators before it is applied to anyone", () => {
@@ -531,6 +539,7 @@ test("Daniela's elder sign resolves before test results; resulting agenda tests 
   s = decodeSave(JSON.parse(JSON.stringify(s)))!;
   assert.ok(s);
   s = reduceGame(s, { type: "resolve" });
+  s = orderResults(s);
   assert.ok(member(s, D).discard.some((c) => c.id === committed));
   s.bag = ["+1"];
   for (const actor of [D, J, T]) {

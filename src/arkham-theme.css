@@ -1682,6 +1682,23 @@ select {
   background: #0b1b11;
   border-color: #b5a65e40;
 }
+.player-window-list {
+  max-height: min(38vh, 320px);
+  overflow-y: auto;
+}
+.window-test-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #0b1b11;
+  border: 1px solid #b5a65e40;
+  color: #bbba8a;
+}
+.window-test-summary strong {
+  color: #e0d1a2;
+  font-size: 22px;
+}
 .test-values > div {
   color: #bbba8a;
 }

@@ -69,6 +69,30 @@ export function validSave(x: unknown): x is GameState {
       return false;
     const party = [p, ...s.companions];
     if (
+      s.resolutionDepth !== undefined &&
+      (!integer(s.resolutionDepth, 0, 100) ||
+        s.queue.filter((e) => e.kind === "endResolution").length !==
+          s.resolutionDepth)
+    )
+      return false;
+    if (s.window !== undefined) {
+      const w = s.window;
+      if (
+        !record(w) ||
+        !["phase", "turn", "beforeCommit", "beforeToken"].includes(w.timing) ||
+        typeof w.title !== "string" ||
+        !s.partyOrder.includes(w.actor) ||
+        s.test ||
+        s.decision
+      )
+        return false;
+      if (["beforeCommit", "beforeToken"].includes(w.timing) !== !!w.test)
+        return false;
+      if (w.test && w.test.stage !== "commit") return false;
+      if (w.test && !validSave({ ...s, window: undefined, test: w.test }))
+        return false;
+    }
+    if (
       (s.testInProgress !== undefined &&
         typeof s.testInProgress !== "boolean") ||
       (s.queuedTests !== undefined &&
@@ -324,6 +348,8 @@ export function validSave(x: unknown): x is GameState {
         ) ||
         typeof s.test.title !== "string" ||
         typeof s.test.kind !== "string" ||
+        (s.test.commitClosed !== undefined &&
+          typeof s.test.commitClosed !== "boolean") ||
         ![s.test.difficulty, s.test.base, s.test.bonus].every((n) =>
           integer(n),
         ) ||
@@ -393,6 +419,10 @@ export function decodeSave(value: unknown): GameState | null {
     // Older saves kept committed cards in hand and had no persistent test scope.
     const pending = [
       x.test,
+      x.window?.test,
+      ...x.queue
+        .filter((e) => e.kind === "resumeWindow")
+        .map((e) => (e.data?.window as { test?: unknown })?.test),
       ...x.queue
         .filter((e) => e.kind === "resumeTest")
         .map((e) => e.data?.test),

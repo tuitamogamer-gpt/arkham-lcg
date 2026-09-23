@@ -28,6 +28,7 @@ import {
   availableConnections,
   canAct,
   canPlay,
+  fastOptions,
   commitValue,
   engaged,
   location,
@@ -132,6 +133,7 @@ export function Game({
     !!s.event ||
     !!s.test ||
     !!s.decision ||
+    !!s.window ||
     s.status !== "playing" ||
     s.phase !== "investigation";
   const tools = s.player.assets.filter((a) =>
@@ -593,6 +595,13 @@ export function Game({
               End turn <ArrowRight size={17} />
             </button>
           </div>
+          <Button
+            secondary
+            disabled={locked || s.player.turnEnded}
+            onClick={() => dispatch({ type: "openWindow" })}
+          >
+            Fast abilities · all investigators
+          </Button>
           {tools.length > 0 && (
             <div className="tool-selector">
               <label>
@@ -1045,6 +1054,60 @@ export function Game({
           </div>
         </Modal>
       )}
+      {s.window && !s.event && (
+        <Modal title="Player window" compact>
+          <div className="modal-intro">
+            <span className="eyebrow">Fast abilities · {s.phase} phase</span>
+            <h2>{s.window.title}</h2>
+            <p>
+              {s.window.test
+                ? `${card(s.window.actor).name} · ${s.window.test.title}. `
+                : ""}
+              Use an available ability, or pass for the group to continue.
+            </p>
+          </div>
+          {s.window.test && (
+            <p className="window-test-summary">
+              <SkillIcon skill={s.window.test.skill} size={18} />
+              <strong>
+                {testValue({
+                  ...s,
+                  player: roster.find((p) => p.code === s.window!.actor)!,
+                  test: s.window.test,
+                })}
+              </strong>
+              <span>
+                vs {s.window.test.difficulty} difficulty ·{" "}
+                {s.window.test.committed.length} committed
+              </span>
+            </p>
+          )}
+          {s.peril && (
+            <p className="test-instructions">
+              Peril · only {card(s.peril).name} may use abilities.
+            </p>
+          )}
+          <div className="decision-list player-window-list">
+            {fastOptions(s).map((o) => (
+              <button
+                key={o.id}
+                onClick={() => dispatch({ type: "fast", id: o.id })}
+              >
+                <span>
+                  {o.label}
+                  <small>{card(o.actor).name}</small>
+                </span>
+                <ArrowRight size={17} />
+              </button>
+            ))}
+          </div>
+          <div className="modal-footer">
+            <Button onClick={() => dispatch({ type: "passWindow" })}>
+              Pass Fast window <ArrowRight size={17} />
+            </Button>
+          </div>
+        </Modal>
+      )}
       {s.test && !s.event && (
         <Modal title={s.test.title} compact>
           <div className="modal-intro">
@@ -1069,8 +1132,9 @@ export function Game({
           {s.test.stage === "commit" ? (
             <>
               <p className="test-instructions">
-                Commit matching cards to improve your odds. Committed cards are
-                discarded after the test.{" "}
+                {s.test.commitClosed
+                  ? "Commitments are locked. You may use Fast abilities before revealing the token. "
+                  : "Commit matching cards to improve your odds. Using a boost finishes commitment. Cards are discarded after the test. "}
                 {s.peril === s.player.code
                   ? "Peril: teammates cannot play cards, trigger abilities, or help with this test."
                   : s.peril
@@ -1092,6 +1156,7 @@ export function Game({
                         s.test!.committed.includes(c.id) ? "selected" : ""
                       }
                       onClick={() => dispatch({ type: "commit", id: c.id })}
+                      disabled={!!s.test?.commitClosed}
                     >
                       <span className="commit-check">
                         {s.test!.committed.includes(c.id) ? (

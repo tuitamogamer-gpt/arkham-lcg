@@ -290,7 +290,11 @@ test("act 1 advances only at end of round, then sets up fire and the pursuing en
   assert.equal(s.player.clues, 0);
   assert.ok(s.locations.find((l) => l.code === C(113))!.fire);
   assert.equal(s.enemies.find((e) => e.code === C(114))!.location, C(117));
-  assert.equal(s.encounterDiscard.filter((c) => c === C(129)).length, 4);
+  assert.equal(
+    [...s.encounterDeck, ...s.encounterDiscard].filter((c) => c === C(129))
+      .length,
+    4,
+  );
   assert.equal(s.round, 2);
   assert.equal(s.doom, 1);
 });
