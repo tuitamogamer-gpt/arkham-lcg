@@ -197,6 +197,7 @@ export function Home({
             {PLAYABLE_INVESTIGATORS.map((c, i) => (
               <button
                 className={`night-dossier ${card(c).faction_code}`}
+                data-preview-code={c}
                 key={c}
                 onClick={onStart}
               >

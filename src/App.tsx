@@ -28,6 +28,7 @@ import {
   SkillStats,
   Token,
 } from "./components/Common";
+import { CardPreviewLayer } from "./components/Previews";
 import { Home } from "./components/Home";
 import { Game } from "./components/Game";
 import { EventController, EventJournal } from "./components/Events";
@@ -282,6 +283,7 @@ export default function App() {
   ];
   return (
     <div className={`app ${page === "game" ? "in-game" : ""}`}>
+      <CardPreviewLayer game={game} page={page} />
       <aside className="sidebar">
         <button
           className="brand"
@@ -472,6 +474,7 @@ export default function App() {
                   return (
                     <button
                       key={c}
+                      data-preview-code={c}
                       className={`investigator-choice ${investigator.faction_code} ${selected ? "selected" : ""}`}
                       aria-pressed={selected}
                       aria-label={`Select ${investigator.name}`}

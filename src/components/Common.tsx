@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useId, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type MouseEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowUpRight,
@@ -19,7 +25,8 @@ import {
   Heart,
   Shield,
 } from "@phosphor-icons/react";
-import { card, CARD_ART, plain } from "../game/data";
+import { card, CARD_ART, LOCATION_ART, plain } from "../game/data";
+import scans from "../../public/data/art-manifest.json";
 import type { Card, GameState, Skill } from "../game/types";
 import { canInspectCard, canReadReverse } from "../game/knowledge";
 const dialogStack: HTMLElement[] = [];
@@ -43,7 +50,7 @@ export function Button({
   title,
 }: {
   children: ReactNode;
-  onClick?: () => void;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   secondary?: boolean;
   disabled?: boolean;
   arrow?: boolean;
@@ -240,6 +247,7 @@ export function CardFace({
       <button
         className={`card-face official-scan ${["act", "agenda", "investigator"].includes(c.type_code) ? "landscape-scan" : ""} ${compact ? "compact" : ""} ${c.faction_code} ${selected ? "selected" : ""}`}
         aria-label={`Inspect ${c.name}`}
+        data-preview-code={c.code}
         onClick={onClick}
       >
         <img
@@ -256,6 +264,7 @@ export function CardFace({
       onClick={onClick}
       className={`card-face ${c.faction_code} ${compact ? "compact" : ""} ${selected ? "selected" : ""}`}
       aria-label={`Inspect ${c.name}`}
+      data-preview-code={c.code}
     >
       <div className="card-inner">
         <div className="card-top">
@@ -303,6 +312,22 @@ export function CardDetail({
   onClose: () => void;
 }) {
   const c = card(code);
+  const [flipped, setFlipped] = useState(false);
+  useEffect(() => setFlipped(false), [code]);
+  const genericBack =
+    !["investigator", "act", "agenda", "location", "scenario"].includes(
+      c?.type_code,
+    ) && !c?.back_text;
+  const backKind =
+    c?.encounter_code && !["asset", "event", "skill"].includes(c.type_code)
+      ? "encounter"
+      : "player";
+  const backSrc = genericBack
+    ? `/art/backs/${backKind}.png`
+    : (scans as Record<string, string>)[
+        LOCATION_ART[code]?.unrevealed || `${code}b`
+      ];
+  const mayFlip = !!backSrc && (genericBack || canReadReverse(game, code));
   if (!canInspectCard(game, code))
     return (
       <Modal title="Undiscovered card" onClose={onClose}>
@@ -316,7 +341,27 @@ export function CardDetail({
     <Modal title={c.name} onClose={onClose} wide>
       <div className="card-detail">
         <div className="detail-art">
-          <CardFace c={c} />
+          {flipped && mayFlip ? (
+            <img
+              className="detail-card-back"
+              tabIndex={0}
+              src={backSrc}
+              alt={`${c.name} · reverse face`}
+              data-preview-code={genericBack ? undefined : code}
+              data-preview-face="back"
+              data-preview-back={genericBack ? backKind : undefined}
+            />
+          ) : (
+            <CardFace c={c} />
+          )}
+          {mayFlip && (
+            <button
+              className="turn-card-button"
+              onClick={() => setFlipped((value) => !value)}
+            >
+              {flipped ? "Show card front" : "Turn card over"}
+            </button>
+          )}
         </div>
         <div className="detail-copy">
           <div className="eyebrow">
@@ -403,7 +448,7 @@ export function CardDetail({
   );
 }
 
-/** A read-only preview. Pointer hover and keyboard focus never dispatch a game action. */
+/** Metadata consumed by the one shared pointer/keyboard preview layer. */
 export function HoverPreview({
   code,
   title,
@@ -415,103 +460,14 @@ export function HoverPreview({
   text?: string;
   children: ReactNode;
 }) {
-  const id = useId();
-  const [position, setPosition] = useState<{
-    left: number;
-    top: number;
-  } | null>(null);
-  const trigger = useRef<HTMLSpanElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const cancel = () => {
-    clearTimeout(timer.current);
-  };
-  const close = () => {
-    cancel();
-    setPosition(null);
-  };
-  const leave = () => {
-    cancel();
-    timer.current = setTimeout(() => setPosition(null), 150);
-  };
-  const show = (delay = 280) => {
-    cancel();
-    timer.current = setTimeout(() => {
-      const box = trigger.current?.firstElementChild?.getBoundingClientRect();
-      if (!box) return;
-      const width = Math.min(520, window.innerWidth - 24);
-      const left =
-        box.right + width + 18 < window.innerWidth
-          ? box.right + 12
-          : Math.max(12, box.left - width - 12);
-      setPosition({
-        left: Math.min(left, window.innerWidth - width - 12),
-        top: Math.max(
-          12,
-          Math.min(
-            box.top,
-            window.innerHeight - Math.min(480, window.innerHeight - 24) - 12,
-          ),
-        ),
-      });
-    }, delay);
-  };
-  useEffect(() => {
-    const dismiss = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const scroll = () => close();
-    window.addEventListener("keydown", dismiss);
-    window.addEventListener("resize", scroll);
-    window.addEventListener("scroll", scroll);
-    return () => {
-      cancel();
-      window.removeEventListener("keydown", dismiss);
-      window.removeEventListener("resize", scroll);
-      window.removeEventListener("scroll", scroll);
-    };
-  }, []);
-  const c = code ? card(code) : undefined;
   return (
     <span
-      ref={trigger}
       className="hover-trigger"
-      onMouseEnter={() => show()}
-      onMouseLeave={leave}
-      onFocus={() => show(0)}
-      onBlur={leave}
-      onClick={close}
-      aria-describedby={position ? id : undefined}
+      data-preview-code={code}
+      data-preview-title={title}
+      data-preview-text={text}
     >
       {children}
-      {position &&
-        createPortal(
-          <aside
-            id={id}
-            role="tooltip"
-            className={`card-hover ${c ? "with-card" : ""}`}
-            style={position}
-            onMouseEnter={cancel}
-            onMouseLeave={leave}
-          >
-            {c && (
-              <div className="hover-art" aria-hidden="true">
-                <CardFace c={c} compact />
-              </div>
-            )}
-            <div className="hover-copy">
-              <span className="eyebrow">
-                {c ? `${c.type_code} · ${c.faction_code}` : "Campaign log"}
-              </span>
-              <h3>{title || c?.name}</h3>
-              {c?.flavor && <blockquote>{plain(c.flavor)}</blockquote>}
-              <div className="rules-text">
-                <RulesText text={text || c?.text || ""} />
-              </div>
-              {c?.traits && <small>{c.traits}</small>}
-            </div>
-          </aside>,
-          document.body,
-        )}
     </span>
   );
 }

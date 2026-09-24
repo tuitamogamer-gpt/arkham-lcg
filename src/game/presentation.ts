@@ -477,6 +477,11 @@ export function presentEffect(
       title,
       description,
       card: c,
+      motion: {
+        kind: e.kind === "perform" ? e.title || e.kind : e.kind,
+        source: e.id || e.source,
+        target: e.target,
+      },
       story,
       encounter: encounterStage
         ? { stage: encounterStage, destination }
@@ -568,6 +573,7 @@ export function presentAction(
       description:
         notes.map((n) => n.text).join(" ") ||
         `${name(s.player.code)} · ${title.toLowerCase()}.`,
+      motion: { kind: action.type === "act" ? action.kind : action.type },
       tone: "neutral",
       changes,
       continueLabel: s.window

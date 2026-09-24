@@ -171,6 +171,7 @@ export interface VisibleEvent {
   tone: "neutral" | "good" | "bad" | "story";
   changes: EventChange[];
   continueLabel: string;
+  motion?: { kind: string; source?: string; target?: string };
   story?: { kind: "act" | "agenda"; previous: string; current?: string };
   encounter?: {
     stage: "revealed" | "resolving" | "resolved";
@@ -183,6 +184,8 @@ export interface GameState {
   seed: number;
   nextId: number;
   difficulty: Difficulty;
+  // Missing on older saves, which resume at their existing point in play.
+  introduction?: "campaign" | "scenario" | "complete";
   status: "mulligan" | "playing" | "resolution";
   phase: "investigation" | "enemy" | "upkeep" | "mythos" | "roundEnd";
   round: number;
@@ -229,6 +232,7 @@ export interface GameState {
   };
 }
 export type Action =
+  | { type: "continueIntroduction"; page: "campaign" | "scenario" }
   | { type: "openWindow" }
   | { type: "passWindow" }
   | { type: "fast"; id: string }

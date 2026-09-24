@@ -1,12 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  createGame,
-  reduceGame,
-  party,
-  fastOptions,
-  testValue,
-} from "../src/game/engine";
+import { createGame } from "./helpers";
+import { reduceGame, party, fastOptions, testValue } from "../src/game/engine";
 import { code as C } from "../src/game/data";
 import { decodeSave } from "../src/game/storage";
 import type { GameState, Action, Effect } from "../src/game/types";

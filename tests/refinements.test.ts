@@ -1,12 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  createGame,
-  reduceGame as raw,
-  canAct,
-  testValue,
-} from "../src/game/engine";
-import { reduceGame as step } from "./helpers";
+import { createGame, reduceGame as step } from "./helpers";
+import { reduceGame as raw, canAct, testValue } from "../src/game/engine";
+
 import { decodeSave } from "../src/game/storage";
 import type { GameState, Effect } from "../src/game/types";
 

@@ -1,8 +1,9 @@
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { createGame, reduceGame as raw } from "../src/game/engine.ts";
-import { reduceGame as step } from "../tests/helpers.ts";
+import { createGame, reduceGame as step } from "../tests/helpers.ts";
+import { reduceGame as raw } from "../src/game/engine.ts";
+
 import { acknowledgeEvents } from "./browser-pacing.mjs";
 
 const base = process.env.BASE_URL || "http://localhost:5187";

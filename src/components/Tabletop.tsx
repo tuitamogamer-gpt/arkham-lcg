@@ -49,11 +49,17 @@ export function TableCard({
     <img
       onError={() => setFailed(true)}
       className="table-card-image"
+      data-preview-code={code}
+      data-preview-face={back ? "back" : "front"}
       src={src}
       alt={`${c.name}${faces ? (back ? " · unrevealed" : " · revealed") : back ? " · reverse face" : ""}`}
     />
   ) : (
-    <span className={`table-card-fallback ${back ? "unrevealed-face" : ""}`}>
+    <span
+      data-preview-code={code}
+      data-preview-face={back ? "back" : "front"}
+      className={`table-card-fallback ${back ? "unrevealed-face" : ""}`}
+    >
       <span>{back ? "UNEXPLORED LOCATION" : c.type_code}</span>
       <StarFour size={32} weight="thin" />
       <strong>{c.name}</strong>
@@ -344,6 +350,8 @@ export function LocationTable({
                 {here.map((p) => (
                   <span
                     key={p.code}
+                    data-preview-code={p.code}
+                    tabIndex={0}
                     data-motion-target={`pawn-${p.code}`}
                     className={`mini-investigator ${card(p.code).faction_code} ${p.turnEnded ? "spent" : ""}`}
                     title={`${card(p.code).name}${p.turnEnded ? " · turn complete" : ""}`}
@@ -357,6 +365,30 @@ export function LocationTable({
                         .join("")}
                     </small>
                   </span>
+                ))}
+              </div>
+              <div
+                className="location-enemies"
+                aria-label={`Enemies at ${card(l.code).name}`}
+              >
+                {enemies.map((enemy) => (
+                  <button
+                    key={enemy.id}
+                    className={`enemy-miniature ${enemy.exhausted ? "exhausted" : ""} ${enemy.engaged ? "engaged" : ""}`}
+                    data-motion-target={`enemy-token-${enemy.id}`}
+                    data-preview-code={enemy.code}
+                    onClick={() => inspect(enemy.code)}
+                    aria-label={`Inspect ${card(enemy.code).name} at ${card(l.code).name}`}
+                  >
+                    <img src={CARD_ART[enemy.code]} alt="" />
+                    <span>
+                      {enemy.exhausted
+                        ? "Z"
+                        : enemy.damage
+                          ? `−${enemy.damage}`
+                          : "!"}
+                    </span>
+                  </button>
                 ))}
               </div>
               <div className="location-caption">
@@ -407,23 +439,22 @@ export function LocationTable({
 }
 
 function CardBack({ encounter = false }: { encounter?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const kind = encounter ? "encounter" : "player";
   return (
-    <span
-      className={`table-card-back ${encounter ? "encounter-back" : "player-back"}`}
-      aria-hidden="true"
-    >
-      <span className="back-corner">✦</span>
-      <span className="back-sigil">
-        {encounter ? (
-          <Skull size={38} weight="thin" />
-        ) : (
+    <span className={`table-card-back ${kind}-back`} data-preview-back={kind}>
+      {!failed ? (
+        <img
+          src={`/art/backs/${kind}.png`}
+          alt={`${encounter ? "Encounter" : "Player"} card back`}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <>
           <StarFour size={40} weight="thin" />
-        )}
-      </span>
-      <span className="back-wordmark">
-        {encounter ? "THE MYTHOS" : "ARKHAM"}
-      </span>
-      <span className="back-corner">✦</span>
+          <span className="back-wordmark">ARKHAM HORROR</span>
+        </>
+      )}
     </span>
   );
 }
@@ -460,6 +491,7 @@ export function SupplyTray({
           className={`discard-pile ${top ? "has-cards" : ""}`}
           onClick={() => setView("encounter")}
           aria-label={`Encounter discard · ${s.encounterDiscard.length} cards`}
+          data-motion-target="encounter-discard"
         >
           <span className="discard-face">
             {top ? (
@@ -491,7 +523,11 @@ export function SupplyTray({
           </small>
         </span>
       </button>
-      <button className="victory-button" onClick={() => setView("victory")}>
+      <button
+        className="victory-button"
+        data-motion-target="victory-display"
+        onClick={() => setView("victory")}
+      >
         <StarFour size={13} /> Victory display <b>{s.victory.length}</b>
       </button>
       {view && (
@@ -749,6 +785,7 @@ export function InvestigatorMat({
             className={`discard-pile ${top ? "has-cards" : ""}`}
             onClick={openDeck}
             aria-label={`Your discard · ${p.discard.length} cards`}
+            data-motion-target={`player-discard-${p.code}`}
           >
             <span className="discard-face">
               {top ? (

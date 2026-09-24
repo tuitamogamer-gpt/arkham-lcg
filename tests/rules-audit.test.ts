@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reduceGame } from "./helpers";
+import { reduceGame, createGame } from "./helpers";
+
 import {
-  createGame,
   party,
   canAct,
   canPlay,

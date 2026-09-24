@@ -38,6 +38,13 @@ function validEvent(x: unknown, party: string[]): x is VisibleEvent {
       (t) => typeof t === "string" && t.length <= 10000,
     ) &&
     (!x.card || (typeof x.card === "string" && !!card(x.card))) &&
+    (x.motion === undefined ||
+      (record(x.motion) &&
+        typeof x.motion.kind === "string" &&
+        x.motion.kind.length <= 100 &&
+        [x.motion.source, x.motion.target].every(
+          (v) => v === undefined || (typeof v === "string" && v.length <= 100),
+        ))) &&
     (x.story === undefined ||
       (record(x.story) &&
         ["act", "agenda"].includes(String(x.story.kind)) &&
@@ -83,6 +90,19 @@ export function validSave(x: unknown): x is GameState {
     )
       return false;
     const party = [p, ...s.companions];
+    if (
+      s.introduction !== undefined &&
+      (!["campaign", "scenario", "complete"].includes(s.introduction) ||
+        (s.introduction !== "complete" &&
+          (s.status !== "mulligan" ||
+            party.some((p) => p.mulliganDone) ||
+            s.event ||
+            s.test ||
+            s.decision ||
+            s.window ||
+            s.queue.length)))
+    )
+      return false;
     if (
       s.discoveries !== undefined &&
       (!record(s.discoveries) ||

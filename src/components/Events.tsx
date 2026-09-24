@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  BookOpen as BookOpenIcon,
   ClockCounterClockwise,
   Eye,
   PauseCircle,
@@ -13,7 +14,14 @@ import {
   Coins,
   Stack,
   Footprints,
+  ChatCircle,
+  Crosshair,
+  HandFist,
+  Sparkle,
+  Wind,
+  ArrowBendUpRight,
 } from "@phosphor-icons/react";
+import { eventMotion } from "../game/motion";
 import { card, plain } from "../game/data";
 import type { Action, GameState, VisibleEvent } from "../game/types";
 import { CardFace, Modal, RulesText } from "./Common";
@@ -77,18 +85,33 @@ export function EventController({
                   : /move/i.test(e.title)
                     ? "move"
                     : "phase";
+  const actionMotion = eventMotion(e);
   const Motif = {
-    story: StarFour,
-    encounter: Skull,
-    attack: Skull,
-    injury: Heart,
-    doom: Fire,
-    clue: MagnifyingGlass,
-    resource: Coins,
-    card: Stack,
+    investigate: MagnifyingGlass,
+    attack: HandFist,
+    evade: Footprints,
+    engage: Crosshair,
+    parley: ChatCircle,
+    fire: Fire,
+    extinguish: Wind,
+    gain: Coins,
+    spend: Coins,
+    draw: Stack,
+    play: Stack,
+    discard: Stack,
+    commit: Sparkle,
+    boost: Sparkle,
     move: Footprints,
-    phase: StarFour,
-  }[motif];
+    resign: ArrowBendUpRight,
+    defeat: Skull,
+    damage: Heart,
+    horror: Skull,
+    heal: Heart,
+    reveal: e.encounter ? Skull : StarFour,
+    exhaust: ClockCounterClockwise,
+    ready: StarFour,
+    story: BookOpenIcon,
+  }[actionMotion];
   const advance = (
     <button
       className="button event-continue"
@@ -131,13 +154,19 @@ export function EventController({
       onClose={() => setMinimized(true)}
     >
       <div
-        className={`event-window ${e.tone} ${e.story ? "story-reveal" : ""} motion-${motif}`}
+        className={`event-window ${e.tone} ${e.story ? "story-reveal" : ""} motion-${motif} action-${actionMotion}`}
       >
         <header className="event-header">
-          <div className="event-motif" aria-hidden="true">
+          <div
+            className={`event-motif action-vignette vignette-${actionMotion}`}
+            aria-hidden="true"
+          >
             <Motif size={32} weight="thin" />
             <i />
             <i />
+            <span className="action-trace trace-one" />
+            <span className="action-trace trace-two" />
+            <span className="action-trace trace-three" />
           </div>
           <div className="event-meta">
             <span>
@@ -165,11 +194,27 @@ export function EventController({
                   <small>{previousStory.back_name || "The story so far"}</small>
                 </div>
               )}
-              <CardFace
-                c={source}
-                compact
-                onClick={() => inspect(source.code)}
-              />
+              <div
+                className={
+                  e.encounter?.stage === "revealed"
+                    ? "encounter-flip"
+                    : "event-card-motion"
+                }
+              >
+                {e.encounter?.stage === "revealed" && (
+                  <img
+                    className="encounter-flip-back"
+                    src="/art/backs/encounter.png"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                )}
+                <CardFace
+                  c={source}
+                  compact
+                  onClick={() => inspect(source.code)}
+                />
+              </div>
               <button onClick={() => inspect(source.code)}>
                 Inspect full card <Eye size={14} />
               </button>

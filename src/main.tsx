@@ -7,6 +7,7 @@ import "./tabletop.css";
 import "./refinements.css";
 import "./motion.css";
 import "./identity.css";
+import "./story.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

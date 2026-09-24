@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGame, gameSummary, reduceGame as raw } from "../src/game/engine";
-import { reduceGame as step } from "./helpers";
+import { createGame, reduceGame as step } from "./helpers";
+import { gameSummary, reduceGame as raw } from "../src/game/engine";
+
 import {
   availableCards,
   campaignKnowledge,

@@ -149,6 +149,8 @@ export function Investigators({
               {PLAYABLE_INVESTIGATORS.includes(c.code) ? (
                 <div
                   className="dossier-portrait"
+                  data-preview-code={c.code}
+                  tabIndex={0}
                   style={{ backgroundImage: `url(${CARD_ART[c.code]})` }}
                 />
               ) : (

@@ -1,9 +1,10 @@
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { createGame, party } from "../src/game/engine.ts";
+import { createGame, reduceGame } from "../tests/helpers.ts";
+import { party } from "../src/game/engine.ts";
 import { BAGS } from "../src/game/data.ts";
-import { reduceGame } from "../tests/helpers.ts";
+
 import { acknowledgeEvents } from "./browser-pacing.mjs";
 
 const base = process.env.BASE_URL || "http://localhost:5187";

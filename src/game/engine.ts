@@ -487,6 +487,7 @@ export function createGame(
     seed: seed || 1,
     nextId: 1,
     difficulty,
+    introduction: "campaign",
     status: "mulligan",
     phase: "investigation",
     round: 1,
@@ -3978,6 +3979,17 @@ function actionCost(s: GameState, n: number, safe: boolean, isAction = n > 0) {
     );
 }
 export function reduceGame(state: GameState, action: Action): GameState {
+  if (state.introduction && state.introduction !== "complete") {
+    if (
+      action.type !== "continueIntroduction" ||
+      action.page !== state.introduction
+    )
+      return state;
+    const s = structuredClone(state);
+    s.introduction = action.page === "campaign" ? "scenario" : "complete";
+    return s;
+  }
+  if (action.type === "continueIntroduction") return state;
   if (action.type === "continue") {
     // An old click must never acknowledge a newer event.
     if (!state.event || action.eventId !== state.event.id) return state;
@@ -4305,6 +4317,7 @@ function reduceCore(state: GameState, action: Action): GameState {
 export function gameSummary(s: GameState) {
   return {
     status: s.status,
+    introduction: s.introduction || "complete",
     round: s.round,
     phase: s.phase,
     actions: s.player.actions,
@@ -4377,7 +4390,12 @@ export function gameSummary(s: GameState) {
     error: s.error,
     event: s.event,
     eventHistoryCount: s.eventHistory.length,
-    paused: !!s.event || !!s.test || !!s.decision || !!s.window,
+    paused:
+      (!!s.introduction && s.introduction !== "complete") ||
+      !!s.event ||
+      !!s.test ||
+      !!s.decision ||
+      !!s.window,
     coordinateSystem:
       "DOM layout; map percentages measured from top-left, x right, y down",
   };

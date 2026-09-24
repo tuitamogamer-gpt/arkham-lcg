@@ -1,7 +1,8 @@
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { createGame, reduceGame, party } from "../src/game/engine.ts";
+import { createGame } from "../tests/helpers.ts";
+import { reduceGame, party } from "../src/game/engine.ts";
 const baseUrl = process.env.BASE_URL || "http://localhost:5187";
 const out = "output/pacing-browser";
 await mkdir(out, { recursive: true });

@@ -5,6 +5,18 @@ export async function acknowledgeEvents(page) {
     const s = JSON.parse(
       await page.evaluate(() => window.render_game_to_text()),
     );
+    if (["campaign", "scenario"].includes(s.introduction)) {
+      await page
+        .getByRole("button", {
+          name:
+            s.introduction === "campaign"
+              ? "Continue to scenario intro"
+              : "Prepare opening hands",
+          exact: true,
+        })
+        .click();
+      continue;
+    }
     if (!s.event) {
       if (s.window) {
         await page

@@ -1,4 +1,4 @@
-import { reduceGame as step } from "../src/game/engine";
+import { createGame as newGame, reduceGame as step } from "../src/game/engine";
 import type { GameState, Action } from "../src/game/types";
 
 // Legacy rules fixtures pass Fast opportunities without using an ability.
@@ -16,4 +16,11 @@ export function reduceGame(s: GameState, a: Action): GameState {
     );
   }
   return s;
+}
+
+// Existing rules fixtures begin after the independently tested introduction.
+export function createGame(...args: Parameters<typeof newGame>): GameState {
+  let s = newGame(...args);
+  s = step(s, { type: "continueIntroduction", page: "campaign" });
+  return step(s, { type: "continueIntroduction", page: "scenario" });
 }

@@ -24,6 +24,7 @@ import {
 } from "@phosphor-icons/react";
 import { card, CARD_ART, plain } from "../game/data";
 import { useTableMotion } from "./Motion";
+import { Introduction, PursuerStory, ResolutionPassage } from "./Story";
 import {
   InvestigatorMat,
   LocationTable,
@@ -87,6 +88,9 @@ export function Game({
   const [investigateTarget, setInvestigateTarget] = useState("");
 
   const [deck, setDeck] = useState(false);
+  const [replayIntro, setReplayIntro] = useState<
+    "campaign" | "scenario" | null
+  >(null);
   const [endConfirm, setEndConfirm] = useState(false);
   useEffect(() => {
     if (s.status === "playing")
@@ -151,6 +155,18 @@ export function Game({
       ? investigateTarget || s.player.location
       : s.player.location;
 
+  if (s.introduction && s.introduction !== "complete")
+    return (
+      <Introduction
+        page={s.introduction}
+        onContinue={() =>
+          dispatch({
+            type: "continueIntroduction",
+            page: s.introduction as "campaign" | "scenario",
+          })
+        }
+      />
+    );
   if (s.status === "resolution")
     return (
       <div className="resolution-page page-content">
@@ -158,16 +174,7 @@ export function Game({
         <div className="resolution-content">
           <div className="eyebrow">Spreading Flames · Case closed</div>
           <StarFour size={40} weight="light" />
-          <h1>
-            {s.campaign.result === "saved"
-              ? "A light in the darkness."
-              : "The embers remain."}
-          </h1>
-          <p>
-            {s.campaign.result === "saved"
-              ? "The masked pursuer is defeated, and Miskatonic University still stands. Dr. Armitage may hold the answers to your friend’s disappearance."
-              : "Your investigation has ended for tonight. What you discovered and the consequences of your choices are recorded below."}
-          </p>
+          <ResolutionPassage game={s} />
           <div className="resolution-stats">
             <span>
               <b>{s.campaign.xp}</b> EXPERIENCE
@@ -184,8 +191,13 @@ export function Game({
               <div key={p.code}>
                 <strong>{card(p.code).name}</strong>
                 <span>
-                  {p.status} · {p.xp} XP · {p.physicalTrauma} physical /{" "}
-                  {p.mentalTrauma} mental trauma
+                  {p.status === "active"
+                    ? "Survived"
+                    : p.status === "resigned"
+                      ? "Resigned"
+                      : "Defeated"}{" "}
+                  · {p.xp} XP · {p.physicalTrauma} physical / {p.mentalTrauma}{" "}
+                  mental trauma
                 </span>
               </div>
             ))}
@@ -231,6 +243,13 @@ export function Game({
           </HoverPreview>
         </div>
         <div className="game-header-actions">
+          <button
+            className="history-trigger"
+            onClick={() => setReplayIntro("campaign")}
+          >
+            <BookOpen size={17} />
+            Read introduction
+          </button>
           <button className="history-trigger" onClick={onHistory}>
             <ClockCounterClockwise size={17} />
             Event history
@@ -344,7 +363,10 @@ export function Game({
             <span>{actText[s.act - 1]}</span>
           </div>
           <div className="action-bar">
-            <div className="action-count">
+            <div
+              className="action-count"
+              data-motion-target={`actions-${s.player.code}`}
+            >
               {[0, 1, 2].map((i) => (
                 <span
                   className={i < s.player.actions ? "available" : ""}
@@ -738,6 +760,21 @@ export function Game({
           </details>
         </div>
       </div>
+      {replayIntro && (
+        <Modal
+          title="Read introduction"
+          wide
+          onClose={() => setReplayIntro(null)}
+        >
+          <Introduction
+            replay
+            page={replayIntro}
+            onContinue={() =>
+              setReplayIntro(replayIntro === "campaign" ? "scenario" : null)
+            }
+          />
+        </Modal>
+      )}
       {s.status === "mulligan" && (
         <Modal title="Your opening hand" wide>
           <div className="modal-intro">
@@ -852,7 +889,7 @@ export function Game({
               hand does not use its attack ability.
             </p>
           )}
-          <div className="test-values">
+          <div className="test-values" data-motion-target="test-scene">
             <div>
               <SkillIcon skill={s.test.skill} size={23} />
               <strong>{testValue(s)}</strong>
@@ -888,6 +925,8 @@ export function Game({
                   .map((c) => (
                     <button
                       key={c.id}
+                      data-preview-code={c.code}
+                      data-motion-target={`commit-${c.id}`}
                       className={
                         s.test!.committed.includes(c.id) ? "selected" : ""
                       }
@@ -1013,6 +1052,7 @@ export function Game({
             <h2>{s.decision.title}</h2>
             <p>{s.decision.description}</p>
           </div>
+          {s.decision.title === "The masked pursuer falls" && <PursuerStory />}
           {s.decision.title === "Daniela strikes back" && (
             <div className="reaction-source">
               <HoverPreview code="12001">
@@ -1102,7 +1142,11 @@ export function Game({
             )
               .sort((a, b) => card(a[0]).name.localeCompare(card(b[0]).name))
               .map(([c, n]) => (
-                <button key={c} onClick={() => inspect(c)}>
+                <button
+                  key={c}
+                  data-preview-code={c}
+                  onClick={() => inspect(c)}
+                >
                   <span>{card(c).name}</span>
                   <b>×{n}</b>
                 </button>
@@ -1111,7 +1155,11 @@ export function Game({
           <h3>Discard pile · {s.player.discard.length}</h3>
           <div className="deck-list">
             {s.player.discard.map((c) => (
-              <button key={c.id} onClick={() => inspect(c.code)}>
+              <button
+                key={c.id}
+                data-preview-code={c.code}
+                onClick={() => inspect(c.code)}
+              >
                 {card(c.code).name}
               </button>
             ))}
