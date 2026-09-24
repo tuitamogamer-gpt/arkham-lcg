@@ -1,0 +1,691 @@
+/* Motion belongs to the table's presentation; it never gates a rules action. */
+.motion-setting {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 16px;
+  border: 1px solid #bfa36455;
+  background: #14271f;
+  color: #e4d5ad;
+}
+.motion-setting select {
+  padding: 8px 12px;
+  background: #0a1914;
+  color: #e4d5ad;
+  border: 1px solid #bfa36466;
+}
+.motion-setting small {
+  grid-column: 1 / -1;
+  color: #b2b5a0;
+  line-height: 1.6;
+  font-size: 11px;
+}
+.sealed-note {
+  padding: 12px 15px;
+  border-left: 2px solid #b79a56;
+  color: #b4af99;
+  font-size: 12px;
+}
+.archive-count > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.night-chapter.locked .night-chapter-art {
+  background:
+    repeating-linear-gradient(125deg, transparent 0 25px, #bca3750b 26px 27px),
+    radial-gradient(ellipse at 50% 30%, #3e4938, #101d17 75%);
+  filter: none;
+}
+.night-chapter.locked h3 {
+  color: #c5bea4;
+}
+.night-chapter.locked .chapter-index {
+  opacity: 0.45;
+}
+.atmosphere-embers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  contain: strict;
+}
+.atmosphere-embers i {
+  position: absolute;
+  bottom: -12px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #e4ba6a;
+  box-shadow: 0 0 8px #e5a8538a;
+  opacity: 0;
+  animation: ember-rise 16s linear infinite;
+}
+.night-hero-copy,
+.night-hero > .hover-trigger {
+  z-index: 2;
+}
+.night-hero-art {
+  animation: night-develop 1.8s ease-out both;
+}
+.night-hero-copy > * {
+  animation: ink-arrive 0.85s var(--ease) both;
+}
+.night-hero-copy > :nth-child(2) {
+  animation-delay: 80ms;
+}
+.night-hero-copy > :nth-child(3) {
+  animation-delay: 160ms;
+}
+.night-hero-copy > :nth-child(4) {
+  animation-delay: 240ms;
+}
+.night-hero-copy > :nth-child(5) {
+  animation-delay: 320ms;
+}
+.campaign-case {
+  animation: case-open 1s var(--ease) 100ms both;
+}
+.night-chapter,
+.night-dossier {
+  transition:
+    translate 0.3s var(--ease),
+    box-shadow 0.3s;
+}
+.night-chapter:hover,
+.night-dossier:hover {
+  translate: 0 -4px;
+}
+.button,
+.action-button,
+.end-turn,
+.play-card,
+.weapon-fight,
+.decision-list > button {
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s,
+    scale 0.16s;
+}
+.button:active:not(:disabled),
+.action-button:active:not(:disabled),
+.end-turn:active:not(:disabled),
+.play-card:active:not(:disabled),
+.weapon-fight:active:not(:disabled),
+.decision-list > button:active {
+  scale: 0.97;
+}
+.button-arrow {
+  transition: translate 0.25s;
+}
+.button:hover .button-arrow {
+  translate: 2px -2px;
+}
+.hand-card-wrap {
+  animation: hand-deal 0.5s var(--ease) backwards;
+}
+.table-asset {
+  animation: card-land 0.5s var(--ease);
+}
+.table-asset .card-face {
+  transition:
+    transform 0.55s var(--ease),
+    filter 0.35s;
+}
+.enemy-card-preview {
+  transition: transform 0.55s var(--ease);
+}
+.token-value {
+  display: inline-block;
+  animation: counter-settle 0.42s var(--ease);
+}
+.doom-pips i,
+.action-count > span {
+  transition:
+    background 0.3s,
+    box-shadow 0.3s,
+    opacity 0.3s,
+    scale 0.3s;
+}
+.action-count > span:not(.available) {
+  scale: 0.72;
+}
+.seat {
+  transition:
+    box-shadow 0.35s,
+    border-color 0.35s,
+    background 0.35s;
+}
+.seat.active {
+  animation: seat-select 0.7s ease-out;
+}
+.map-lines line {
+  animation: trace-path 0.8s ease-out;
+  stroke-dasharray: 2 1;
+}
+.mini-investigator {
+  animation: marker-arrive 0.45s var(--ease);
+}
+.table-fire {
+  animation: fire-breathe 2.5s ease-in-out infinite alternate;
+}
+.phase-track > .active {
+  position: relative;
+  overflow: hidden;
+}
+.phase-track > .active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent, #dfc08533, transparent);
+  animation: phase-sweep 0.9s ease-out both;
+  pointer-events: none;
+}
+.modal-backdrop {
+  animation: veil-in 0.22s ease-out;
+}
+.modal {
+  animation: dossier-arrive 0.36s var(--ease);
+}
+.card-hover {
+  animation: preview-arrive 0.2s ease-out;
+}
+.event-header {
+  position: relative;
+  padding-right: 112px;
+}
+.event-motif {
+  position: absolute;
+  top: 2px;
+  right: 57px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #cbb272;
+}
+.event-motif i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.25;
+  animation: sigil-ring 0.85s ease-out both;
+}
+.event-motif i + i {
+  inset: 7px;
+  animation-delay: 0.12s;
+}
+.event-motif > svg {
+  animation: motif-arrive 0.65s var(--ease);
+}
+.motion-attack .event-motif,
+.motion-injury .event-motif,
+.motion-encounter .event-motif {
+  color: #d58f73;
+}
+.motion-doom .event-motif {
+  color: #b9a2d1;
+}
+.motion-clue .event-motif {
+  color: #b2cca6;
+}
+.event-change {
+  animation: ink-arrive 0.38s var(--ease) backwards;
+}
+.event-change:nth-child(2) {
+  animation-delay: 60ms;
+}
+.event-change:nth-child(3) {
+  animation-delay: 100ms;
+}
+.event-change:nth-child(4) {
+  animation-delay: 140ms;
+}
+.event-change:nth-child(5) {
+  animation-delay: 180ms;
+}
+.event-change strong {
+  display: inline-block;
+  animation: counter-settle 0.5s var(--ease);
+}
+.event-window .event-source > .card-face {
+  animation: card-land 0.65s var(--ease) both;
+}
+.motion-encounter .event-source > .card-face {
+  animation: encounter-turn 0.7s var(--ease) both;
+  transform-origin: 50% 50%;
+}
+.motion-attack .event-source > .card-face {
+  animation: threat-strike 0.65s var(--ease);
+}
+.motion-card .event-source > .card-face {
+  animation: hand-deal 0.6s var(--ease);
+}
+.story-reverse-art {
+  perspective: 900px;
+}
+.story-reverse-art img {
+  animation: story-turn 0.85s var(--ease) both;
+}
+.story-passage > blockquote {
+  animation: ink-arrive 0.7s ease-out 0.12s backwards;
+}
+.next-chapter {
+  animation: ink-arrive 0.65s ease-out 0.22s backwards;
+}
+.encounter-route li.current {
+  animation: route-light 0.7s ease-out;
+}
+.token-reveal {
+  perspective: 700px;
+}
+.revealed-token {
+  display: inline-flex;
+  animation: chaos-draw 0.85s cubic-bezier(0.2, 0.8, 0.25, 1) backwards;
+}
+.revealed-token > .chaos-token {
+  animation: none;
+}
+.test-outcome {
+  animation: ink-arrive 0.55s ease-out 0.15s backwards;
+}
+.test-outcome.passed h2 {
+  animation: success-ink 0.8s ease-out;
+}
+.test-outcome.failed h2 {
+  animation: failure-ink 0.65s ease-out;
+}
+.commit-list > button {
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.commit-list > button.selected .commit-check {
+  animation: counter-settle 0.35s ease-out;
+}
+.resolution-stats > span,
+.party-resolution > div {
+  animation: ink-arrive 0.7s var(--ease) backwards;
+}
+.resolution-stats > :nth-child(2),
+.party-resolution > :nth-child(2) {
+  animation-delay: 0.12s;
+}
+.resolution-stats > :nth-child(3),
+.party-resolution > :nth-child(3) {
+  animation-delay: 0.24s;
+}
+.motion-delta {
+  position: absolute;
+  z-index: 35;
+  pointer-events: none;
+  font:
+    700 24px "Cinzel",
+    serif;
+  color: #ebd49a;
+  text-shadow:
+    0 2px 5px #07130f,
+    0 0 18px #b9944666;
+}
+.motion-delta.damage {
+  color: #f2a18b;
+}
+.motion-delta.horror {
+  color: #cab3eb;
+}
+.motion-delta.heal {
+  color: #b2dbb0;
+}
+.motion-delta.spend {
+  color: #c3b69c;
+}
+
+@keyframes ember-rise {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  12% {
+    opacity: 0.5;
+  }
+  75% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--drift) -640px;
+  }
+}
+@keyframes night-develop {
+  from {
+    opacity: 0.25;
+    scale: 1.035;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes ink-arrive {
+  from {
+    opacity: 0;
+    translate: 0 9px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes case-open {
+  from {
+    opacity: 0;
+    translate: 18px 12px;
+    rotate: 2deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes hand-deal {
+  from {
+    opacity: 0;
+    translate: 20px 22px;
+    rotate: -5deg;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes card-land {
+  from {
+    opacity: 0.3;
+    scale: 1.045;
+    translate: 0 -9px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+@keyframes counter-settle {
+  0% {
+    opacity: 0.5;
+    translate: 0 -5px;
+    scale: 1.15;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes seat-select {
+  from {
+    box-shadow: inset 0 0 30px #cab17144;
+  }
+  to {
+    box-shadow: inset 0 0 0 transparent;
+  }
+}
+@keyframes trace-path {
+  from {
+    stroke-dashoffset: 20;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+@keyframes marker-arrive {
+  from {
+    scale: 0.65;
+    opacity: 0.2;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+@keyframes fire-breathe {
+  from {
+    filter: drop-shadow(0 0 2px #d7803655);
+  }
+  to {
+    filter: drop-shadow(0 0 7px #e5a64ba0);
+  }
+}
+@keyframes phase-sweep {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 100% 0;
+  }
+}
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dossier-arrive {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+    scale: 0.985;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes preview-arrive {
+  from {
+    opacity: 0;
+    translate: 0 5px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes sigil-ring {
+  from {
+    scale: 0.65;
+    opacity: 0.6;
+    rotate: -30deg;
+  }
+  to {
+    scale: 1;
+    opacity: 0.25;
+    rotate: 0deg;
+  }
+}
+@keyframes motif-arrive {
+  from {
+    scale: 0.6;
+    opacity: 0;
+    rotate: -20deg;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+    rotate: 0deg;
+  }
+}
+@keyframes encounter-turn {
+  from {
+    opacity: 0.1;
+    rotate: y -75deg;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    rotate: y 0deg;
+    scale: 1;
+  }
+}
+@keyframes threat-strike {
+  0% {
+    translate: 0 0;
+  }
+  35% {
+    translate: 7px -3px;
+    rotate: 2deg;
+  }
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+}
+@keyframes story-turn {
+  from {
+    opacity: 0.2;
+    rotate: y -85deg;
+    filter: brightness(0.65);
+  }
+  to {
+    opacity: 1;
+    rotate: y 0deg;
+    filter: brightness(1);
+  }
+}
+@keyframes route-light {
+  from {
+    box-shadow: inset 0 0 18px #cbb27266;
+  }
+  to {
+    box-shadow: inset 0 0 0 transparent;
+  }
+}
+@keyframes chaos-draw {
+  0% {
+    opacity: 0;
+    translate: 0 -28px;
+    rotate: y 180deg;
+    scale: 0.65;
+  }
+  65% {
+    opacity: 1;
+    translate: 0 4px;
+    rotate: y -12deg;
+    scale: 1.06;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: y 0deg;
+    scale: 1;
+  }
+}
+@keyframes success-ink {
+  from {
+    text-shadow: 0 0 22px #b5d29da0;
+  }
+  to {
+    text-shadow: 0 0 0 transparent;
+  }
+}
+@keyframes failure-ink {
+  20% {
+    translate: -3px 0;
+  }
+  40% {
+    translate: 3px 0;
+  }
+  60% {
+    translate: -1px 0;
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+@keyframes motion-soft {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+:root[data-motion="subtle"] *,
+:root[data-motion="subtle"] *::before,
+:root[data-motion="subtle"] *::after {
+  animation: none !important;
+  transition-duration: 0.1s !important;
+}
+:root[data-motion="subtle"] .modal,
+:root[data-motion="subtle"] .card-hover,
+:root[data-motion="subtle"] .test-outcome {
+  animation: motion-soft 0.15s ease-out !important;
+}
+@media (max-width: 600px) {
+  .event-motif {
+    display: none;
+  }
+  .event-header {
+    padding-right: 50px;
+  }
+  .event-body.has-card,
+  .story-reveal .event-body.has-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .story-reveal .event-source {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .story-reveal .event-source .card-face {
+    width: 100%;
+  }
+  .story-reveal .event-source > button:last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+  .story-reverse-art {
+    margin-bottom: 0;
+  }
+  .story-passage blockquote {
+    font-size: 20px;
+  }
+}
+:root[data-motion="subtle"] .atmosphere-embers,
+:root[data-motion="off"] .atmosphere-embers {
+  display: none;
+}
+:root[data-motion="off"] *,
+:root[data-motion="off"] *::before,
+:root[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .atmosphere-embers {
+    display: none;
+  }
+}

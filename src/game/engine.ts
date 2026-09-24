@@ -1,5 +1,6 @@
 import { BAGS, CONNECTIONS, STARTER_DECKS, card, code } from "./data";
 import { visibleSnapshot, presentEffect, presentAction } from "./presentation";
+import { recordDiscoveries } from "./knowledge";
 import type {
   Action,
   Asset,
@@ -578,6 +579,7 @@ export function createGame(
     "You arrive at Miskatonic University. Your friend is missing. The room is in disarray.",
     "story",
   );
+  recordDiscoveries(s);
   return s;
 }
 function checkDefeat(s: GameState) {
@@ -4339,7 +4341,17 @@ export function gameSummary(s: GameState) {
     },
     locations: s.locations
       .filter((l) => l.active)
-      .map((l) => ({ ...l, name: card(l.code).name })),
+      .map((l) =>
+        l.revealed
+          ? { ...l, name: card(l.code).name }
+          : {
+              code: l.code,
+              name: card(l.code).name,
+              active: true,
+              revealed: false,
+              fire: l.fire,
+            },
+      ),
     enemies: s.enemies.map((e) => ({ ...e, name: card(e.code).name })),
     test: s.test,
     window: s.window

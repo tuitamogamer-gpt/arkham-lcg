@@ -5,6 +5,14 @@ import {
   Eye,
   PauseCircle,
   CheckCircle,
+  StarFour,
+  Skull,
+  Fire,
+  MagnifyingGlass,
+  Heart,
+  Coins,
+  Stack,
+  Footprints,
 } from "@phosphor-icons/react";
 import { card, plain } from "../game/data";
 import type { Action, GameState, VisibleEvent } from "../game/types";
@@ -50,6 +58,37 @@ export function EventController({
   const source = e.card ? card(e.card) : undefined;
   const previousStory = e.story ? card(e.story.previous) : undefined;
   const nextStory = e.story?.current ? card(e.story.current) : undefined;
+  const motif = e.story
+    ? "story"
+    : e.encounter
+      ? "encounter"
+      : /attack|Retaliation|Enemy damaged/i.test(e.title)
+        ? "attack"
+        : /horror|Damage|Fire/i.test(e.title)
+          ? "injury"
+          : /Doom/i.test(e.title)
+            ? "doom"
+            : /Clue/i.test(e.title)
+              ? "clue"
+              : /Resource/i.test(e.title)
+                ? "resource"
+                : /draw|hand|Card played|Asset enters/i.test(e.title)
+                  ? "card"
+                  : /move/i.test(e.title)
+                    ? "move"
+                    : "phase";
+  const Motif = {
+    story: StarFour,
+    encounter: Skull,
+    attack: Skull,
+    injury: Heart,
+    doom: Fire,
+    clue: MagnifyingGlass,
+    resource: Coins,
+    card: Stack,
+    move: Footprints,
+    phase: StarFour,
+  }[motif];
   const advance = (
     <button
       className="button event-continue"
@@ -92,9 +131,14 @@ export function EventController({
       onClose={() => setMinimized(true)}
     >
       <div
-        className={`event-window ${e.tone} ${e.story ? "story-reveal" : ""}`}
+        className={`event-window ${e.tone} ${e.story ? "story-reveal" : ""} motion-${motif}`}
       >
         <header className="event-header">
+          <div className="event-motif" aria-hidden="true">
+            <Motif size={32} weight="thin" />
+            <i />
+            <i />
+          </div>
           <div className="event-meta">
             <span>
               <PauseCircle size={15} />{" "}

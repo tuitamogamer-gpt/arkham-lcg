@@ -195,7 +195,7 @@ await clickAndAcknowledge(
   page,
 );
 await clickAndAcknowledge(
-  page.getByRole("button", { name: /Smoke and Mirrors/ }),
+  page.getByRole("button", { name: /Sealed chapter II\b/ }),
   page,
 );
 assert.match(

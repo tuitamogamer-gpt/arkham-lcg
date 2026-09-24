@@ -23,6 +23,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { card, CARD_ART, plain } from "../game/data";
+import { useTableMotion } from "./Motion";
 import {
   InvestigatorMat,
   LocationTable,
@@ -72,6 +73,7 @@ export function Game({
   onExport: () => void;
   onHistory: () => void;
 }) {
+  useTableMotion(s);
   const roster = party(s),
     member = card(s.player.code);
   const actText = [
@@ -164,7 +166,7 @@ export function Game({
           <p>
             {s.campaign.result === "saved"
               ? "The masked pursuer is defeated, and Miskatonic University still stands. Dr. Armitage may hold the answers to your friend’s disappearance."
-              : "You have survived a night that Arkham will not forget. Dr. Armitage and the mystery of your missing friend await."}
+              : "Your investigation has ended for tonight. What you discovered and the consequences of your choices are recorded below."}
           </p>
           <div className="resolution-stats">
             <span>
@@ -199,7 +201,7 @@ export function Game({
           </div>
           <div className="coming-note">
             <span>THE NEXT CHAPTER</span>
-            <h3>Smoke and Mirrors</h3>
+            <h3>A sealed case file</h3>
             <p>
               Your campaign record is saved. Scenario II is not yet scripted in
               this build.
@@ -217,7 +219,7 @@ export function Game({
       </div>
     );
   return (
-    <div className="game-page">
+    <div className="game-page" data-motion-target="table">
       <div className="game-title">
         <div>
           <div className="eyebrow">Brethren of Ash / Scenario I</div>
@@ -260,6 +262,7 @@ export function Game({
           {roster.map((p, i) => (
             <button
               key={p.code}
+              data-motion-target={`investigator-${p.code}`}
               className={`seat ${card(p.code).faction_code} ${p.code === s.player.code ? "active" : ""} ${p.turnEnded ? "finished" : ""}`}
               aria-label={`Control ${card(p.code).name}`}
               title={`Control ${card(p.code).name} · press ${i + 1}`}
@@ -311,7 +314,7 @@ export function Game({
           </p>
         )}
       </section>
-      <div className="phase-track">
+      <div className="phase-track" data-motion-target="phase">
         {["mythos", "investigation", "enemy", "upkeep"].map((p, i) => (
           <div className={s.phase === p ? "active" : ""} key={p}>
             <span>0{i + 1}</span>
@@ -555,7 +558,11 @@ export function Game({
                     (loc.code === "12113" && near.includes(e.location)),
                 )
                 .map((e) => (
-                  <div className="enemy-row" key={e.id}>
+                  <div
+                    className="enemy-row"
+                    key={e.id}
+                    data-motion-target={`enemy-${e.id}`}
+                  >
                     <HoverPreview code={e.code}>
                       <button
                         className="enemy-info"
@@ -679,8 +686,13 @@ export function Game({
               </button>
             </div>
             <div className="hand-row">
-              {s.player.hand.map((c) => (
-                <div className="hand-card-wrap" key={c.id}>
+              {s.player.hand.map((c, i) => (
+                <div
+                  className="hand-card-wrap"
+                  key={c.id}
+                  data-motion-target={`card-${c.id}`}
+                  style={{ animationDelay: `${Math.min(i, 7) * 45}ms` }}
+                >
                   <CardFace
                     c={card(c.code)}
                     compact
@@ -947,7 +959,13 @@ export function Game({
             <>
               <div className="token-reveal">
                 {s.test.tokens.map((t, i) => (
-                  <Token key={i} token={t} large />
+                  <span
+                    className="revealed-token"
+                    key={i}
+                    style={{ animationDelay: `${i * 130}ms` }}
+                  >
+                    <Token token={t} large />
+                  </span>
                 ))}
               </div>
               <div

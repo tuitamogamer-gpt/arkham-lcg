@@ -30,11 +30,13 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - Local autosave, save export/import, preservation of pending events, tests and choices, automatic migration of older solo and party saves, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
 - Physical tabletop based on the 2026 rulebook and real session photography: landscape act/agenda stacks, full location faces, miniature investigator markers, tactile counters, sideways exhausted assets, player/encounter piles and a public chaos-bag/victory viewer. See [design research and sources](docs/tabletop-design-research.md).
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
-- Searchable archive of **196 normalized 2026 card definitions**; all five investigator dossiers.
+- Catalog of **196 normalized 2026 card definitions**; the searchable archive shows player cards and discoveries from your current case. Future chapters, unexplored location faces, campaign rewards and unearned story reverses stay sealed. All five investigator dossiers are available.
 
 - Direct **Fight with weapon** buttons show the action/ammo cost beside each enemy; skill tests identify the selected weapon. Daniela’s optional counterattack is explicitly explained and attributed to her investigator card.
 - Pointer and keyboard previews for agenda, act, investigator, assets, enemies and campaign information. Act/agenda transitions show the completed card’s reverse-side story and the new objective; previews do not reveal future story faces.
 - Encounter checkpoints show reveal, resolution and destination, including attached threats, Fire!, spawned enemies and the discard pile. Dialogs keep one accessible focus owner while inspecting cards.
+- Card dealing/playing, investigator movement, token changes, attacks, injuries, chaos-token draws, phases and story turns have contextual animations. Settings offer **Cinematic**, **Subtle**, and **Off**, and honor the device's reduced-motion preference. Animations never advance a checkpoint or spend an action.
+- Campaign discoveries survive save export/import, reload and event-history rollover; older saves recover what is already public. Starting a new investigation starts a fresh discovery record.
 
 ## Scope and next milestones
 
@@ -72,6 +74,8 @@ Official references:
 
 - `src/game/engine.ts`: pure serializable state transitions, pending decisions, and effect queue. No React dependency; deterministic random seed is part of a save.
 - `src/game/presentation.ts`: public-state changes, source-card attribution, event history and confirmation checkpoints. Hidden future draws are excluded from presentation snapshots.
+- `src/game/knowledge.ts`: shared discovery policy for the archive, card inspection and story reverses; persisted independently of the bounded journal.
+- `src/game/motion.ts` and `src/components/Motion.tsx`: presentation cues from resolved public state and cancellable table animations, independent of the rules queue.
 - `src/game/data.ts`: normalized catalog, three exact starter lists, chaos bags and map connections.
 - `src/game/storage.ts`: guarded local storage, portable version 3 saves, and migration of version 1 and 2 saves without changing the storage key.
 - `src/components/`: game table, campaign home, archive, investigator files and shared dialogs.
@@ -94,6 +98,7 @@ node --import tsx scripts/rules-browser-check.mjs
 node --import tsx scripts/timing-browser-check.mjs
 node --import tsx scripts/tabletop-browser-check.mjs
 node --import tsx scripts/refinements-browser-check.mjs
+node --import tsx scripts/discovery-motion-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs

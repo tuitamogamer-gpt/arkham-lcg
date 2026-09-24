@@ -66,10 +66,12 @@ export function TableToken({
   kind,
   value,
   label,
+  motionTarget,
 }: {
   kind: "clue" | "doom" | "resource" | "damage" | "horror";
   value: number;
   label?: string;
+  motionTarget?: string;
 }) {
   const Icon = {
     clue: MagnifyingGlass,
@@ -81,11 +83,14 @@ export function TableToken({
   return (
     <span
       className={`table-token token-${kind}`}
+      data-motion-target={motionTarget}
       title={label || `${value} ${kind}`}
       aria-label={label || `${value} ${kind}`}
     >
       <Icon size={14} weight="fill" aria-hidden="true" />
-      <b>{value}</b>
+      <b key={value} className="token-value">
+        {value}
+      </b>
     </span>
   );
 }
@@ -120,6 +125,7 @@ export function ScenarioTray({
         <HoverPreview code={String(12105 + s.agenda)}>
           <button
             className="story-card agenda-card physical-card landscape-card"
+            data-motion-target="agenda"
             onClick={() => inspect(String(12105 + s.agenda))}
             aria-label={`Inspect agenda: ${card(String(12105 + s.agenda)).name}`}
           >
@@ -129,6 +135,7 @@ export function ScenarioTray({
         <div className="story-progress doom-progress">
           <TableToken
             kind="doom"
+            motionTarget="doom"
             value={s.doom}
             label={`${s.doom} doom on the agenda`}
           />
@@ -153,6 +160,7 @@ export function ScenarioTray({
         <HoverPreview code={String(12108 + s.act)}>
           <button
             className="story-card act-card physical-card landscape-card"
+            data-motion-target="act"
             onClick={() => inspect(String(12108 + s.act))}
             aria-label={`Inspect act: ${card(String(12108 + s.act)).name}`}
             title={objective}
@@ -289,6 +297,7 @@ export function LocationTable({
           return (
             <div
               key={l.code}
+              data-motion-target={`location-${l.code}`}
               aria-label={card(l.code).name}
               className={`map-location ${l.code === s.player.location ? "current" : ""} ${l.revealed ? "revealed" : "unrevealed"} ${l.fire ? "burning" : ""} ${near.includes(l.code) ? "connected" : ""}`}
               style={{ left: `${pos(l.code)[0]}%`, top: `${pos(l.code)[1]}%` }}
@@ -335,6 +344,7 @@ export function LocationTable({
                 {here.map((p) => (
                   <span
                     key={p.code}
+                    data-motion-target={`pawn-${p.code}`}
                     className={`mini-investigator ${card(p.code).faction_code} ${p.turnEnded ? "spent" : ""}`}
                     title={`${card(p.code).name}${p.turnEnded ? " · turn complete" : ""}`}
                     aria-label={`${card(p.code).name} at ${card(l.code).name}`}
@@ -438,6 +448,7 @@ export function SupplyTray({
       <div className="encounter-piles">
         <button
           className="deck-pile"
+          data-motion-target="encounter-deck"
           onClick={() => setView("encounter")}
           aria-label="Encounter deck and discard"
         >
@@ -593,6 +604,7 @@ export function InvestigatorMat({
           <div>
             <TableToken
               kind="damage"
+              motionTarget={`damage-${p.code}`}
               value={p.damage}
               label={`${p.damage} damage; ${Math.max(0, health(s) - p.damage)} of ${health(s)} health remaining`}
             />
@@ -606,6 +618,7 @@ export function InvestigatorMat({
           <div>
             <TableToken
               kind="horror"
+              motionTarget={`horror-${p.code}`}
               value={p.horror}
               label={`${p.horror} horror; ${Math.max(0, sanity(s) - p.horror)} of ${sanity(s)} sanity remaining`}
             />
@@ -619,6 +632,7 @@ export function InvestigatorMat({
           <div>
             <TableToken
               kind="resource"
+              motionTarget={`resource-${p.code}`}
               value={p.resources}
               label={`${p.resources} resources`}
             />
@@ -627,6 +641,7 @@ export function InvestigatorMat({
           <div>
             <TableToken
               kind="clue"
+              motionTarget={`clue-${p.code}`}
               value={p.clues}
               label={`${p.clues} clues`}
             />
@@ -646,6 +661,7 @@ export function InvestigatorMat({
             {p.assets.map((asset) => (
               <div
                 key={asset.id}
+                data-motion-target={`card-${asset.id}`}
                 className={`table-asset ${asset.exhausted ? "exhausted" : ""}`}
               >
                 <HoverPreview code={asset.code}>
@@ -660,6 +676,7 @@ export function InvestigatorMat({
                     ["12019", "12045"].includes(asset.code)) && (
                     <span
                       className="uses-counter"
+                      data-motion-target={`uses-${asset.id}`}
                       title={`${asset.uses} ${["12019", "12045"].includes(asset.code) ? "ammo" : "uses"}`}
                     >
                       <Coins size={10} />
@@ -721,6 +738,7 @@ export function InvestigatorMat({
           <button
             className="deck-pile"
             onClick={openDeck}
+            data-motion-target={`player-deck-${p.code}`}
             aria-label="Inspect your deck and discard"
           >
             <CardBack />

@@ -1,5 +1,6 @@
 import type { GameState, VisibleEvent } from "./types";
 import { card, STARTER_DECKS } from "./data";
+import { recordDiscoveries } from "./knowledge";
 export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
 const integer = (n: unknown, min = 0, max = 100000): n is number =>
   typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
@@ -82,6 +83,18 @@ export function validSave(x: unknown): x is GameState {
     )
       return false;
     const party = [p, ...s.companions];
+    if (
+      s.discoveries !== undefined &&
+      (!record(s.discoveries) ||
+        !codes(s.discoveries.cards) ||
+        !codes(s.discoveries.storyBacks) ||
+        s.discoveries.cards.length > 196 ||
+        s.discoveries.storyBacks.length > 196 ||
+        !s.discoveries.storyBacks.every((c) =>
+          ["act", "agenda"].includes(card(c).type_code),
+        ))
+    )
+      return false;
     if (
       s.resolutionDepth !== undefined &&
       (!integer(s.resolutionDepth, 0, 100) ||
@@ -472,6 +485,7 @@ export function decodeSave(value: unknown): GameState | null {
         x.queue.splice(after, 0, { kind: "endResolution", actor: "scenario" });
       }
     }
+    recordDiscoveries(x);
     return x;
   } catch {
     return null;

@@ -1,4 +1,5 @@
 import { card, code } from "./data";
+import { recordDiscoveries } from "./knowledge";
 import type {
   Action,
   Effect,
@@ -290,6 +291,7 @@ export function rememberEvent(
     actor,
   };
   s.eventHistory.push(entry);
+  recordDiscoveries(s);
   if (s.eventHistory.length > 500) s.eventHistory.shift();
   if (pause) s.event = entry;
 }

@@ -6,18 +6,26 @@ import {
   CheckCircle,
 } from "@phosphor-icons/react";
 import {
-  cards,
   investigators,
   plain,
   CARD_ART,
   PLAYABLE_INVESTIGATORS,
 } from "../game/data";
 import { CardFace, SkillStats, Button } from "./Common";
-export function Archive({ inspect }: { inspect: (c: string) => void }) {
+import { availableCards } from "../game/knowledge";
+import type { GameState } from "../game/types";
+export function Archive({
+  game,
+  inspect,
+}: {
+  game: GameState | null;
+  inspect: (c: string) => void;
+}) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [faction, setFaction] = useState("all");
-  const list = cards.filter(
+  const known = availableCards(game);
+  const list = known.filter(
     (c) =>
       (type === "all" || c.type_code === type) &&
       (faction === "all" || c.faction_code === faction) &&
@@ -31,10 +39,10 @@ export function Archive({ inspect }: { inspect: (c: string) => void }) {
       <div className="page-heading">
         <div>
           <h1>The card archive</h1>
-          <p>Every lead, every ally, every unspeakable thing.</p>
+          <p>Your player cards and the discoveries from this investigation.</p>
         </div>
         <span className="edition-tag">
-          CORE SET 2026 <span>196 cards</span>
+          CORE SET 2026 <span>{known.length} available cards</span>
         </span>
       </div>
       <div className="archive-filters">
@@ -53,7 +61,7 @@ export function Archive({ inspect }: { inspect: (c: string) => void }) {
           onChange={(e) => setType(e.target.value)}
         >
           <option value="all">All card types</option>
-          {[...new Set(cards.map((c) => c.type_code))].map((t) => (
+          {[...new Set(known.map((c) => c.type_code))].map((t) => (
             <option key={t} value={t}>
               {t[0].toUpperCase() + t.slice(1)}
             </option>
@@ -65,7 +73,7 @@ export function Archive({ inspect }: { inspect: (c: string) => void }) {
           onChange={(e) => setFaction(e.target.value)}
         >
           <option value="all">All classes</option>
-          {[...new Set(cards.map((c) => c.faction_code))].map((t) => (
+          {[...new Set(known.map((c) => c.faction_code))].map((t) => (
             <option key={t} value={t}>
               {t[0].toUpperCase() + t.slice(1)}
             </option>
@@ -74,7 +82,9 @@ export function Archive({ inspect }: { inspect: (c: string) => void }) {
       </div>
       <div className="archive-count">
         {list.length} cards found{" "}
-        <span>ArkhamDB data · includes encounter cards and 2026 errata</span>
+        <span>
+          <LockKey size={13} /> Unseen story cards stay sealed
+        </span>
       </div>
       <div className="archive-grid">
         {list.map((c) => (
@@ -99,8 +109,8 @@ export function Archive({ inspect }: { inspect: (c: string) => void }) {
         </div>
       )}
       <p className="quiet-note">
-        The archive contains the complete set. Inclusion in the archive does not
-        mean a card’s effects are scripted for play.
+        Story cards appear as you discover them. Unexplored locations and future
+        story faces stay hidden. Available cards are not all scripted for play.
       </p>
     </div>
   );

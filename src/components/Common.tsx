@@ -20,7 +20,8 @@ import {
   Shield,
 } from "@phosphor-icons/react";
 import { card, CARD_ART, plain } from "../game/data";
-import type { Card, Skill } from "../game/types";
+import type { Card, GameState, Skill } from "../game/types";
+import { canInspectCard, canReadReverse } from "../game/knowledge";
 const dialogStack: HTMLElement[] = [];
 let originalOverflow = "";
 export function Sigil({ small = false }: { small?: boolean }) {
@@ -294,12 +295,23 @@ export function CardFace({
 }
 export function CardDetail({
   code,
+  game,
   onClose,
 }: {
   code: string;
+  game: GameState | null;
   onClose: () => void;
 }) {
   const c = card(code);
+  if (!canInspectCard(game, code))
+    return (
+      <Modal title="Undiscovered card" onClose={onClose}>
+        <div className="modal-intro">
+          <h2>This discovery is still sealed.</h2>
+          <p>Keep investigating to reveal this card.</p>
+        </div>
+      </Modal>
+    );
   return (
     <Modal title={c.name} onClose={onClose} wide>
       <div className="card-detail">
@@ -343,13 +355,20 @@ export function CardDetail({
             />
           </p>
           {c.flavor && <blockquote>{plain(c.flavor)}</blockquote>}
-          {c.back_text && (
+          {c.back_text && canReadReverse(game, code) && (
             <details>
               <summary>Reverse side</summary>
+              {c.back_name && <h3>{c.back_name}</h3>}
+              {c.back_flavor && <blockquote>{plain(c.back_flavor)}</blockquote>}
               <p className="rules-text">
                 <RulesText text={c.back_text} />
               </p>
             </details>
+          )}
+          {c.back_text && !canReadReverse(game, code) && (
+            <p className="sealed-note">
+              The reverse side opens when the story advances.
+            </p>
           )}
           <div className="detail-credit">
             {c.errata_date && (
@@ -365,13 +384,17 @@ export function CardDetail({
               </>
             )}
             Card data from{" "}
-            <a
-              href={`https://arkhamdb.com/card/${c.code}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              ArkhamDB <ArrowUpRight size={12} />
-            </a>{" "}
+            {c.encounter_code && !canReadReverse(game, code) ? (
+              "ArkhamDB"
+            ) : (
+              <a
+                href={`https://arkhamdb.com/card/${c.code}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                ArkhamDB <ArrowUpRight size={12} />
+              </a>
+            )}{" "}
             · Fantasy Flight Games
           </div>
         </div>

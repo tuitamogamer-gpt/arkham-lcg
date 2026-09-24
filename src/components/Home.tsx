@@ -11,6 +11,7 @@ import type { GameState } from "../game/types";
 import { card, CARD_ART, PLAYABLE_INVESTIGATORS } from "../game/data";
 import { party } from "../game/engine";
 import { Button, HoverPreview } from "./Common";
+import { Embers } from "./Motion";
 export function Home({
   game,
   onStart,
@@ -31,6 +32,7 @@ export function Home({
       <section className="night-hero">
         <div className="night-hero-art" />
         <div className="night-vignette" />
+        <Embers />
         <div className="night-hero-copy">
           <div className="occult-rule">
             <StarFour size={14} />
@@ -133,15 +135,15 @@ export function Home({
               ready: true,
             },
             {
-              name: "Smoke and Mirrors",
-              place: "The streets of Arkham",
-              copy: "Every answer hides another question.",
+              name: "Sealed chapter II",
+              place: "Undiscovered",
+              copy: "The next case stays sealed.",
               ready: false,
             },
             {
-              name: "Queen of Ash",
-              place: "Beneath the city",
-              copy: "Some doors can never be closed again.",
+              name: "Sealed chapter III",
+              place: "Undiscovered",
+              copy: "Continue the story to uncover more.",
               ready: false,
             },
           ].map((c, i) => (
@@ -166,7 +168,7 @@ export function Home({
                 ) : (
                   <>
                     <LockKey size={13} />
-                    COMING LATER
+                    SEALED · COMING LATER
                   </>
                 )}
               </span>

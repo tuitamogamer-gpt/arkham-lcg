@@ -217,6 +217,8 @@ export interface GameState {
   log: LogEntry[];
   error: string | null;
   victory: string[];
+  // Public discoveries persist even when the bounded event history rolls over.
+  discoveries?: { cards: string[]; storyBacks: string[] };
   campaign: {
     armitageBearer?: string;
     notes: string[];

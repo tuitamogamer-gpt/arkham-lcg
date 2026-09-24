@@ -32,6 +32,11 @@ import { Home } from "./components/Home";
 import { Game } from "./components/Game";
 import { EventController, EventJournal } from "./components/Events";
 import { BAGS, card, CARD_ART, PLAYABLE_INVESTIGATORS } from "./game/data";
+import { availableCards } from "./game/knowledge";
+import {
+  readMotionPreference,
+  type MotionPreference,
+} from "./components/Motion";
 type Page = "home" | "investigators" | "archive" | "guide" | "game";
 declare global {
   interface Window {
@@ -127,13 +132,6 @@ function Guide() {
         >
           2026 rulebook <ArrowUpRight size={15} />
         </a>
-        <a
-          href="https://images-cdn.fantasyflightgames.com/filer_public/f0/22/f022ac7c-9c30-4521-ac16-1f74f00e1d31/ahc100_campaign_guide-web.pdf"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Campaign guide <ArrowUpRight size={15} />
-        </a>
       </div>
     </div>
   );
@@ -151,6 +149,25 @@ export default function App() {
   const [settings, setSettings] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sound, setSound] = useState(false);
+  const [motion, setMotion] = useState<MotionPreference>(readMotionPreference);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      if (query.matches) document.getAnimations().forEach((a) => a.cancel());
+    };
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    document.documentElement.dataset.motion = motion;
+    try {
+      localStorage.setItem("arkham-chronicle:motion", motion);
+    } catch {
+      /* Optional preference. */
+    }
+    // Changing the setting also stops effects already in flight.
+    if (motion !== "full") document.getAnimations().forEach((a) => a.cancel());
+  }, [motion]);
   const [notice, setNotice] = useState("");
   const soundRef = useRef<AudioContext | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -289,7 +306,7 @@ export default function App() {
             >
               <Icon size={20} weight="light" />
               <span>{label}</span>
-              {id === "archive" && <small>196</small>}
+              {id === "archive" && <small>{availableCards(game).length}</small>}
             </button>
           ))}
           {game && (
@@ -297,6 +314,7 @@ export default function App() {
               className={
                 page === "game" ? "active continue-nav" : "continue-nav"
               }
+              aria-label="Current investigation"
               onClick={() => navigate("game")}
             >
               <FolderOpen size={20} weight="light" />
@@ -390,7 +408,7 @@ export default function App() {
             }
           />
         )}{" "}
-        {page === "archive" && <Archive inspect={setInspect} />}{" "}
+        {page === "archive" && <Archive game={game} inspect={setInspect} />}{" "}
         {page === "investigators" && (
           <Investigators inspect={setInspect} onStart={onStart} />
         )}{" "}
@@ -569,30 +587,29 @@ export default function App() {
         </Modal>
       )}
       {scenario !== null && (
-        <Modal title="Upcoming scenario" onClose={() => setScenario(null)}>
+        <Modal title="Sealed chapter" onClose={() => setScenario(null)}>
           <div className="modal-intro">
             <div className="eyebrow">
               Scenario 0{scenario + 1} · Coming later
             </div>
-            <h2>{scenario === 1 ? "Smoke and Mirrors" : "Queen of Ash"}</h2>
+            <h2>This case file is sealed.</h2>
             <p>
-              {scenario === 1
-                ? "The investigation continues through the streets of Arkham, following the trail of a dangerous cult."
-                : "Beneath the city, a final confrontation awaits."}
+              Follow the current investigation. Later titles, locations and
+              discoveries stay sealed until their story begins.
             </p>
             <p>
-              This chapter’s cards are in the archive. Its scenario script is
-              planned for a later build.
+              This chapter is not playable yet. Your current campaign record
+              stays saved for a future continuation.
             </p>
           </div>
           <Button
             onClick={() => {
               setScenario(null);
-              navigate("archive");
+              game ? navigate("game") : onStart();
             }}
             arrow
           >
-            Explore the card archive
+            Return to your investigation
           </Button>
         </Modal>
       )}
@@ -607,6 +624,22 @@ export default function App() {
             </p>
           </div>
           <div className="settings-actions">
+            <label className="motion-setting">
+              <span>Table animations</span>
+              <select
+                aria-label="Table animations"
+                value={motion}
+                onChange={(e) => setMotion(e.target.value as MotionPreference)}
+              >
+                <option value="full">Cinematic</option>
+                <option value="subtle">Subtle</option>
+                <option value="off">Off</option>
+              </select>
+              <small>
+                Effects follow your actions. Continue always stays in your
+                control. Your device’s reduced motion preference is respected.
+              </small>
+            </label>
             <Button
               secondary
               disabled={!game}
@@ -661,7 +694,11 @@ export default function App() {
         </Modal>
       )}
       {inspect && (
-        <CardDetail code={inspect} onClose={() => setInspect(null)} />
+        <CardDetail
+          code={inspect}
+          game={game}
+          onClose={() => setInspect(null)}
+        />
       )}{" "}
       {notice && (
         <div role="status" className="toast">
