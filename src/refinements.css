@@ -68,17 +68,13 @@
   min-width: 0;
 }
 .hover-copy h3 {
-  font:
-    600 26px/1.1 "Cormorant Garamond",
-    serif;
+  font: 600 26px/1.1 var(--font-reading);
   color: #ead9b4;
   margin: 8px 0 14px;
 }
 .hover-copy blockquote {
   margin: 0 0 14px;
-  font:
-    italic 17px/1.4 "Cormorant Garamond",
-    serif;
+  font: italic 17px/1.4 var(--font-reading);
   color: #adbba8;
 }
 .hover-copy .rules-text {
@@ -106,9 +102,7 @@
   overflow-wrap: anywhere;
 }
 .in-game .table-card-fallback > small {
-  font:
-    9px/1.3 "DM Sans",
-    sans-serif;
+  font: 9px/1.3 var(--font-ui);
   max-height: 3.9em;
   overflow: hidden;
 }
@@ -152,9 +146,7 @@
 .weapon-fight small {
   display: block;
   max-width: 220px;
-  font:
-    10px/1.5 "DM Sans",
-    sans-serif;
+  font: 10px/1.5 var(--font-ui);
   color: #c5c7b4;
   margin-top: 3px;
 }
@@ -291,9 +283,7 @@
   margin-bottom: 5px;
 }
 .story-passage blockquote {
-  font:
-    italic 22px/1.5 "Cormorant Garamond",
-    serif;
+  font: italic 22px/1.5 var(--font-reading);
   color: #e4d9bd;
   margin: 10px 0 22px;
 }
@@ -303,9 +293,7 @@
   margin: 20px 0;
 }
 .next-chapter h3 {
-  font:
-    600 30px/1.15 "Cormorant Garamond",
-    serif;
+  font: 600 30px/1.15 var(--font-reading);
   margin: 8px 0;
   color: #e5cc91;
 }

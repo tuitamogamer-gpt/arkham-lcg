@@ -1,0 +1,338 @@
+/* Arkham's printed vocabulary: Teutonic headings, book type, ink and paper.
+   Font sources and the visual reference are documented in docs/visual-identity.md. */
+@font-face {
+  font-family: "Teutonic";
+  src: url("/fonts/Teutonic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Pro";
+  src: url("/fonts/CrimsonPro.ttf") format("truetype");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Crimson Pro";
+  src: url("/fonts/CrimsonPro-Italic.ttf") format("truetype");
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+:root {
+  --font-display: "Teutonic", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-reading: "Crimson Pro", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-ui: var(--font-reading);
+  --vellum: #e6dcc2;
+  --printed-ink: #283c35;
+  --printed-muted: #5b604c;
+  --printed-rule: #7b79584d;
+  font-family: var(--font-reading);
+  font-size: 16px;
+}
+
+/* Display lettering is reserved for names and titles, as on the cards. */
+h1,
+h2,
+h3,
+.night-hero h1,
+.hover-copy h3,
+.next-chapter h3,
+.seat-copy > strong,
+.choice-details strong,
+.case-status > strong,
+.table-card-fallback > strong,
+.in-game .table-card-fallback > strong,
+.in-game .location-caption h3,
+.in-game .zone-heading h3,
+.chaos-bag-button strong,
+.asset-name,
+.enemy-info b,
+.empty-assets strong,
+.night-help strong,
+.pause-dock strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.015em;
+}
+.night-hero h1 {
+  font-size: clamp(64px, 7.3vw, 112px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #e4dcc4;
+  text-shadow:
+    0 2px 1px #3e4735,
+    0 8px 24px #0008;
+}
+.night-hero h1 > span {
+  font-size: 0.76em;
+  letter-spacing: 0.12em;
+  margin-top: 6px;
+}
+.chronicle-wordmark {
+  font-size: 27px;
+  letter-spacing: 0.1em;
+}
+.night-hero-copy > p {
+  font-size: 23px;
+  color: #d6d5c4;
+}
+.night-hero-art {
+  filter: saturate(0.68);
+}
+.campaign-case {
+  background:
+    radial-gradient(ellipse at 8% 90%, #99896626, transparent 55%),
+    linear-gradient(115deg, #d3c7a7, #e8dfc7 52%, #c9bd9d);
+  border: 3px double #797b60;
+  border-radius: 25px 3px 25px 3px;
+  outline-color: #cfc5a67a;
+}
+.campaign-case:before {
+  display: none;
+}
+.campaign-case h2 {
+  font-size: 55px;
+  line-height: 1.02;
+  color: #2d4941;
+}
+.campaign-case h2 em {
+  font-style: normal;
+}
+.campaign-case > p {
+  font-size: 18px;
+  color: #4e5547;
+}
+.night-section-title h2 {
+  font-size: 35px;
+}
+.case-topline,
+.case-eyebrow,
+.case-status > span:first-child,
+.case-ready {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.eyebrow,
+.occult-rule,
+.night-meta > span:last-child,
+.night-hero-footer,
+.case-topline,
+.event-meta,
+.in-game .table-zone-label {
+  font-weight: 600;
+  letter-spacing: 0.13em;
+}
+.night-meta > span,
+.night-text-link,
+.case-open,
+.breadcrumbs,
+.page-subtitle,
+.page-heading p {
+  font-size: 14px;
+}
+.button {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  border-radius: 2px;
+  background: linear-gradient(115deg, #dad0ad, #b4a477);
+  border-color: #d8cda7;
+  box-shadow:
+    inset 0 0 0 3px #eee7cb35,
+    0 4px 14px #03090845;
+}
+.button:hover:not(:disabled) {
+  background: linear-gradient(115deg, #ebe2c6, #c6b78e);
+}
+.button.secondary {
+  background: #192c24;
+  color: #ded7bb;
+  border-color: #85896a;
+}
+.button.secondary:hover:not(:disabled) {
+  background: #293e31;
+}
+
+/* Thin printed rules and muted green frames keep the scans as the focal point. */
+.in-game .game-title h1 {
+  font-size: 33px;
+}
+.in-game .seat-copy > strong {
+  font-size: 22px;
+}
+.in-game .game-title .eyebrow,
+.in-game .seat-copy > small,
+.in-game .table-zone-label,
+.in-game .pile-heading {
+  font-size: 10px;
+}
+.in-game .seat-copy > span,
+.in-game .story-progress,
+.in-game .location-caption,
+.in-game .deck-caption {
+  font-size: 12px;
+}
+.in-game .table-main {
+  border-color: #81896b66;
+  box-shadow:
+    inset 0 0 0 3px #acaf8420,
+    0 15px 38px #0003;
+}
+.in-game .action-button,
+.in-game .enemy-actions button,
+.in-game .end-turn {
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+.in-game .play-card,
+.in-game .ability-picker,
+.in-game .game-header-actions .button,
+.in-game .seat-hint,
+.commit-list > button {
+  font-size: 12px;
+}
+.in-game .location-caption h3 {
+  font-size: 17px;
+}
+.in-game .asset-name {
+  font-size: 16px;
+}
+.in-game .zone-heading h3 {
+  font-size: 23px;
+}
+.in-game .pile-heading > span:last-child {
+  font-size: 9px;
+}
+
+/* The rulebook's asymmetric printed frame, used for reading surfaces. */
+.modal,
+.card-hover {
+  border: 1px solid #a9aa86;
+  border-radius: 24px 3px 24px 3px;
+  background: radial-gradient(ellipse at 15% 0%, #354439, #172920 78%);
+  box-shadow:
+    inset 0 0 0 4px #acb08b22,
+    0 24px 70px #0009;
+}
+.modal h2,
+.modal .modal-intro h2,
+.event-header h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.15;
+  color: #e6dfc8;
+}
+.modal .modal-intro p,
+.modal .decision-list > button,
+.test-instructions,
+.test-footnote,
+.event-description,
+.hover-copy .rules-text,
+.rules-text {
+  font-family: var(--font-reading);
+  font-size: 17px;
+  line-height: 1.45;
+}
+.modal .decision-list small {
+  font-size: 14px;
+}
+.event-meta,
+.event-header > p,
+.event-footer > div > span {
+  font-size: 11px;
+}
+.event-story {
+  background:
+    radial-gradient(ellipse at 100% 100%, #b2a27a33, transparent 70%),
+    var(--vellum);
+  color: var(--printed-ink);
+  padding: 17px 20px;
+  border: 3px double #838468;
+  border-radius: 2px 20px 2px 20px;
+  min-width: 0;
+  box-shadow:
+    inset 0 0 24px #95845b18,
+    0 4px 12px #0002;
+}
+.event-story .event-description,
+.event-story .rules-text,
+.event-story .story-passage blockquote,
+.event-story .event-rules p,
+.event-story .encounter-route p,
+.event-story .next-chapter blockquote {
+  color: var(--printed-ink);
+}
+.event-story .eyebrow,
+.event-story .event-rules summary,
+.event-story .encounter-route p strong,
+.event-story .event-awaiting,
+.event-story .event-change,
+.event-story .event-change del,
+.event-story .encounter-route ol {
+  color: var(--printed-muted);
+}
+.event-story .event-change strong,
+.event-story .next-chapter h3,
+.event-story .encounter-route li.current {
+  color: #244f42;
+}
+.event-story .event-rules {
+  background: #98966e12;
+  border-color: var(--printed-rule);
+}
+.event-story .event-change,
+.event-story .encounter-route,
+.event-story .next-chapter {
+  border-color: var(--printed-rule);
+}
+.event-story .event-change svg,
+.event-story .event-awaiting svg {
+  color: #6d714d;
+}
+.event-story .event-change {
+  font-size: 14px;
+}
+.event-story .event-changes > .eyebrow,
+.event-story .event-rules summary,
+.event-story .encounter-route p strong {
+  font-size: 11px;
+}
+.event-story .encounter-route p {
+  font-size: 16px;
+}
+.event-story .story-passage blockquote {
+  font-size: 21px;
+}
+.event-story .next-chapter h3 {
+  font-size: 28px;
+}
+.event-table-button,
+.event-source > button:last-child {
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .night-hero h1 {
+    font-size: clamp(52px, 12vw, 82px);
+  }
+  .campaign-case h2 {
+    font-size: 46px;
+  }
+  .in-game .game-title h1 {
+    font-size: 27px;
+  }
+  .in-game .seat-copy > strong {
+    font-size: 18px;
+  }
+  .event-story {
+    padding: 12px;
+  }
+  .event-description,
+  .event-story .rules-text {
+    font-size: 16px;
+  }
+}

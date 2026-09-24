@@ -23,7 +23,7 @@ body:after {
 h1,
 h2,
 h3 {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-reading);
 }
 ::selection {
   background: #806d3b;
@@ -257,7 +257,7 @@ select {
   padding: 10px 0;
 }
 .night-hero h1 {
-  font-family: "Cinzel", Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(55px, 6.8vw, 110px);
   font-weight: 500;
   line-height: 1;
@@ -274,7 +274,7 @@ select {
   margin-top: 7px;
 }
 .chronicle-wordmark {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 32px;
   font-style: italic;
   letter-spacing: 3px;
@@ -296,7 +296,7 @@ select {
 }
 .night-hero-copy > p {
   color: #c6c5b2;
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 22px;
   line-height: 1.5;
   margin: 28px 0;
@@ -388,7 +388,7 @@ select {
   margin-top: 24px;
 }
 .case-number b {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 40px;
   font-weight: 500;
   line-height: 1.1;
@@ -411,7 +411,7 @@ select {
   font-weight: 400;
 }
 .campaign-case > p {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 17px;
   line-height: 1.4;
   margin: 23px 0;
@@ -443,7 +443,7 @@ select {
 }
 .case-status > strong {
   font-size: 23px;
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-weight: 600;
 }
 .case-ready {
@@ -558,7 +558,7 @@ select {
   margin-bottom: auto;
   padding-bottom: 18px;
   line-height: 1;
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 50px;
   color: #c7bb8999;
 }
@@ -575,7 +575,7 @@ select {
   color: #eadbbb;
 }
 .night-chapter p {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-style: italic;
   font-size: 16px;
   color: #adb79f;
@@ -691,7 +691,7 @@ select {
   color: #303c2b;
 }
 .dossier-note p {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-style: italic;
   font-size: 13px;
   color: #66694e;
@@ -715,7 +715,7 @@ select {
   gap: 7px;
 }
 .night-help strong {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 23px;
   font-weight: 500;
   color: #d5c7a1;
@@ -753,7 +753,7 @@ select {
   letter-spacing: 0.5px;
 }
 .night-footer > span:first-child {
-  font-family: "Cinzel", serif;
+  font-family: var(--font-display);
   letter-spacing: 3px;
   color: #b6a372;
 }
@@ -858,7 +858,7 @@ select {
   color: #b9a773;
 }
 .choice-details strong {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 23px;
   font-weight: 600;
   line-height: 1;
@@ -986,7 +986,7 @@ select {
   color: #e0c082;
 }
 .seat-copy > strong {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 24px;
   line-height: 1;
   color: #e4d7b4;
@@ -1003,7 +1003,7 @@ select {
   margin-left: 5px;
 }
 .seat-number {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   position: absolute;
   right: 12px;
   top: 9px;
@@ -1768,7 +1768,7 @@ select {
   border-width: 4px;
   color: #e1cc96;
   background: radial-gradient(circle at 40% 30%, #5e7150, #142f20);
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 44px;
   box-shadow:
     inset 0 0 0 3px #93895877,
@@ -3139,7 +3139,7 @@ select {
 }
 .event-rules p {
   white-space: pre-line;
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 18px;
   line-height: 1.4;
   color: #c9c8b1;
@@ -3256,7 +3256,7 @@ select {
   margin-bottom: 5px;
 }
 .pause-dock strong {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 25px;
   font-weight: 500;
   color: #e7d9b4;
@@ -3292,7 +3292,7 @@ select {
   cursor: pointer;
 }
 .journal-number {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 24px;
   color: #ac9c69;
   min-width: 30px;

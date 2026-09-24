@@ -1,5 +1,5 @@
 :root {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui);
   color: #24382f;
   background: #f4f3ec;
   font-synthesis: none;
@@ -76,7 +76,7 @@ p {
 h1,
 h2,
 h3 {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-reading);
   font-weight: 600;
 }
 button svg {
@@ -136,7 +136,7 @@ body:after {
   height: 32px;
 }
 .brand > span {
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--font-reading);
   font-size: 27px;
   font-weight: 600;
   letter-spacing: 3px;
@@ -144,7 +144,7 @@ body:after {
 }
 .brand small {
   display: block;
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui);
   font-weight: 400;
   font-size: 9px;
   letter-spacing: 4.5px;
@@ -361,7 +361,7 @@ body:after {
   border: 1px solid #4a653321;
   display: grid;
   place-items: center;
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 14px;
   color: #5a6b49;
 }
@@ -399,7 +399,7 @@ body:after {
   color: #9d9d7e;
 }
 .chapter-stamp span {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 32px;
   border: 1px solid #a7a88850;
   padding: 0 11px;
@@ -596,7 +596,7 @@ body:after {
   color: #b3ac82;
 }
 .hero-caption > strong {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 18px;
   font-weight: 500;
 }
@@ -680,7 +680,7 @@ body:after {
   background: linear-gradient(0deg, #0e251987, transparent);
 }
 .scenario-number {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   position: absolute;
   z-index: 1;
   font-size: 31px;
@@ -1042,7 +1042,7 @@ body:after {
   justify-content: center;
   background: var(--faction);
   color: #fff8e6;
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 18px;
   font-weight: 600;
   width: 25px;
@@ -1101,7 +1101,7 @@ body:after {
   line-height: 1.05;
 }
 .card-copy > p {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 12px;
   font-style: italic;
   color: #8c8269;
@@ -1228,7 +1228,7 @@ body:after {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 80px;
   color: #677259;
   border-radius: 7px;
@@ -1257,7 +1257,7 @@ body:after {
   font-size: 29px;
 }
 .subname {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-style: italic;
   font-size: 17px;
   color: #8c8e72;
@@ -1444,7 +1444,7 @@ body:after {
 }
 .setup-art b {
   display: block;
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 62px;
   font-weight: 400;
   margin-top: 2px;
@@ -1526,7 +1526,7 @@ body:after {
   width: 23px;
   border: 1px solid #bfb591;
   border-radius: 50%;
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-weight: 700;
   font-size: 13px;
   color: #655c44;
@@ -1612,7 +1612,7 @@ body:after {
   margin: 10px 0 9px;
 }
 .traits {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-style: italic;
   font-size: 17px;
   color: #838264;
@@ -1641,7 +1641,7 @@ body:after {
   color: #5f6e50;
 }
 .detail-copy blockquote {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 19px;
   font-style: italic;
   color: #939078;
@@ -1756,7 +1756,7 @@ body:after {
   color: #8b9379;
 }
 .round-label b {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 24px;
   margin-left: 6px;
   font-weight: 500;
@@ -1845,7 +1845,7 @@ body:after {
   color: #9da58c;
 }
 .story-number {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 27px;
   color: #839872;
 }
@@ -1872,7 +1872,7 @@ body:after {
   gap: 3px;
 }
 .doom-counter strong {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 28px;
   color: #a07852;
   font-weight: 500;
@@ -1941,7 +1941,7 @@ body:after {
   align-items: center;
 }
 .compass-rose span {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 9px;
   margin-bottom: -8px;
 }
@@ -2243,7 +2243,7 @@ body:after {
   gap: 8px;
 }
 .zone-heading h3 > span {
-  font: 8px "DM Sans";
+  font: 8px var(--font-ui);
   color: #829675;
   border-radius: 4px;
   background: #e1e9d6;
@@ -2331,7 +2331,7 @@ body:after {
   gap: 3px;
 }
 .asset-chip b {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 17px;
   font-weight: 600;
 }
@@ -2396,7 +2396,7 @@ body:after {
   gap: 3px;
 }
 .enemy-info b {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 18px;
   color: #7c634c;
 }
@@ -2520,7 +2520,7 @@ body:after {
   color: #99a080;
 }
 .player-pools b {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 28px;
   font-weight: 600;
   color: #617548;
@@ -2575,7 +2575,7 @@ body:after {
   color: #8c9a7e;
 }
 .log-entry.story > p {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 14px;
   color: #6b825b;
   line-height: 1.4;
@@ -2616,7 +2616,7 @@ body:after {
   color: #8c9564;
 }
 .test-values strong {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 43px;
   color: #506d42;
   font-weight: 500;
@@ -2629,7 +2629,7 @@ body:after {
   color: #9aa481;
 }
 .versus {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-style: italic;
   font-size: 24px;
   color: #b2b298;
@@ -2827,7 +2827,7 @@ body:after {
   color: #95a17d;
 }
 .resolution-stats b {
-  font-family: "Cormorant Garamond";
+  font-family: var(--font-reading);
   font-size: 43px;
   line-height: 1;
   color: #66844c;
