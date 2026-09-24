@@ -1431,13 +1431,13 @@ function drain(s: GameState) {
         if (!en || s.player.code !== C(1) || s.player.flags.daniela) break;
         const weapons = s.player.assets.filter(
           (a) =>
-            [C(2), C(19), C(20), C(77), C(86)].includes(a.code) &&
-            (a.code !== C(19) || a.uses > 0),
+            [C(2), C(19), C(20), C(45), C(77), C(86)].includes(a.code) &&
+            (![C(19), C(45)].includes(a.code) || a.uses > 0),
         );
         choice(
           s,
           "Daniela strikes back",
-          `An enemy attacked an investigator here. Fight ${card(en.code).name} without spending an action (once per round).`,
+          `Daniela’s reaction: after the enemy attack resolves, fight ${card(en.code).name} without spending an action (once per round). This is a counterattack, not a defense: it does not prevent the damage or horror. A firearm still spends 1 ammo.`,
           [
             option("basic", "Fight · bare hands", [
               eff("flag", { source: "daniela" }),
@@ -3519,7 +3519,7 @@ export function canAct(
       if (!a || ![C(2), C(19), C(20), C(45), C(77), C(86)].includes(a.code))
         return "Choose a weapon.";
       if ([C(19), C(45)].includes(a.code) && a.uses <= 0)
-        return "The M1911 is out of ammunition.";
+        return `${card(a.code).name} is out of ammunition.`;
     }
   }
   if (kind === "move" && !availableConnections(s).includes(target || ""))

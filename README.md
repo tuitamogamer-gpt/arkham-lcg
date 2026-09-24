@@ -32,11 +32,15 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
 - Searchable archive of **196 normalized 2026 card definitions**; all five investigator dossiers.
 
+- Direct **Fight with weapon** buttons show the action/ammo cost beside each enemy; skill tests identify the selected weapon. Daniela’s optional counterattack is explicitly explained and attributed to her investigator card.
+- Pointer and keyboard previews for agenda, act, investigator, assets, enemies and campaign information. Act/agenda transitions show the completed card’s reverse-side story and the new objective; previews do not reveal future story faces.
+- Encounter checkpoints show reveal, resolution and destination, including attached threats, Fire!, spawned enemies and the discard pile. Dialogs keep one accessible focus owner while inspecting cards.
+
 ## Scope and next milestones
 
 This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. Dexter Drake, Isabelle Barnes, Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
 
-The engine scripts these three fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. Card and location views use locally cached original scans where available, alongside current source text; unavailable art has a local fallback.
+The engine scripts these three fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
 The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, **142 passing tests**, and the limits of that coverage. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
@@ -89,6 +93,7 @@ node --import tsx scripts/pacing-browser-check.mjs
 node --import tsx scripts/rules-browser-check.mjs
 node --import tsx scripts/timing-browser-check.mjs
 node --import tsx scripts/tabletop-browser-check.mjs
+node --import tsx scripts/refinements-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
@@ -103,4 +108,4 @@ The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.co
 
 ## Art and attribution
 
-This is an independent fan project, not an official Fantasy Flight Games product. Arkham Horror, its cards, text and the official card images remain the property of their respective owners. Preview image source URLs are in `docs/art-sources.json`; downloaded ArkhamDB scans and unavailable images are recorded in `docs/card-image-sources.json`. Refresh them with `node scripts/cache-card-art.mjs` after a card sync, optionally selecting a comma-separated `CARD_CODES` list. The campus illustration was created with the built-in image generation tool; its prompt and saved location are in `docs/art-direction.md`. Typography: Cinzel, Cormorant Garamond and DM Sans. Icons: Phosphor.
+This is an independent fan project, not an official Fantasy Flight Games product. Arkham Horror, its cards, text and the official card images remain the property of their respective owners. Preview image source URLs are in `docs/art-sources.json`; downloaded original scans, exact source URLs, and unavailable images are recorded in `docs/card-image-sources.json`. Refresh them with `node scripts/cache-card-art.mjs` after a card sync, optionally selecting a comma-separated `CARD_CODES` list. The campus illustration was created with the built-in image generation tool; its prompt and saved location are in `docs/art-direction.md`. Typography: Cinzel, Cormorant Garamond and DM Sans. Interface icons: Phosphor. Game symbols: ArkhamCards’ Arkham icon font (provenance in `docs/icon-sources.json`).

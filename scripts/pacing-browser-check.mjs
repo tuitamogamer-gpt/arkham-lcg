@@ -180,6 +180,9 @@ assert.ok(
 await next();
 assert.equal((await saved()).player.threats.length, 1);
 await next();
+assert.equal((await state()).event.title, "Encounter complete");
+assert.match(await page.locator(".encounter-route").innerText(), /threat area/);
+await next();
 assert.equal((await state()).event.title, "Encounter revealed");
 assert.equal((await state()).event.actor, "12007");
 assert.equal((await saved()).player.threats.length, 0);

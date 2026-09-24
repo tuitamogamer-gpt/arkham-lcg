@@ -1,0 +1,502 @@
+/* Shared card reading and decisions: readable, bounded, and consistent. */
+@font-face {
+  font-family: "Arkham Symbols";
+  src: url("/fonts/arkhamicons.ttf") format("truetype");
+  font-display: block;
+}
+.game-symbol {
+  font-family: "Arkham Symbols", sans-serif;
+  display: inline-block;
+  line-height: 1;
+  font-weight: normal;
+  font-style: normal;
+  text-transform: none;
+  flex-shrink: 0;
+  vertical-align: -0.08em;
+}
+.symbol-willpower {
+  color: #8cbbdf;
+}
+.symbol-intellect {
+  color: #dcbb66;
+}
+.symbol-combat {
+  color: #e58a83;
+}
+.symbol-agility {
+  color: #9fc98a;
+}
+.skill-stats > span {
+  align-items: center;
+}
+.skill-stats .game-symbol {
+  font-size: 23px !important;
+}
+.skill-stats b {
+  color: #e6dec7;
+}
+.hover-trigger {
+  display: contents;
+}
+.card-hover {
+  position: fixed;
+  z-index: 1200;
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(480px, calc(100dvh - 24px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 22px;
+  border: 1px solid #b3a27377;
+  border-radius: 8px;
+  background: #17241f;
+  box-shadow: 0 16px 60px #000a;
+  color: #ded8bf;
+}
+.card-hover.with-card {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.card-hover .card-face {
+  width: 160px;
+  height: auto;
+  aspect-ratio: 419 / 600;
+  pointer-events: none;
+}
+.hover-copy {
+  min-width: 0;
+}
+.hover-copy h3 {
+  font:
+    600 26px/1.1 "Cormorant Garamond",
+    serif;
+  color: #ead9b4;
+  margin: 8px 0 14px;
+}
+.hover-copy blockquote {
+  margin: 0 0 14px;
+  font:
+    italic 17px/1.4 "Cormorant Garamond",
+    serif;
+  color: #adbba8;
+}
+.hover-copy .rules-text {
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+.hover-copy small {
+  display: block;
+  margin-top: 14px;
+  color: #b1b8a3;
+  font-size: 11px;
+}
+.in-game .table-card-fallback {
+  overflow: hidden;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px;
+  text-align: center;
+  min-width: 0;
+}
+.in-game .table-card-fallback > strong {
+  font-size: clamp(10px, 1.1vw, 16px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.in-game .table-card-fallback > small {
+  font:
+    9px/1.3 "DM Sans",
+    sans-serif;
+  max-height: 3.9em;
+  overflow: hidden;
+}
+.in-game .enemy-card-preview .table-card-fallback > small,
+.in-game .discard-face .table-card-fallback > small {
+  display: none;
+}
+.in-game .enemy-info > span:last-child {
+  min-width: 0;
+}
+.in-game .enemy-info b {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.in-game .enemy-row {
+  align-items: start;
+}
+.in-game .enemy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.in-game .enemy-actions > button {
+  min-height: 38px;
+  white-space: normal;
+}
+.in-game .enemy-actions .weapon-fight {
+  text-align: left;
+  padding: 9px 12px;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.weapon-fight span b {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.weapon-fight small {
+  display: block;
+  max-width: 220px;
+  font:
+    10px/1.5 "DM Sans",
+    sans-serif;
+  color: #c5c7b4;
+  margin-top: 3px;
+}
+.weapon-fight:disabled small {
+  color: inherit;
+}
+.test-source-summary {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 2px solid #ba9d60;
+  background: #ffffff06;
+  color: #bfc8b4;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.modal-backdrop {
+  padding: 20px;
+}
+.modal {
+  max-height: calc(100dvh - 40px);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.modal.compact {
+  width: 600px;
+  padding: 28px;
+}
+.modal .modal-intro {
+  padding-right: 25px;
+}
+.modal .modal-intro h2 {
+  font-size: 32px;
+  line-height: 1.12;
+}
+.modal .modal-intro p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.modal .decision-list {
+  display: grid;
+  gap: 8px;
+}
+.modal .decision-list > button {
+  padding: 13px 16px;
+  min-height: 48px;
+  border: 1px solid #a6af8b32;
+  border-radius: 5px;
+  background: #ffffff04;
+  line-height: 1.4;
+}
+.modal .decision-list > button:hover {
+  border-color: #c4ab74;
+  background: #c4ab7410;
+}
+.modal .decision-list small {
+  display: block;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+.modal:has(.event-window) {
+  width: 820px;
+  max-width: calc(100vw - 40px);
+}
+.event-window {
+  max-height: calc(100dvh - 40px);
+}
+.event-header {
+  padding: 22px 28px 18px;
+}
+.event-body {
+  padding: 22px 28px;
+}
+.event-body.has-card {
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 28px;
+}
+.event-source .card-face {
+  width: 170px;
+  height: auto;
+  aspect-ratio: 419 / 600;
+}
+.event-source .card-face.official-scan img {
+  object-fit: contain;
+}
+.event-source .scan-caption {
+  display: none;
+}
+.event-footer {
+  padding: 16px 28px;
+  flex-shrink: 0;
+}
+.event-header,
+.event-footer {
+  flex-shrink: 0;
+}
+.event-change {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.event-change > span:last-child {
+  max-width: none;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.encounter-route {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #a6af8b32;
+}
+.encounter-route ol {
+  display: flex;
+  list-style: none;
+  gap: 15px;
+  padding: 0;
+  margin: 0 0 14px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #8e9a89;
+}
+.encounter-route li.current {
+  color: #e8cd91;
+}
+.encounter-route p {
+  font-size: 13px;
+  color: #becbb5;
+  line-height: 1.55;
+}
+.encounter-route p strong {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #b8a275;
+  margin-bottom: 5px;
+}
+.story-passage blockquote {
+  font:
+    italic 22px/1.5 "Cormorant Garamond",
+    serif;
+  color: #e4d9bd;
+  margin: 10px 0 22px;
+}
+.next-chapter {
+  border-top: 1px solid #b7a47150;
+  padding-top: 22px;
+  margin: 20px 0;
+}
+.next-chapter h3 {
+  font:
+    600 30px/1.15 "Cormorant Garamond",
+    serif;
+  margin: 8px 0;
+  color: #e5cc91;
+}
+.next-chapter blockquote {
+  font-size: 19px;
+  color: #bac4b0;
+}
+.story-reveal .event-body.has-card {
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+.story-reveal .event-source .card-face {
+  width: 220px;
+  aspect-ratio: 600 / 419;
+}
+.detail-art .card-face {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 419 / 600;
+}
+.detail-art .card-face img {
+  object-fit: contain;
+}
+.rules-text {
+  white-space: pre-line;
+}
+@media (max-width: 760px) {
+  .in-game .enemy-row {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .event-body.has-card,
+  .story-reveal .event-body.has-card {
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .event-source .card-face,
+  .story-reveal .event-source .card-face {
+    width: 100px;
+  }
+  .event-header,
+  .event-body,
+  .event-footer {
+    padding: 16px;
+  }
+  .event-footer {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .encounter-route ol {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .card-hover.with-card {
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px;
+  }
+  .card-hover .card-face {
+    width: 90px;
+  }
+  .modal.compact {
+    padding: 22px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .modal {
+    animation: none;
+    transition: none;
+  }
+}
+.card-hover .card-face.landscape-scan,
+.detail-art .card-face.landscape-scan {
+  aspect-ratio: 600 / 419;
+}
+.modal[inert] {
+  visibility: hidden;
+}
+.in-game .enemy-card-preview .table-card-fallback > strong {
+  font-size: 10px;
+}
+.in-game .enemy-card-preview .table-card-fallback > span {
+  font-size: 7px;
+}
+.in-game .enemy-card-preview .table-card-fallback > svg {
+  width: 18px;
+  height: 18px;
+}
+.story-reverse-art {
+  width: 100%;
+  margin-bottom: 18px;
+}
+.story-reverse-art .table-card-image {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 600 / 419;
+  object-fit: contain;
+  border-radius: 7px;
+}
+.story-reverse-art small {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: #b2bba7;
+  margin-top: 8px;
+}
+.reaction-source {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  margin: 20px 0;
+  border: 1px solid #9aab8233;
+  border-radius: 6px;
+}
+.reaction-source button {
+  padding: 0;
+  border: 0;
+  background: none;
+  width: 125px;
+  flex: 0 0 125px;
+}
+.reaction-source .table-card-image {
+  width: 100%;
+  height: auto;
+}
+.reaction-source p {
+  white-space: pre-line;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #bdc7b1;
+}
+.reaction-source .eyebrow {
+  display: block;
+  font-size: 8px;
+  margin-bottom: 8px;
+}
+@media (max-width: 500px) {
+  .reaction-source {
+    gap: 12px;
+    padding: 12px;
+  }
+  .reaction-source button {
+    width: 85px;
+    flex-basis: 85px;
+  }
+}
+/* Scan geometry must follow the card face, never the old synthetic frame. */
+.card-face.official-scan {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.card-face.official-scan > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: contain;
+  background: transparent;
+}
+.card-face.official-scan.landscape-scan > img {
+  aspect-ratio: auto;
+}
+.card-hover .rules-text,
+.modal .rules-text {
+  color: #d1d8c3;
+}
+.card-face:not(.official-scan) .card-inner {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.card-face:not(.official-scan) .card-copy {
+  min-height: 0;
+  overflow: hidden;
+}
+.card-face:not(.official-scan) .card-copy h3 {
+  overflow-wrap: anywhere;
+}
+.card-face.compact:not(.official-scan) .card-copy p {
+  overflow: hidden;
+  max-height: 2.6em;
+  line-height: 1.3;
+}
+.card-face:not(.official-scan) .card-foot {
+  margin-top: auto;
+  flex-shrink: 0;
+}

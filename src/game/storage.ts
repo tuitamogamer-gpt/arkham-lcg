@@ -37,6 +37,20 @@ function validEvent(x: unknown, party: string[]): x is VisibleEvent {
       (t) => typeof t === "string" && t.length <= 10000,
     ) &&
     (!x.card || (typeof x.card === "string" && !!card(x.card))) &&
+    (x.story === undefined ||
+      (record(x.story) &&
+        ["act", "agenda"].includes(String(x.story.kind)) &&
+        typeof x.story.previous === "string" &&
+        !!card(x.story.previous) &&
+        (x.story.current === undefined ||
+          (typeof x.story.current === "string" && !!card(x.story.current))))) &&
+    (x.encounter === undefined ||
+      (record(x.encounter) &&
+        ["revealed", "resolving", "resolved"].includes(
+          String(x.encounter.stage),
+        ) &&
+        typeof x.encounter.destination === "string" &&
+        x.encounter.destination.length <= 1000)) &&
     ["neutral", "good", "bad", "story"].includes(String(x.tone)) &&
     Array.isArray(x.changes) &&
     x.changes.length <= 256 &&

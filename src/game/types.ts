@@ -8,6 +8,7 @@ export interface Card {
   faction_code: string;
   text?: string;
   back_text?: string;
+  back_name?: string;
   flavor?: string;
   back_flavor?: string;
   traits?: string;
@@ -170,6 +171,11 @@ export interface VisibleEvent {
   tone: "neutral" | "good" | "bad" | "story";
   changes: EventChange[];
   continueLabel: string;
+  story?: { kind: "act" | "agenda"; previous: string; current?: string };
+  encounter?: {
+    stage: "revealed" | "resolving" | "resolved";
+    destination: string;
+  };
 }
 export interface GameState {
   version: 3;

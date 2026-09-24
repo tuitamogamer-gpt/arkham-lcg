@@ -39,6 +39,8 @@ export function visibleSnapshot(s: GameState) {
     locations: s.locations,
     logId: s.log.at(-1)?.id || 0,
     limbo: s.limbo || [],
+    encounterDiscard: s.encounterDiscard,
+    victory: s.victory,
   });
 }
 export type VisibleSnapshot = ReturnType<typeof visibleSnapshot>;
@@ -225,7 +227,30 @@ export function visibleChanges(
   for (const en of before.enemies.filter(
     (en) => !after.enemies.some((v) => v.id === en.id),
   ))
-    changes.push(change(name(en.code), "In play", "Leaves play"));
+    changes.push(
+      change(
+        name(en.code),
+        "In play",
+        s.victory.includes(en.code)
+          ? "Victory display"
+          : s.encounterDiscard.includes(en.code)
+            ? "Encounter discard"
+            : "Leaves play",
+      ),
+    );
+  for (const c of new Set(after.encounterDiscard)) {
+    const added =
+      after.encounterDiscard.filter((x) => x === c).length -
+      before.encounterDiscard.filter((x) => x === c).length;
+    if (added > 0)
+      changes.push(
+        change(
+          name(c),
+          "Resolving / in play",
+          `Encounter discard${added > 1 ? ` ×${added}` : ""}`,
+        ),
+      );
+  }
   return changes;
 }
 function sourceCard(
@@ -275,7 +300,7 @@ export function presentEffect(
 ) {
   const changes = visibleChanges(before, s);
   const notes = s.log.filter((l) => l.id > before.logId);
-  if (!changes.length && !notes.length) return;
+  if (!changes.length && !notes.length && e.kind !== "endEncounter") return;
   const titles: Record<string, string> = {
     nextTurn: "Investigator handoff",
     investigationEnd: "Investigation phase complete",
@@ -293,6 +318,7 @@ export function presentEffect(
     encounter: "Encounter revealed",
     drawSearchedEnemy: "Encounter revealed",
     revelation: "Revelation resolves",
+    endEncounter: "Encounter complete",
     drawOne: e.title || "Card drawn",
     drawBatch: e.title || "Card drawn",
     drawnCard: "Drawn card resolves",
@@ -380,12 +406,79 @@ export function presentEffect(
     description = `${name(s.player.code)} reveals ${name(e.code!)}. Read the card, then resolve its revelation. Its effects have not resolved yet.`;
   if (!description)
     description = `${name(s.player.code)} · ${title.toLowerCase()}. Review the changes below.`;
+  const story: VisibleEvent["story"] =
+    before.act !== s.act
+      ? {
+          kind: "act",
+          previous: code(108 + before.act),
+          current: code(108 + s.act),
+        }
+      : before.agenda !== s.agenda
+        ? {
+            kind: "agenda",
+            previous: code(105 + before.agenda),
+            current: s.agenda <= 3 ? code(105 + s.agenda) : undefined,
+          }
+        : undefined;
+  const encounterStage = encounterReveal
+    ? "revealed"
+    : e.kind === "revelation"
+      ? "resolving"
+      : e.kind === "endEncounter"
+        ? "resolved"
+        : undefined;
+  let destination =
+    "Resolve the card, then place it in the encounter discard pile.";
+  const lastReveal = [...s.eventHistory]
+    .reverse()
+    .find((x) => x.encounter?.stage === "revealed");
+  const encounterTrail = lastReveal
+    ? s.eventHistory.filter((x) => x.id >= lastReveal.id && x.card === c)
+    : [];
+  const encounterChanges = [
+    ...encounterTrail.flatMap((x) => x.changes),
+    ...changes,
+  ];
+  const wasDiscarded =
+    c &&
+    encounterChanges.some(
+      (x) => x.label === name(c) && x.after.startsWith("Encounter discard"),
+    );
+  if (c && card(c).type_code === "enemy") {
+    const enemy =
+      !encounterReveal && [...s.enemies].reverse().find((en) => en.code === c);
+    destination = enemy
+      ? `${name(enemy.location)}${enemy.engagedWith ? ` · engaged with ${name(enemy.engagedWith)}` : " · not engaged"}`
+      : "Spawns at the location specified by the card; otherwise, at your location.";
+  } else if (c === code(125)) {
+    destination = encounterReveal
+      ? "Your threat area · stays in play. An extra copy is discarded."
+      : wasDiscarded
+        ? "Encounter discard pile · another copy is already in your threat area."
+        : s.player.threats.includes(c)
+          ? `${name(s.player.code)} · threat area`
+          : "Encounter discard pile";
+  } else if (c === code(129)) {
+    const attached =
+      !encounterReveal && encounterChanges.find((x) => x.after === "On fire");
+    destination =
+      !encounterReveal && wasDiscarded
+        ? "Encounter discard pile · every active location already has Fire!."
+        : attached
+          ? `${attached.label} · attached Fire!`
+          : "Attaches to the nearest location without Fire!";
+  } else if (encounterStage === "resolved")
+    destination = "Encounter discard pile";
   rememberEvent(
     s,
     {
       title,
       description,
       card: c,
+      story,
+      encounter: encounterStage
+        ? { stage: encounterStage, destination }
+        : undefined,
       changes,
       tone: notes.some((n) => n.tone === "bad")
         ? "bad"

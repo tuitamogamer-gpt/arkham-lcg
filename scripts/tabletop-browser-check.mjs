@@ -273,7 +273,7 @@ threat.enemies = [
 await load(threat);
 assert.equal(await page.locator(".enemy-card-preview img").count(), 1);
 await shot("threat-area", true);
-await page.getByRole("button", { name: /^Fight / }).click();
+await page.getByRole("button", { name: /^Fight .* with bare hands$/ }).click();
 await acknowledgeEvents(page);
 assert.ok((await summary()).test, "fight still starts a skill test");
 await shot("fight-test");

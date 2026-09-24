@@ -1,10 +1,14 @@
 {
-  "source": "https://arkhamdb.com",
-  "retrievedAt": "2026-09-23T22:35:34.460Z",
+  "source": "ArkhamDB original scans and assets.arkham.build mirror",
+  "retrievedAt": "2026-09-24T09:04:31.486Z",
   "images": [
     {
       "code": "12001",
       "url": "https://arkhamdb.com/bundles/cards/12001.png"
+    },
+    {
+      "code": "12001b",
+      "url": "https://arkhamdb.com/bundles/cards/12001b.jpg"
     },
     {
       "code": "12002",
@@ -19,6 +23,10 @@
       "url": "https://arkhamdb.com/bundles/cards/12004.png"
     },
     {
+      "code": "12004b",
+      "url": "https://arkhamdb.com/bundles/cards/12004b.jpg"
+    },
+    {
       "code": "12005",
       "url": "https://arkhamdb.com/bundles/cards/12005.jpg"
     },
@@ -31,12 +39,48 @@
       "url": "https://arkhamdb.com/bundles/cards/12007.png"
     },
     {
+      "code": "12007b",
+      "url": "https://arkhamdb.com/bundles/cards/12007b.jpg"
+    },
+    {
       "code": "12008",
       "url": "https://arkhamdb.com/bundles/cards/12008.jpg"
     },
     {
       "code": "12009",
       "url": "https://arkhamdb.com/bundles/cards/12009.jpg"
+    },
+    {
+      "code": "12010",
+      "url": "https://arkhamdb.com/bundles/cards/12010.png"
+    },
+    {
+      "code": "12010b",
+      "url": "https://arkhamdb.com/bundles/cards/12010b.jpg"
+    },
+    {
+      "code": "12011",
+      "url": "https://arkhamdb.com/bundles/cards/12011.jpg"
+    },
+    {
+      "code": "12012",
+      "url": "https://arkhamdb.com/bundles/cards/12012.jpg"
+    },
+    {
+      "code": "12013",
+      "url": "https://arkhamdb.com/bundles/cards/12013.png"
+    },
+    {
+      "code": "12013b",
+      "url": "https://arkhamdb.com/bundles/cards/12013b.jpg"
+    },
+    {
+      "code": "12014",
+      "url": "https://assets.arkham.build/optimized/12014.jpg"
+    },
+    {
+      "code": "12015",
+      "url": "https://assets.arkham.build/optimized/12015.jpg"
     },
     {
       "code": "12016",
@@ -79,6 +123,22 @@
       "url": "https://arkhamdb.com/bundles/cards/12025.jpg"
     },
     {
+      "code": "12026",
+      "url": "https://assets.arkham.build/optimized/12026.jpg"
+    },
+    {
+      "code": "12027",
+      "url": "https://assets.arkham.build/optimized/12027.jpg"
+    },
+    {
+      "code": "12028",
+      "url": "https://assets.arkham.build/optimized/12028.jpg"
+    },
+    {
+      "code": "12029",
+      "url": "https://assets.arkham.build/optimized/12029.jpg"
+    },
+    {
       "code": "12030",
       "url": "https://arkhamdb.com/bundles/cards/12030.jpg"
     },
@@ -115,6 +175,26 @@
       "url": "https://arkhamdb.com/bundles/cards/12038.jpg"
     },
     {
+      "code": "12039",
+      "url": "https://assets.arkham.build/optimized/12039.jpg"
+    },
+    {
+      "code": "12040",
+      "url": "https://assets.arkham.build/optimized/12040.jpg"
+    },
+    {
+      "code": "12041",
+      "url": "https://assets.arkham.build/optimized/12041.jpg"
+    },
+    {
+      "code": "12042",
+      "url": "https://assets.arkham.build/optimized/12042.jpg"
+    },
+    {
+      "code": "12043",
+      "url": "https://assets.arkham.build/optimized/12043.jpg"
+    },
+    {
       "code": "12044",
       "url": "https://arkhamdb.com/bundles/cards/12044.jpg"
     },
@@ -139,6 +219,94 @@
       "url": "https://arkhamdb.com/bundles/cards/12049.jpg"
     },
     {
+      "code": "12050",
+      "url": "https://assets.arkham.build/optimized/12050.jpg"
+    },
+    {
+      "code": "12051",
+      "url": "https://assets.arkham.build/optimized/12051.jpg"
+    },
+    {
+      "code": "12052",
+      "url": "https://assets.arkham.build/optimized/12052.jpg"
+    },
+    {
+      "code": "12053",
+      "url": "https://assets.arkham.build/optimized/12053.jpg"
+    },
+    {
+      "code": "12054",
+      "url": "https://assets.arkham.build/optimized/12054.jpg"
+    },
+    {
+      "code": "12055",
+      "url": "https://assets.arkham.build/optimized/12055.jpg"
+    },
+    {
+      "code": "12056",
+      "url": "https://assets.arkham.build/optimized/12056.jpg"
+    },
+    {
+      "code": "12057",
+      "url": "https://assets.arkham.build/optimized/12057.jpg"
+    },
+    {
+      "code": "12058",
+      "url": "https://assets.arkham.build/optimized/12058.jpg"
+    },
+    {
+      "code": "12059",
+      "url": "https://assets.arkham.build/optimized/12059.jpg"
+    },
+    {
+      "code": "12060",
+      "url": "https://assets.arkham.build/optimized/12060.jpg"
+    },
+    {
+      "code": "12061",
+      "url": "https://assets.arkham.build/optimized/12061.jpg"
+    },
+    {
+      "code": "12062",
+      "url": "https://assets.arkham.build/optimized/12062.jpg"
+    },
+    {
+      "code": "12063",
+      "url": "https://assets.arkham.build/optimized/12063.jpg"
+    },
+    {
+      "code": "12064",
+      "url": "https://assets.arkham.build/optimized/12064.jpg"
+    },
+    {
+      "code": "12065",
+      "url": "https://assets.arkham.build/optimized/12065.jpg"
+    },
+    {
+      "code": "12066",
+      "url": "https://assets.arkham.build/optimized/12066.jpg"
+    },
+    {
+      "code": "12067",
+      "url": "https://assets.arkham.build/optimized/12067.jpg"
+    },
+    {
+      "code": "12068",
+      "url": "https://assets.arkham.build/optimized/12068.jpg"
+    },
+    {
+      "code": "12069",
+      "url": "https://assets.arkham.build/optimized/12069.jpg"
+    },
+    {
+      "code": "12070",
+      "url": "https://assets.arkham.build/optimized/12070.jpg"
+    },
+    {
+      "code": "12071",
+      "url": "https://assets.arkham.build/optimized/12071.jpg"
+    },
+    {
       "code": "12072",
       "url": "https://arkhamdb.com/bundles/cards/12072.jpg"
     },
@@ -151,8 +319,56 @@
       "url": "https://arkhamdb.com/bundles/cards/12074.jpg"
     },
     {
+      "code": "12075",
+      "url": "https://assets.arkham.build/optimized/12075.jpg"
+    },
+    {
+      "code": "12076",
+      "url": "https://assets.arkham.build/optimized/12076.jpg"
+    },
+    {
+      "code": "12077",
+      "url": "https://assets.arkham.build/optimized/12077.jpg"
+    },
+    {
+      "code": "12078",
+      "url": "https://assets.arkham.build/optimized/12078.jpg"
+    },
+    {
+      "code": "12079",
+      "url": "https://assets.arkham.build/optimized/12079.jpg"
+    },
+    {
+      "code": "12080",
+      "url": "https://assets.arkham.build/optimized/12080.jpg"
+    },
+    {
+      "code": "12081",
+      "url": "https://assets.arkham.build/optimized/12081.jpg"
+    },
+    {
+      "code": "12082",
+      "url": "https://assets.arkham.build/optimized/12082.jpg"
+    },
+    {
+      "code": "12083",
+      "url": "https://assets.arkham.build/optimized/12083.jpg"
+    },
+    {
+      "code": "12084",
+      "url": "https://assets.arkham.build/optimized/12084.jpg"
+    },
+    {
+      "code": "12085",
+      "url": "https://assets.arkham.build/optimized/12085.jpg"
+    },
+    {
       "code": "12086",
       "url": "https://arkhamdb.com/bundles/cards/12086.jpg"
+    },
+    {
+      "code": "12087",
+      "url": "https://assets.arkham.build/optimized/12087.jpg"
     },
     {
       "code": "12088",
@@ -161,6 +377,10 @@
     {
       "code": "12089",
       "url": "https://arkhamdb.com/bundles/cards/12089.jpg"
+    },
+    {
+      "code": "12090",
+      "url": "https://assets.arkham.build/optimized/12090.jpg"
     },
     {
       "code": "12091",
@@ -179,40 +399,116 @@
       "url": "https://arkhamdb.com/bundles/cards/12094.jpg"
     },
     {
+      "code": "12095",
+      "url": "https://assets.arkham.build/optimized/12095.jpg"
+    },
+    {
+      "code": "12096",
+      "url": "https://assets.arkham.build/optimized/12096.jpg"
+    },
+    {
+      "code": "12097",
+      "url": "https://assets.arkham.build/optimized/12097.jpg"
+    },
+    {
+      "code": "12098",
+      "url": "https://assets.arkham.build/optimized/12098.jpg"
+    },
+    {
+      "code": "12099",
+      "url": "https://assets.arkham.build/optimized/12099.jpg"
+    },
+    {
+      "code": "12100",
+      "url": "https://assets.arkham.build/optimized/12100.jpg"
+    },
+    {
+      "code": "12101",
+      "url": "https://assets.arkham.build/optimized/12101.jpg"
+    },
+    {
+      "code": "12102",
+      "url": "https://assets.arkham.build/optimized/12102.jpg"
+    },
+    {
+      "code": "12103",
+      "url": "https://assets.arkham.build/optimized/12103.jpg"
+    },
+    {
+      "code": "12104",
+      "url": "https://assets.arkham.build/optimized/12104.jpg"
+    },
+    {
       "code": "12105",
       "url": "https://arkhamdb.com/bundles/cards/12105.jpg"
+    },
+    {
+      "code": "12105b",
+      "url": "https://arkhamdb.com/bundles/cards/12105b.jpg"
     },
     {
       "code": "12106",
       "url": "https://arkhamdb.com/bundles/cards/12106.jpg"
     },
     {
+      "code": "12106b",
+      "url": "https://assets.arkham.build/optimized/12106b.jpg"
+    },
+    {
       "code": "12107",
       "url": "https://arkhamdb.com/bundles/cards/12107.jpg"
+    },
+    {
+      "code": "12107b",
+      "url": "https://assets.arkham.build/optimized/12107b.jpg"
     },
     {
       "code": "12108",
       "url": "https://arkhamdb.com/bundles/cards/12108.jpg"
     },
     {
+      "code": "12108b",
+      "url": "https://assets.arkham.build/optimized/12108b.jpg"
+    },
+    {
       "code": "12109",
       "url": "https://arkhamdb.com/bundles/cards/12109.jpg"
+    },
+    {
+      "code": "12109b",
+      "url": "https://assets.arkham.build/optimized/12109b.jpg"
     },
     {
       "code": "12110",
       "url": "https://arkhamdb.com/bundles/cards/12110.jpg"
     },
     {
+      "code": "12110b",
+      "url": "https://assets.arkham.build/optimized/12110b.jpg"
+    },
+    {
       "code": "12111",
       "url": "https://arkhamdb.com/bundles/cards/12111.jpg"
+    },
+    {
+      "code": "12111b",
+      "url": "https://assets.arkham.build/optimized/12111b.jpg"
     },
     {
       "code": "12112",
       "url": "https://arkhamdb.com/bundles/cards/12112.jpg"
     },
     {
+      "code": "12112b",
+      "url": "https://assets.arkham.build/optimized/12112b.jpg"
+    },
+    {
       "code": "12113",
       "url": "https://arkhamdb.com/bundles/cards/12113.jpg"
+    },
+    {
+      "code": "12113b",
+      "url": "https://arkhamdb.com/bundles/cards/12113b.jpg"
     },
     {
       "code": "12114",
@@ -227,54 +523,417 @@
       "url": "https://arkhamdb.com/bundles/cards/12116.jpg"
     },
     {
+      "code": "12116b",
+      "url": "https://arkhamdb.com/bundles/cards/12116b.jpg"
+    },
+    {
       "code": "12117",
       "url": "https://arkhamdb.com/bundles/cards/12117.jpg"
+    },
+    {
+      "code": "12117b",
+      "url": "https://arkhamdb.com/bundles/cards/12117b.jpg"
     },
     {
       "code": "12118",
       "url": "https://arkhamdb.com/bundles/cards/12118.jpg"
     },
     {
+      "code": "12118b",
+      "url": "https://arkhamdb.com/bundles/cards/12118b.jpg"
+    },
+    {
       "code": "12119",
       "url": "https://arkhamdb.com/bundles/cards/12119.jpg"
+    },
+    {
+      "code": "12119b",
+      "url": "https://arkhamdb.com/bundles/cards/12119b.jpg"
     },
     {
       "code": "12120",
       "url": "https://arkhamdb.com/bundles/cards/12120.jpg"
     },
     {
+      "code": "12120b",
+      "url": "https://arkhamdb.com/bundles/cards/12120b.jpg"
+    },
+    {
       "code": "12121",
       "url": "https://arkhamdb.com/bundles/cards/12121.jpg"
-    }
-  ],
-  "failed": [
+    },
     {
       "code": "12122",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12122.jpg"
     },
     {
       "code": "12123",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12123.jpg"
     },
     {
       "code": "12124",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12124.jpg"
     },
     {
       "code": "12125",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12125.jpg"
     },
     {
       "code": "12126",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12126.jpg"
     },
     {
       "code": "12127",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12127.jpg"
     },
     {
       "code": "12128",
-      "error": "The operation was aborted due to timeout"
+      "url": "https://assets.arkham.build/optimized/12128.jpg"
+    },
+    {
+      "code": "12129",
+      "url": "https://assets.arkham.build/optimized/12129.jpg"
+    },
+    {
+      "code": "12130",
+      "url": "https://assets.arkham.build/optimized/12130.jpg"
+    },
+    {
+      "code": "12131",
+      "url": "https://assets.arkham.build/optimized/12131.jpg"
+    },
+    {
+      "code": "12132",
+      "url": "https://assets.arkham.build/optimized/12132.jpg"
+    },
+    {
+      "code": "12133",
+      "url": "https://assets.arkham.build/optimized/12133.jpg"
+    },
+    {
+      "code": "12133b",
+      "url": "https://assets.arkham.build/optimized/12133b.jpg"
+    },
+    {
+      "code": "12134",
+      "url": "https://assets.arkham.build/optimized/12134.jpg"
+    },
+    {
+      "code": "12134b",
+      "url": "https://assets.arkham.build/optimized/12134b.jpg"
+    },
+    {
+      "code": "12135",
+      "url": "https://assets.arkham.build/optimized/12135.jpg"
+    },
+    {
+      "code": "12135b",
+      "url": "https://assets.arkham.build/optimized/12135b.jpg"
+    },
+    {
+      "code": "12136",
+      "url": "https://assets.arkham.build/optimized/12136.jpg"
+    },
+    {
+      "code": "12136b",
+      "url": "https://assets.arkham.build/optimized/12136b.jpg"
+    },
+    {
+      "code": "12137",
+      "url": "https://assets.arkham.build/optimized/12137.jpg"
+    },
+    {
+      "code": "12138",
+      "url": "https://assets.arkham.build/optimized/12138.jpg"
+    },
+    {
+      "code": "12139",
+      "url": "https://assets.arkham.build/optimized/12139.jpg"
+    },
+    {
+      "code": "12140",
+      "url": "https://assets.arkham.build/optimized/12140.jpg"
+    },
+    {
+      "code": "12141",
+      "url": "https://assets.arkham.build/optimized/12141.jpg"
+    },
+    {
+      "code": "12142",
+      "url": "https://assets.arkham.build/optimized/12142.jpg"
+    },
+    {
+      "code": "12143",
+      "url": "https://assets.arkham.build/optimized/12143.jpg"
+    },
+    {
+      "code": "12144",
+      "url": "https://assets.arkham.build/optimized/12144.jpg"
+    },
+    {
+      "code": "12145",
+      "url": "https://assets.arkham.build/optimized/12145.jpg"
+    },
+    {
+      "code": "12146",
+      "url": "https://assets.arkham.build/optimized/12146.jpg"
+    },
+    {
+      "code": "12147",
+      "url": "https://assets.arkham.build/optimized/12147.jpg"
+    },
+    {
+      "code": "12148",
+      "url": "https://assets.arkham.build/optimized/12148.jpg"
+    },
+    {
+      "code": "12149",
+      "url": "https://assets.arkham.build/optimized/12149.jpg"
+    },
+    {
+      "code": "12150",
+      "url": "https://assets.arkham.build/optimized/12150.jpg"
+    },
+    {
+      "code": "12151",
+      "url": "https://assets.arkham.build/optimized/12151.jpg"
+    },
+    {
+      "code": "12152",
+      "url": "https://assets.arkham.build/optimized/12152.jpg"
+    },
+    {
+      "code": "12153",
+      "url": "https://assets.arkham.build/optimized/12153.jpg"
+    },
+    {
+      "code": "12154",
+      "url": "https://assets.arkham.build/optimized/12154.jpg"
+    },
+    {
+      "code": "12155",
+      "url": "https://assets.arkham.build/optimized/12155.jpg"
+    },
+    {
+      "code": "12156",
+      "url": "https://assets.arkham.build/optimized/12156.jpg"
+    },
+    {
+      "code": "12157",
+      "url": "https://assets.arkham.build/optimized/12157.jpg"
+    },
+    {
+      "code": "12158",
+      "url": "https://assets.arkham.build/optimized/12158.jpg"
+    },
+    {
+      "code": "12159",
+      "url": "https://assets.arkham.build/optimized/12159.jpg"
+    },
+    {
+      "code": "12160",
+      "url": "https://assets.arkham.build/optimized/12160.jpg"
+    },
+    {
+      "code": "12161",
+      "url": "https://assets.arkham.build/optimized/12161.jpg"
+    },
+    {
+      "code": "12162",
+      "url": "https://assets.arkham.build/optimized/12162.jpg"
+    },
+    {
+      "code": "12163",
+      "url": "https://assets.arkham.build/optimized/12163.jpg"
+    },
+    {
+      "code": "12164",
+      "url": "https://assets.arkham.build/optimized/12164.jpg"
+    },
+    {
+      "code": "12165",
+      "url": "https://assets.arkham.build/optimized/12165.jpg"
+    },
+    {
+      "code": "12166",
+      "url": "https://assets.arkham.build/optimized/12166.jpg"
+    },
+    {
+      "code": "12167",
+      "url": "https://assets.arkham.build/optimized/12167.jpg"
+    },
+    {
+      "code": "12168",
+      "url": "https://assets.arkham.build/optimized/12168.jpg"
+    },
+    {
+      "code": "12168b",
+      "url": "https://assets.arkham.build/optimized/12168b.jpg"
+    },
+    {
+      "code": "12169",
+      "url": "https://assets.arkham.build/optimized/12169.jpg"
+    },
+    {
+      "code": "12169b",
+      "url": "https://assets.arkham.build/optimized/12169b.jpg"
+    },
+    {
+      "code": "12170",
+      "url": "https://assets.arkham.build/optimized/12170.jpg"
+    },
+    {
+      "code": "12170b",
+      "url": "https://assets.arkham.build/optimized/12170b.jpg"
+    },
+    {
+      "code": "12171",
+      "url": "https://assets.arkham.build/optimized/12171.jpg"
+    },
+    {
+      "code": "12171b",
+      "url": "https://assets.arkham.build/optimized/12171b.jpg"
+    },
+    {
+      "code": "12172",
+      "url": "https://assets.arkham.build/optimized/12172.jpg"
+    },
+    {
+      "code": "12172b",
+      "url": "https://assets.arkham.build/optimized/12172b.jpg"
+    },
+    {
+      "code": "12173",
+      "url": "https://assets.arkham.build/optimized/12173.jpg"
+    },
+    {
+      "code": "12173b",
+      "url": "https://assets.arkham.build/optimized/12173b.jpg"
+    },
+    {
+      "code": "12174",
+      "url": "https://assets.arkham.build/optimized/12174.jpg"
+    },
+    {
+      "code": "12174b",
+      "url": "https://assets.arkham.build/optimized/12174b.jpg"
+    },
+    {
+      "code": "12175",
+      "url": "https://assets.arkham.build/optimized/12175.jpg"
+    },
+    {
+      "code": "12175b",
+      "url": "https://assets.arkham.build/optimized/12175b.jpg"
+    },
+    {
+      "code": "12176",
+      "url": "https://assets.arkham.build/optimized/12176.jpg"
+    },
+    {
+      "code": "12177",
+      "url": "https://assets.arkham.build/optimized/12177.jpg"
+    },
+    {
+      "code": "12178",
+      "url": "https://assets.arkham.build/optimized/12178.jpg"
+    },
+    {
+      "code": "12179",
+      "url": "https://assets.arkham.build/optimized/12179.jpg"
+    },
+    {
+      "code": "12179b",
+      "url": "https://assets.arkham.build/optimized/12179b.jpg"
+    },
+    {
+      "code": "12180",
+      "url": "https://assets.arkham.build/optimized/12180.jpg"
+    },
+    {
+      "code": "12181",
+      "url": "https://assets.arkham.build/optimized/12181.jpg"
+    },
+    {
+      "code": "12182",
+      "url": "https://assets.arkham.build/optimized/12182.jpg"
+    },
+    {
+      "code": "12182b",
+      "url": "https://assets.arkham.build/optimized/12182b.jpg"
+    },
+    {
+      "code": "12183",
+      "url": "https://assets.arkham.build/optimized/12183.jpg"
+    },
+    {
+      "code": "12183b",
+      "url": "https://assets.arkham.build/optimized/12183b.jpg"
+    },
+    {
+      "code": "12184",
+      "url": "https://assets.arkham.build/optimized/12184.jpg"
+    },
+    {
+      "code": "12184b",
+      "url": "https://assets.arkham.build/optimized/12184b.jpg"
+    },
+    {
+      "code": "12185",
+      "url": "https://assets.arkham.build/optimized/12185.jpg"
+    },
+    {
+      "code": "12185b",
+      "url": "https://assets.arkham.build/optimized/12185b.jpg"
+    },
+    {
+      "code": "12186",
+      "url": "https://assets.arkham.build/optimized/12186.jpg"
+    },
+    {
+      "code": "12186b",
+      "url": "https://assets.arkham.build/optimized/12186b.jpg"
+    },
+    {
+      "code": "12187",
+      "url": "https://assets.arkham.build/optimized/12187.jpg"
+    },
+    {
+      "code": "12187b",
+      "url": "https://assets.arkham.build/optimized/12187b.jpg"
+    },
+    {
+      "code": "12188",
+      "url": "https://assets.arkham.build/optimized/12188.jpg"
+    },
+    {
+      "code": "12189",
+      "url": "https://assets.arkham.build/optimized/12189.jpg"
+    },
+    {
+      "code": "12190",
+      "url": "https://assets.arkham.build/optimized/12190.jpg"
+    },
+    {
+      "code": "12191",
+      "url": "https://assets.arkham.build/optimized/12191.jpg"
+    },
+    {
+      "code": "12192",
+      "url": "https://assets.arkham.build/optimized/12192.jpg"
+    },
+    {
+      "code": "12193",
+      "url": "https://assets.arkham.build/optimized/12193.jpg"
+    },
+    {
+      "code": "12194",
+      "url": "https://assets.arkham.build/optimized/12194.jpg"
+    },
+    {
+      "code": "12195",
+      "url": "https://assets.arkham.build/optimized/12195.jpg"
     }
-  ]
+  ],
+  "failed": []
 }

@@ -8,7 +8,8 @@ import {
 } from "@phosphor-icons/react";
 import { card, plain } from "../game/data";
 import type { Action, GameState, VisibleEvent } from "../game/types";
-import { CardFace, Modal } from "./Common";
+import { CardFace, Modal, RulesText } from "./Common";
+import { TableCard } from "./Tabletop";
 
 const phaseName = (p: string) =>
   p === "roundEnd" ? "End of round" : p[0].toUpperCase() + p.slice(1);
@@ -47,6 +48,8 @@ export function EventController({
   const e = s.event;
   if (!e || obscured) return null;
   const source = e.card ? card(e.card) : undefined;
+  const previousStory = e.story ? card(e.story.previous) : undefined;
+  const nextStory = e.story?.current ? card(e.story.current) : undefined;
   const advance = (
     <button
       className="button event-continue"
@@ -88,17 +91,23 @@ export function EventController({
       wide
       onClose={() => setMinimized(true)}
     >
-      <div className={`event-window ${e.tone}`}>
+      <div
+        className={`event-window ${e.tone} ${e.story ? "story-reveal" : ""}`}
+      >
         <header className="event-header">
           <div className="event-meta">
             <span>
-              <PauseCircle size={15} /> GAME PAUSED
+              <PauseCircle size={15} />{" "}
+              {e.story
+                ? "A NEW CHAPTER"
+                : e.encounter
+                  ? "ENCOUNTER"
+                  : "GAME PAUSED"}
             </span>
             <span>ROUND {String(e.round).padStart(2, "0")}</span>
             <span>{phaseName(e.phase)}</span>
-            <span>EVENT {String(e.id).padStart(2, "0")}</span>
           </div>
-          <h2>{e.title}</h2>
+          <h2>{e.story ? previousStory?.back_name || e.title : e.title}</h2>
           <p>
             {e.actor === "scenario" ? "All investigators" : card(e.actor).name}
           </p>
@@ -106,6 +115,12 @@ export function EventController({
         <div className={`event-body ${source ? "has-card" : ""}`}>
           {source && (
             <aside className="event-source">
+              {previousStory && (
+                <div className="story-reverse-art">
+                  <TableCard code={previousStory.code} back />
+                  <small>{previousStory.back_name || "The story so far"}</small>
+                </div>
+              )}
               <CardFace
                 c={source}
                 compact
@@ -117,18 +132,72 @@ export function EventController({
             </aside>
           )}
           <div className="event-story">
+            {e.encounter && (
+              <div className="encounter-route" aria-label="Encounter progress">
+                <ol>
+                  {["revealed", "resolving", "resolved"].map((step, i) => (
+                    <li
+                      key={step}
+                      className={e.encounter!.stage === step ? "current" : ""}
+                    >
+                      {i + 1}. {step === "resolved" ? "Destination" : step}
+                    </li>
+                  ))}
+                </ol>
+                <p>
+                  <strong>
+                    {e.encounter.stage === "revealed"
+                      ? "Where it goes"
+                      : "Card destination"}
+                  </strong>
+                  {e.encounter.destination}
+                </p>
+              </div>
+            )}
+            {previousStory && (
+              <section className="story-passage" aria-label="Story transition">
+                <span className="eyebrow">
+                  {e.story?.kind} · turning the card
+                </span>
+                <blockquote>
+                  {plain(previousStory.back_flavor || "")}
+                </blockquote>
+                <details className="event-rules">
+                  <summary>Resolve the reverse side</summary>
+                  <p>
+                    <RulesText text={previousStory.back_text} />
+                  </p>
+                </details>
+                {nextStory && (
+                  <div className="next-chapter">
+                    <span className="eyebrow">
+                      {e.story?.kind === "act"
+                        ? "Your next objective"
+                        : "The next threat"}
+                    </span>
+                    <h3>{nextStory.name}</h3>
+                    <blockquote>{plain(nextStory.flavor || "")}</blockquote>
+                    <p className="rules-text">
+                      <RulesText text={nextStory.text} />
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
             <p className="event-description">{e.description}</p>
-            {source?.text && (
+            {source?.text && !e.story && (
               <details
                 className="event-rules"
                 open={e.title === "Encounter revealed"}
               >
                 <summary>Card text · {source.name}</summary>
-                <p>{plain(source.text)}</p>
+                <p>
+                  <RulesText text={source.text} />
+                </p>
               </details>
             )}
             <Changes event={e} />
-            {!e.changes.length && (
+            {!e.changes.length && !e.encounter && !e.story && (
               <div className="event-awaiting">
                 <PauseCircle size={17} />
                 <p>
@@ -141,7 +210,7 @@ export function EventController({
         </div>
         <footer className="event-footer">
           <div>
-            <span>No timers. Nothing advances on its own.</span>
+            <span>Continue when you are ready.</span>
             <button
               className="event-table-button"
               onClick={() => setMinimized(true)}

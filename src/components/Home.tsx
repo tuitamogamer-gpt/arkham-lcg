@@ -10,7 +10,7 @@ import {
 import type { GameState } from "../game/types";
 import { card, CARD_ART, PLAYABLE_INVESTIGATORS } from "../game/data";
 import { party } from "../game/engine";
-import { Button } from "./Common";
+import { Button, HoverPreview } from "./Common";
 export function Home({
   game,
   onStart,
@@ -65,42 +65,51 @@ export function Home({
             <span>THE 2026 CORE SET</span>
           </div>
         </div>
-        <aside className="campaign-case">
-          <div className="case-topline">
-            <span>MISKATONIC UNIVERSITY</span>
-            <span>CONFIDENTIAL</span>
-          </div>
-          <div className="case-number">
-            CASE
-            <br />
-            <b>001</b>
-          </div>
-          <span className="case-eyebrow">THE CURRENT CAMPAIGN</span>
-          <h2>
-            Brethren <br />
-            of <em>Ash</em>
-          </h2>
-          <p>
-            A missing friend. A room in disarray.
-            <br />
-            And the unmistakable scent of smoke.
-          </p>
-          <div className="case-divider">
-            <StarFour size={16} />
-          </div>
-          <div className="case-status">
-            <span>CHAPTER I</span>
-            <strong>Spreading Flames</strong>
-            <span className="case-ready">
-              {game
-                ? `SAVED · ROUND ${String(game.round).padStart(2, "0")}`
-                : "READY TO INVESTIGATE"}
-            </span>
-          </div>
-          <button className="case-open" onClick={game ? onResume : onStart}>
-            Open the case file <ArrowRight size={18} />
-          </button>
-        </aside>
+        <HoverPreview
+          title="Brethren of Ash"
+          text={
+            game
+              ? `Spreading Flames · Round ${game.round}\nAct ${game.act} · Agenda ${game.agenda}\n\n${game.campaign.notes.join("\n") || "Your campaign discoveries will be recorded here."}`
+              : "Your friend has vanished from Miskatonic University. Start Spreading Flames to follow the first clues.\n\n1–3 investigators · Three actions each turn.\nCampaign discoveries are saved as the story unfolds."
+          }
+        >
+          <aside className="campaign-case" tabIndex={0}>
+            <div className="case-topline">
+              <span>MISKATONIC UNIVERSITY</span>
+              <span>CONFIDENTIAL</span>
+            </div>
+            <div className="case-number">
+              CASE
+              <br />
+              <b>001</b>
+            </div>
+            <span className="case-eyebrow">THE CURRENT CAMPAIGN</span>
+            <h2>
+              Brethren <br />
+              of <em>Ash</em>
+            </h2>
+            <p>
+              A missing friend. A room in disarray.
+              <br />
+              And the unmistakable scent of smoke.
+            </p>
+            <div className="case-divider">
+              <StarFour size={16} />
+            </div>
+            <div className="case-status">
+              <span>CHAPTER I</span>
+              <strong>Spreading Flames</strong>
+              <span className="case-ready">
+                {game
+                  ? `SAVED · ROUND ${String(game.round).padStart(2, "0")}`
+                  : "READY TO INVESTIGATE"}
+              </span>
+            </div>
+            <button className="case-open" onClick={game ? onResume : onStart}>
+              Open the case file <ArrowRight size={18} />
+            </button>
+          </aside>
+        </HoverPreview>
         <div className="night-hero-footer">
           <span>THE UNKNOWN AWAITS</span>
           <span>✦</span>

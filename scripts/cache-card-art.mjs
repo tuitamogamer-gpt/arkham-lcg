@@ -1,41 +1,83 @@
-import { readFile, writeFile, mkdir, access } from "node:fs/promises";
+import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
+
 const cards = JSON.parse(await readFile("public/data/core-2026.json", "utf8"));
 const manifest = JSON.parse(
   await readFile("public/data/art-manifest.json", "utf8").catch(() => "{}"),
 );
-const targets = process.env.CARD_CODES
-  ? cards.filter((c) => process.env.CARD_CODES.split(",").includes(c.code))
-  : cards;
+const selected = process.env.CARD_CODES?.split(",");
+const targets = [
+  ...new Map(
+    cards
+      .filter((c) => !selected || selected.includes(c.code))
+      .flatMap((c) => [
+        {
+          code: c.code,
+          // Hidden linked faces can be absent from the API's image metadata.
+          url: new URL(
+            c.imagesrc || `/bundles/cards/${c.code}.jpg`,
+            "https://arkhamdb.com",
+          ).href,
+        },
+        ...(c.backimagesrc
+          ? [
+              {
+                code: `${c.code}b`,
+                url: new URL(c.backimagesrc, "https://arkhamdb.com").href,
+              },
+            ]
+          : []),
+      ])
+      .map((c) => [c.code, c]),
+  ).values(),
+];
+const previous = JSON.parse(
+  await readFile("docs/card-image-sources.json", "utf8").catch(() => "{}"),
+);
+const sources = new Map((previous.images || []).map((c) => [c.code, c]));
 const failed = [];
 let cursor = 0;
-let failuresInARow = 0;
-let stopped = false;
 await mkdir("public/art/cards", { recursive: true });
 async function worker() {
-  while (cursor < targets.length && !stopped) {
+  while (cursor < targets.length) {
     const c = targets[cursor++];
-    if (!c.imagesrc) continue;
-    const url = new URL(c.imagesrc, "https://arkhamdb.com").href;
-    const ext = c.imagesrc.split(".").pop();
-    const path = `public/art/cards/${c.code}.${ext}`;
-    try {
+    const ext = new URL(c.url).pathname.split(".").pop();
+    let path = manifest[c.code]
+      ? `public${manifest[c.code]}`
+      : `public/art/cards/${c.code}.${ext}`;
+    let downloadedFrom;
+    let error;
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        await access(path);
-      } catch {
-        const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
-        if (!r.ok || !r.headers.get("content-type")?.startsWith("image/"))
-          throw new Error(String(r.status));
-        await writeFile(path, new Uint8Array(await r.arrayBuffer()));
+        const existing = await stat(path).catch(() => null);
+        if (!existing || existing.size < 1000) {
+          const url =
+            attempt < 2
+              ? `https://assets.arkham.build/optimized/${c.code}.jpg`
+              : c.url;
+          const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (!r.ok || !r.headers.get("content-type")?.startsWith("image/"))
+            throw new Error(`HTTP ${r.status}`);
+          const bytes = new Uint8Array(await r.arrayBuffer());
+          if (bytes.length < 1000) throw new Error("Incomplete image");
+          path = `public/art/cards/${c.code}.${r.headers.get("content-type").includes("png") ? "png" : "jpg"}`;
+          await writeFile(path, bytes);
+          downloadedFrom = url;
+        }
+        manifest[c.code] = path.replace(/^public/, "");
+        if (downloadedFrom || !sources.has(c.code))
+          sources.set(c.code, { ...c, url: downloadedFrom || c.url });
+        error = undefined;
+        break;
+      } catch (e) {
+        error = e.message;
       }
-      failuresInARow = 0;
-      manifest[c.code] = `/art/cards/${c.code}.${ext}`;
-    } catch (e) {
-      failed.push({ code: c.code, error: e.message });
-      if (++failuresInARow >= 6) stopped = true;
     }
+    if (error) failed.push({ ...c, error });
+    if (cursor % 25 === 0)
+      console.log(`Checked ${cursor}/${targets.length} card faces`);
   }
 }
-await Promise.all(Array.from({ length: 2 }, worker));
+await Promise.all(Array.from({ length: 4 }, worker));
 await writeFile(
   "public/data/art-manifest.json",
   JSON.stringify(manifest, null, 2) + "\n",
@@ -44,14 +86,11 @@ await writeFile(
   "docs/card-image-sources.json",
   JSON.stringify(
     {
-      source: "https://arkhamdb.com",
+      source: "ArkhamDB original scans and assets.arkham.build mirror",
       retrievedAt: new Date().toISOString(),
-      images: cards
-        .filter((c) => manifest[c.code])
-        .map((c) => ({
-          code: c.code,
-          url: new URL(c.imagesrc, "https://arkhamdb.com").href,
-        })),
+      images: [...sources.values()].sort((a, b) =>
+        a.code.localeCompare(b.code),
+      ),
       failed,
     },
     null,
@@ -59,8 +98,7 @@ await writeFile(
   ) + "\n",
 );
 console.log(
-  `Cached ${Object.keys(manifest).length} original card scans; ${failed.length} unavailable.`,
+  `Cached ${Object.keys(manifest).length} original card faces; ${failed.length} unavailable.`,
 );
-
-// All file writes have completed; aborting fetches can leave idle sockets open.
-process.exit(0);
+if (failed.length) console.log(JSON.stringify(failed));
+process.exit(failed.length ? 1 : 0);

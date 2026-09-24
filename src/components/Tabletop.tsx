@@ -25,7 +25,7 @@ import {
   stats,
 } from "../game/engine";
 import type { GameState } from "../game/types";
-import { CardFace, Modal, SkillStats, Token } from "./Common";
+import { CardFace, Modal, SkillStats, Token, HoverPreview } from "./Common";
 
 const nativeArt: Record<string, string> = scans;
 
@@ -43,8 +43,11 @@ export function TableCard({
     : back
       ? nativeArt[`${code}b`]
       : nativeArt[code] || CARD_ART[code];
-  return src ? (
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  return src && !failed ? (
     <img
+      onError={() => setFailed(true)}
       className="table-card-image"
       src={src}
       alt={`${c.name}${faces ? (back ? " · unrevealed" : " · revealed") : back ? " · reverse face" : ""}`}
@@ -54,7 +57,7 @@ export function TableCard({
       <span>{back ? "UNEXPLORED LOCATION" : c.type_code}</span>
       <StarFour size={32} weight="thin" />
       <strong>{c.name}</strong>
-      {!back && <small>{plain(c.text).slice(0, 180)}</small>}
+      <small>Hover or inspect to read the card</small>
     </span>
   );
 }
@@ -114,13 +117,15 @@ export function ScenarioTray({
           <span>AGENDA {s.agenda} / 3</span>
           <span>THE THREAT</span>
         </div>
-        <button
-          className="story-card agenda-card physical-card landscape-card"
-          onClick={() => inspect(String(12105 + s.agenda))}
-          aria-label={`Inspect agenda: ${card(String(12105 + s.agenda)).name}`}
-        >
-          <TableCard code={String(12105 + s.agenda)} />
-        </button>
+        <HoverPreview code={String(12105 + s.agenda)}>
+          <button
+            className="story-card agenda-card physical-card landscape-card"
+            onClick={() => inspect(String(12105 + s.agenda))}
+            aria-label={`Inspect agenda: ${card(String(12105 + s.agenda)).name}`}
+          >
+            <TableCard code={String(12105 + s.agenda)} />
+          </button>
+        </HoverPreview>
         <div className="story-progress doom-progress">
           <TableToken
             kind="doom"
@@ -145,14 +150,16 @@ export function ScenarioTray({
           <span>ACT {s.act} / 4</span>
           <span>YOUR OBJECTIVE</span>
         </div>
-        <button
-          className="story-card act-card physical-card landscape-card"
-          onClick={() => inspect(String(12108 + s.act))}
-          aria-label={`Inspect act: ${card(String(12108 + s.act)).name}`}
-          title={objective}
-        >
-          <TableCard code={String(12108 + s.act)} />
-        </button>
+        <HoverPreview code={String(12108 + s.act)}>
+          <button
+            className="story-card act-card physical-card landscape-card"
+            onClick={() => inspect(String(12108 + s.act))}
+            aria-label={`Inspect act: ${card(String(12108 + s.act)).name}`}
+            title={objective}
+          >
+            <TableCard code={String(12108 + s.act)} />
+          </button>
+        </HoverPreview>
         <div className="story-progress">
           <TableToken
             kind="clue"
@@ -568,13 +575,15 @@ export function InvestigatorMat({
           <span className="table-zone-label">YOUR INVESTIGATOR</span>
           <span>{card(p.code).faction_code}</span>
         </div>
-        <button
-          className="investigator-card physical-card landscape-card"
-          onClick={() => inspect(p.code)}
-          aria-label={`Inspect ${card(p.code).name}`}
-        >
-          <TableCard code={p.code} />
-        </button>
+        <HoverPreview code={p.code}>
+          <button
+            className="investigator-card physical-card landscape-card"
+            onClick={() => inspect(p.code)}
+            aria-label={`Inspect ${card(p.code).name}`}
+          >
+            <TableCard code={p.code} />
+          </button>
+        </HoverPreview>
         <SkillStats
           values={(
             ["willpower", "intellect", "combat", "agility"] as const
@@ -639,16 +648,25 @@ export function InvestigatorMat({
                 key={asset.id}
                 className={`table-asset ${asset.exhausted ? "exhausted" : ""}`}
               >
-                <CardFace
-                  c={card(asset.code)}
-                  compact
-                  onClick={() => inspect(asset.code)}
-                />
+                <HoverPreview code={asset.code}>
+                  <CardFace
+                    c={card(asset.code)}
+                    compact
+                    onClick={() => inspect(asset.code)}
+                  />
+                </HoverPreview>
                 <div className="asset-counters">
-                  {asset.uses > 0 && (
-                    <span className="uses-counter" title={`${asset.uses} uses`}>
+                  {(asset.uses > 0 ||
+                    ["12019", "12045"].includes(asset.code)) && (
+                    <span
+                      className="uses-counter"
+                      title={`${asset.uses} ${["12019", "12045"].includes(asset.code) ? "ammo" : "uses"}`}
+                    >
                       <Coins size={10} />
-                      {asset.uses}
+                      {asset.uses}{" "}
+                      {["12019", "12045"].includes(asset.code)
+                        ? "ammo"
+                        : "uses"}
                     </span>
                   )}
                   {asset.damage > 0 && (
@@ -684,11 +702,13 @@ export function InvestigatorMat({
             </div>
             <div>
               {p.threats.map((code, i) => (
-                <button key={`${code}-${i}`} onClick={() => inspect(code)}>
-                  <Skull size={13} />
-                  {card(code).name}
-                  <Eye size={12} />
-                </button>
+                <HoverPreview key={`${code}-${i}`} code={code}>
+                  <button onClick={() => inspect(code)}>
+                    <Skull size={13} />
+                    {card(code).name}
+                    <Eye size={12} />
+                  </button>
+                </HoverPreview>
               ))}
             </div>
           </section>

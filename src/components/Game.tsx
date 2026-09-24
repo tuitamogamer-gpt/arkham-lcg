@@ -48,7 +48,15 @@ import {
   commitCards,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
-import { Button, CardFace, Modal, SkillIcon, Token } from "./Common";
+import {
+  Button,
+  CardFace,
+  Modal,
+  SkillIcon,
+  Token,
+  HoverPreview,
+  RulesText,
+} from "./Common";
 export function Game({
   game: s,
   dispatch,
@@ -75,7 +83,7 @@ export function Game({
   const [mulligan, setMulligan] = useState<string[]>([]);
   const [investigateSource, setInvestigateSource] = useState("");
   const [investigateTarget, setInvestigateTarget] = useState("");
-  const [weapon, setWeapon] = useState("");
+
   const [deck, setDeck] = useState(false);
   const [endConfirm, setEndConfirm] = useState(false);
   useEffect(() => {
@@ -87,7 +95,6 @@ export function Game({
     setMulligan([]);
     setInvestigateSource("");
     setInvestigateTarget("");
-    setWeapon("");
     setDeck(false);
   }, [s.player.code]);
   useEffect(() => {
@@ -133,11 +140,15 @@ export function Game({
   const source = tools.some((a) => a.id === investigateSource)
     ? investigateSource
     : "";
+  const testWeapon =
+    s.test?.kind === "fight"
+      ? s.player.assets.find((a) => a.id === s.test?.source)
+      : undefined;
   const target =
     tools.find((a) => a.id === source)?.code === "12033"
       ? investigateTarget || s.player.location
       : s.player.location;
-  const fightSource = weapons.some((a) => a.id === weapon) ? weapon : "";
+
   if (s.status === "resolution")
     return (
       <div className="resolution-page page-content">
@@ -210,7 +221,12 @@ export function Game({
       <div className="game-title">
         <div>
           <div className="eyebrow">Brethren of Ash / Scenario I</div>
-          <h1>Spreading Flames</h1>
+          <HoverPreview
+            title="Brethren of Ash · Spreading Flames"
+            text={`Act ${s.act} · ${actText[s.act - 1]}\nAgenda ${s.agenda} · ${s.doom} doom\n\nCampaign record\n${s.campaign.notes.length ? s.campaign.notes.join("\n") : "Your discoveries will be recorded here."}`}
+          >
+            <h1 tabIndex={0}>Spreading Flames</h1>
+          </HoverPreview>
         </div>
         <div className="game-header-actions">
           <button className="history-trigger" onClick={onHistory}>
@@ -531,25 +547,6 @@ export function Game({
                 <h3>
                   <Skull size={16} /> Threats nearby
                 </h3>
-                {weapons.length > 0 && (
-                  <select
-                    value={fightSource}
-                    aria-label="Fight using"
-                    onChange={(e) => setWeapon(e.target.value)}
-                  >
-                    <option value="">Basic fight</option>
-                    {weapons.map((w) => (
-                      <option value={w.id} key={w.id}>
-                        {card(w.code).name}
-                        {w.code === "12019"
-                          ? ` · ${w.uses} ammo`
-                          : w.exhausted
-                            ? " · exhausted"
-                            : ""}
-                      </option>
-                    ))}
-                  </select>
-                )}
               </div>
               {s.enemies
                 .filter(
@@ -559,43 +556,79 @@ export function Game({
                 )
                 .map((e) => (
                   <div className="enemy-row" key={e.id}>
-                    <button
-                      className="enemy-info"
-                      onClick={() => inspect(e.code)}
-                    >
-                      <span
-                        className={`enemy-card-preview ${e.exhausted ? "exhausted" : ""}`}
-                      >
-                        <TableCard code={e.code} />
-                      </span>
-                      <span>
-                        <b>{card(e.code).name}</b>
-                        <small>
-                          {e.exhausted
-                            ? "Exhausted"
-                            : e.engaged
-                              ? `Engaged · ${card(e.engagedWith || s.player.code).name}`
-                              : card(e.location).name}{" "}
-                          · {Math.max(0, enemyHealth(s, e) - e.damage)} health
-                        </small>
-                      </span>
-                    </button>
-                    <div className="enemy-actions">
+                    <HoverPreview code={e.code}>
                       <button
-                        disabled={
-                          !!canAct(s, "fight", e.id, fightSource || undefined)
-                        }
-                        onClick={() =>
-                          a("fight", e.id, fightSource || undefined)
-                        }
+                        className="enemy-info"
+                        onClick={() => inspect(e.code)}
                       >
-                        <HandFist size={14} /> Fight {card(e.code).enemy_fight}
+                        <span
+                          className={`enemy-card-preview ${e.exhausted ? "exhausted" : ""}`}
+                        >
+                          <TableCard code={e.code} />
+                        </span>
+                        <span>
+                          <b>{card(e.code).name}</b>
+                          <small>
+                            {e.exhausted
+                              ? "Exhausted"
+                              : e.engaged
+                                ? `Engaged · ${card(e.engagedWith || s.player.code).name}`
+                                : card(e.location).name}{" "}
+                            · {Math.max(0, enemyHealth(s, e) - e.damage)} health
+                          </small>
+                        </span>
                       </button>
+                    </HoverPreview>
+                    <div className="enemy-actions">
+                      {[
+                        ...weapons.map((w) => ({
+                          id: w.id,
+                          code: w.code,
+                          uses: w.uses,
+                        })),
+                        { id: "", code: "", uses: 0 },
+                      ].map((w) => {
+                        const reason = canAct(
+                          s,
+                          "fight",
+                          e.id,
+                          w.id || undefined,
+                        );
+                        return (
+                          <button
+                            key={w.id}
+                            className="weapon-fight"
+                            disabled={!!reason}
+                            title={reason || "Fight · 1 action"}
+                            aria-label={`Fight ${card(e.code).name} with ${w.code ? card(w.code).name : "bare hands"}`}
+                            onClick={() => a("fight", e.id, w.id || undefined)}
+                          >
+                            <SkillIcon
+                              skill={w.code === "12045" ? "agility" : "combat"}
+                              size={16}
+                            />
+                            <span>
+                              <b>{w.code ? card(w.code).name : "Bare hands"}</b>
+                              <small>
+                                {reason && !locked
+                                  ? reason
+                                  : w.code === "12019"
+                                    ? `1 action + 1 ammo · ${w.uses} left · +1 combat, 2 damage`
+                                    : w.code === "12045"
+                                      ? `1 action + 1 ammo · ${w.uses} left · ${e.exhausted ? 2 : 1} damage`
+                                      : w.code
+                                        ? "1 action · use Fight ability"
+                                        : "1 action · 1 damage"}
+                              </small>
+                            </span>
+                          </button>
+                        );
+                      })}
                       <button
                         disabled={!!canAct(s, "evade", e.id)}
                         onClick={() => a("evade", e.id)}
                       >
-                        <PersonSimpleRun size={14} /> Evade{" "}
+                        <SkillIcon skill="agility" size={14} /> Evade{" "}
                         {card(e.code).enemy_evade}
                       </button>
                       {(!e.engaged ||
@@ -798,6 +831,15 @@ export function Game({
             </div>
             <h2>{s.test.title}</h2>
           </div>
+          {s.test.kind === "fight" && (
+            <p className="test-source-summary">
+              {testWeapon
+                ? `Attacking with ${card(testWeapon.code).name}. ${["12019", "12045"].includes(testWeapon.code) ? "1 ammo already spent. " : ""}`
+                : "Attacking with bare hands. "}
+              Commit cards below for their skill icons; committing a weapon from
+              hand does not use its attack ability.
+            </p>
+          )}
           <div className="test-values">
             <div>
               <SkillIcon skill={s.test.skill} size={23} />
@@ -953,6 +995,24 @@ export function Game({
             <h2>{s.decision.title}</h2>
             <p>{s.decision.description}</p>
           </div>
+          {s.decision.title === "Daniela strikes back" && (
+            <div className="reaction-source">
+              <HoverPreview code="12001">
+                <button
+                  onClick={() => inspect("12001")}
+                  aria-label="Inspect Daniela’s counterattack ability"
+                >
+                  <TableCard code="12001" />
+                </button>
+              </HoverPreview>
+              <p>
+                <span className="eyebrow">
+                  Investigator reaction · once per round
+                </span>
+                <RulesText text={card("12001").text?.split("\n")[0]} />
+              </p>
+            </div>
+          )}
           <div className="decision-list">
             {s.decision.choices.map((c) => (
               <button
