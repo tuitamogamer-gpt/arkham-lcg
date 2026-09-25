@@ -26,13 +26,14 @@ import {
   Modal,
   Sigil,
   SkillStats,
-  Token,
 } from "./components/Common";
+import { ChaosBagPreview } from "./components/ChaosBagPreview";
 import { CardPreviewLayer } from "./components/Previews";
+import { InvestigationAbility } from "./components/InvestigationAbility";
 import { Home } from "./components/Home";
 import { Game } from "./components/Game";
 import { EventController, EventJournal } from "./components/Events";
-import { BAGS, card, CARD_ART, PLAYABLE_INVESTIGATORS } from "./game/data";
+import { card, CARD_ART, PLAYABLE_INVESTIGATORS } from "./game/data";
 import { availableCards } from "./game/knowledge";
 import {
   readMotionPreference,
@@ -141,6 +142,7 @@ export default function App() {
   const [page, setPage] = useState<Page>("home");
   const [game, setGame] = useState<GameState | null>(readSave);
   const [inspect, setInspect] = useState<string | null>(null);
+  const [inspectAssetId, setInspectAssetId] = useState<string | null>(null);
   const [setup, setSetup] = useState(false);
   const [selectedInvestigators, setSelectedInvestigators] = useState<string[]>([
     "12004",
@@ -283,7 +285,7 @@ export default function App() {
   ];
   return (
     <div className={`app ${page === "game" ? "in-game" : ""}`}>
-      <CardPreviewLayer game={game} page={page} />
+      <CardPreviewLayer game={game} page={page} dispatch={dispatch} />
       <aside className="sidebar">
         <button
           className="brand"
@@ -419,7 +421,10 @@ export default function App() {
           <Game
             game={game}
             dispatch={dispatch}
-            inspect={setInspect}
+            inspect={(code, assetId) => {
+              setInspect(code);
+              setInspectAssetId(assetId || null);
+            }}
             onHome={() => navigate("home")}
             onExport={() => exportSave(game)}
             onHistory={() => setHistoryOpen(true)}
@@ -538,15 +543,20 @@ export default function App() {
                   </select>
                 </label>
               )}
-              <label className="difficulty-label" htmlFor="difficulty">
+              <div className="difficulty-label" id="difficulty-label">
                 Choose your difficulty
-              </label>
-              <div className="difficulty-options">
+              </div>
+              <div
+                className="difficulty-options"
+                role="group"
+                aria-labelledby="difficulty-label"
+              >
                 {(["easy", "standard", "hard", "expert"] as Difficulty[]).map(
                   (d) => (
                     <button
                       key={d}
                       className={d === difficulty ? "selected" : ""}
+                      aria-pressed={d === difficulty}
                       onClick={() => setDifficulty(d)}
                     >
                       {d}
@@ -564,11 +574,10 @@ export default function App() {
                   }[difficulty]
                 }
               </p>
-              <div className="bag-preview">
-                {BAGS[difficulty].map((t, i) => (
-                  <Token token={t} key={i} />
-                ))}
-              </div>
+              <ChaosBagPreview
+                difficulty={difficulty}
+                investigators={selectedInvestigators}
+              />
               {game && (
                 <p className="replace-note">
                   Starting a new case replaces your current local save.{" "}
@@ -700,7 +709,17 @@ export default function App() {
         <CardDetail
           code={inspect}
           game={game}
-          onClose={() => setInspect(null)}
+          onClose={() => { setInspect(null); setInspectAssetId(null); }}
+          actions={game && page === "game" && inspectAssetId &&
+            game.player.assets.some((a) => a.id === inspectAssetId && a.code === inspect) ? (
+            <InvestigationAbility game={game} assetId={inspectAssetId}
+              onDismiss={() => { setInspect(null); setInspectAssetId(null); }}
+              onActivate={(action) => {
+                setInspect(null);
+                setInspectAssetId(null);
+                dispatch(action);
+              }} />
+          ) : undefined}
         />
       )}{" "}
       {notice && (

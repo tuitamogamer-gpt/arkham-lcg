@@ -26,6 +26,10 @@ import {
 } from "../game/engine";
 import type { GameState } from "../game/types";
 import { CardFace, Modal, SkillStats, Token, HoverPreview } from "./Common";
+import {
+  INVESTIGATION_ABILITIES,
+  investigationAbilityStatus,
+} from "./InvestigationAbility";
 
 const nativeArt: Record<string, string> = scans;
 
@@ -145,11 +149,11 @@ export function ScenarioTray({
             value={s.doom}
             label={`${s.doom} doom on the agenda`}
           />
-          <span>
+          <span className="story-progress-copy">
             <strong>
               {s.doom} / {[3, 5, 10][s.agenda - 1]}
             </strong>{" "}
-            doom
+            <small>doom</small>
           </span>
           <div className="doom-pips" aria-hidden="true">
             {Array.from({ length: [3, 5, 10][s.agenda - 1] }, (_, i) => (
@@ -180,13 +184,27 @@ export function ScenarioTray({
             value={clues}
             label={`${clues} group clues`}
           />
-          <span>
+          <span className="story-progress-copy">
             <strong>
               {clues}
               {target !== null ? ` / ${target}` : ""}
             </strong>{" "}
-            group clues
+            <small>group clues</small>
           </span>
+          {target !== null && (
+            <div
+              className="clue-meter"
+              role="meter"
+              aria-label="Group clues toward the objective"
+              aria-valuenow={Math.min(clues, target)}
+              aria-valuemin={0}
+              aria-valuemax={target}
+            >
+              <span
+                style={{ width: `${Math.min(100, (clues / target) * 100)}%` }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -606,7 +624,7 @@ export function InvestigatorMat({
   children,
 }: {
   game: GameState;
-  inspect: (code: string) => void;
+  inspect: (code: string, assetId?: string) => void;
   openDeck: () => void;
   children?: ReactNode;
 }) {
@@ -691,20 +709,24 @@ export function InvestigatorMat({
             <h3>
               Assets in play <span>{p.assets.length}</span>
             </h3>
-            <small>Exhausted cards turn sideways</small>
+            <small className="exhaustion-note">
+              <ArrowRight size={13} aria-hidden="true" /> Turn sideways when
+              exhausted
+            </small>
           </div>
           <div className="asset-row">
             {p.assets.map((asset) => (
               <div
                 key={asset.id}
                 data-motion-target={`card-${asset.id}`}
+                data-preview-asset-id={asset.id}
                 className={`table-asset ${asset.exhausted ? "exhausted" : ""}`}
               >
                 <HoverPreview code={asset.code}>
                   <CardFace
                     c={card(asset.code)}
                     compact
-                    onClick={() => inspect(asset.code)}
+                    onClick={() => inspect(asset.code, asset.id)}
                   />
                 </HoverPreview>
                 <div className="asset-counters">
@@ -730,6 +752,16 @@ export function InvestigatorMat({
                   )}
                 </div>
                 <span className="asset-name">{card(asset.code).name}</span>
+                {INVESTIGATION_ABILITIES[asset.code] && (
+                  <button
+                    className="asset-ability-trigger"
+                    aria-label={`Choose ${card(asset.code).name} ability`}
+                    onClick={() => inspect(asset.code, asset.id)}
+                  >
+                    Investigate · choose ability
+                    <small>{investigationAbilityStatus(asset)}</small>
+                  </button>
+                )}
                 {asset.exhausted && (
                   <span className="asset-exhausted-label">EXHAUSTED</span>
                 )}
@@ -737,13 +769,21 @@ export function InvestigatorMat({
             ))}
             {!p.assets.length && (
               <div className="empty-assets">
-                <span className="empty-card-outline">
-                  <HandFist size={21} weight="thin" />
-                </span>
-                <span>
-                  <strong>A little preparation goes a long way.</strong>
-                  <small>Play an asset from your hand to place it here.</small>
-                </span>
+                <div className="equipment-etching" aria-hidden="true">
+                  <span>
+                    <StarFour size={23} weight="thin" />
+                  </span>
+                  <span>
+                    <HandFist size={29} weight="thin" />
+                  </span>
+                  <span>
+                    <MagnifyingGlass size={23} weight="thin" />
+                  </span>
+                </div>
+                <div className="equipment-caption">
+                  <strong>Ready your equipment</strong>
+                  <small>Play an asset from your hand</small>
+                </div>
               </div>
             )}
           </div>

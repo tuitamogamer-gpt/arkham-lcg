@@ -15,15 +15,19 @@ import {
   Heart,
   Info,
   MagnifyingGlass,
+  Moon,
   PersonSimpleRun,
   Plus,
   Skull,
   Stack,
   StarFour,
+  SunHorizon,
   X,
 } from "@phosphor-icons/react";
 import { card, CARD_ART, plain } from "../game/data";
 import { useTableMotion } from "./Motion";
+import { ChaosDraw } from "./ChaosDraw";
+import { INVESTIGATION_ABILITIES } from "./InvestigationAbility";
 import { Introduction, PursuerStory, ResolutionPassage } from "./Story";
 import {
   InvestigatorMat,
@@ -55,7 +59,6 @@ import {
   CardFace,
   Modal,
   SkillIcon,
-  Token,
   HoverPreview,
   RulesText,
 } from "./Common";
@@ -69,7 +72,7 @@ export function Game({
 }: {
   game: GameState;
   dispatch: (a: Action) => void;
-  inspect: (c: string) => void;
+  inspect: (c: string, assetId?: string) => void;
   onHome: () => void;
   onExport: () => void;
   onHistory: () => void;
@@ -84,6 +87,7 @@ export function Game({
     "Defeat the Servant of Flame. Spend group clues to deal damage.",
   ];
   const [mulligan, setMulligan] = useState<string[]>([]);
+  const [chaosDrawRequested, setChaosDrawRequested] = useState(false);
   const [investigateSource, setInvestigateSource] = useState("");
   const [investigateTarget, setInvestigateTarget] = useState("");
 
@@ -148,6 +152,10 @@ export function Game({
     : "";
   const testWeapon =
     s.test?.kind === "fight"
+      ? s.player.assets.find((a) => a.id === s.test?.source)
+      : undefined;
+  const testTool =
+    s.test?.kind === "investigate"
       ? s.player.assets.find((a) => a.id === s.test?.source)
       : undefined;
   const target =
@@ -245,12 +253,17 @@ export function Game({
         <div className="game-header-actions">
           <button
             className="history-trigger"
+            aria-label="Read introduction"
             onClick={() => setReplayIntro("campaign")}
           >
             <BookOpen size={17} />
             Read introduction
           </button>
-          <button className="history-trigger" onClick={onHistory}>
+          <button
+            className="history-trigger"
+            onClick={onHistory}
+            aria-label="Event history"
+          >
             <ClockCounterClockwise size={17} />
             Event history
           </button>
@@ -325,6 +338,7 @@ export function Game({
         </div>
         {roster.length > 1 && (
           <p className="seat-hint">
+            <Info size={14} aria-hidden="true" />
             {s.phase !== "investigation"
               ? "Resolve each investigator’s encounter or choice. Their seat changes automatically."
               : s.player.turnStarted
@@ -333,14 +347,31 @@ export function Game({
           </p>
         )}
       </section>
-      <div className="phase-track" data-motion-target="phase">
-        {["mythos", "investigation", "enemy", "upkeep"].map((p, i) => (
-          <div className={s.phase === p ? "active" : ""} key={p}>
-            <span>0{i + 1}</span>
-            {p}
-            <CaretRight size={13} />
-          </div>
-        ))}
+      <div
+        className="phase-track"
+        data-motion-target="phase"
+        aria-label="Round phases"
+      >
+        {["mythos", "investigation", "enemy", "upkeep"].map((p, i) => {
+          const PhaseIcon = [Moon, MagnifyingGlass, Skull, SunHorizon][i];
+          return (
+            <div
+              className={s.phase === p ? "active" : ""}
+              key={p}
+              aria-current={s.phase === p ? "step" : undefined}
+            >
+              <span>0{i + 1}</span>
+              <PhaseIcon
+                className="phase-symbol"
+                size={16}
+                weight="thin"
+                aria-hidden="true"
+              />
+              {p}
+              <CaretRight size={13} />
+            </div>
+          );
+        })}
       </div>
       <div className="game-layout">
         <div className="table-main">
@@ -359,8 +390,21 @@ export function Game({
             <SupplyTray game={s} inspect={inspect} />
           </div>
           <div className="objective-ribbon">
-            <BookOpen size={13} />
-            <span>{actText[s.act - 1]}</span>
+            <span className="objective-seal" aria-hidden="true">
+              <BookOpen size={23} weight="thin" />
+            </span>
+            <span className="objective-copy">
+              <small>
+                Current objective <i>ACT {s.act}</i>
+              </small>
+              <strong>{actText[s.act - 1]}</strong>
+            </span>
+            <StarFour
+              className="objective-ornament"
+              size={22}
+              weight="thin"
+              aria-hidden="true"
+            />
           </div>
           <div className="action-bar">
             <div
@@ -382,6 +426,7 @@ export function Game({
             </div>
             <button
               className="action-button primary-action"
+              aria-label="Investigate"
               onClick={() => a("investigate", target, source || undefined)}
               disabled={!!canAct(s, "investigate", target, source || undefined)}
               title={
@@ -389,21 +434,44 @@ export function Game({
                 "Investigate for 1 action"
               }
             >
-              <MagnifyingGlass size={19} /> Investigate
+              <span className="action-emblem">
+                <MagnifyingGlass size={22} weight="thin" />
+              </span>
+              <span className="action-copy">
+                <strong>Investigate</strong>
+                <small>{source ? `Use ${card(tools.find((tool) => tool.id === source)!.code).name}` : "Basic investigation"}</small>
+              </span>
+              <span className="action-price" title="1 action">
+                1<span aria-hidden="true">◆</span>
+              </span>
             </button>
             <button
               className="action-button"
+              aria-label="Resource"
               onClick={() => a("resource")}
               disabled={!!canAct(s, "resource")}
             >
-              <Coins size={18} /> Resource
+              <span className="action-emblem">
+                <Coins size={22} weight="thin" />
+              </span>
+              <span className="action-copy">
+                <strong>Resource</strong>
+                <small>Gain 1 resource</small>
+              </span>
             </button>
             <button
               className="action-button"
+              aria-label="Draw card"
               onClick={() => a("draw")}
               disabled={!!canAct(s, "draw")}
             >
-              <Stack size={18} /> Draw card
+              <span className="action-emblem">
+                <Stack size={22} weight="thin" />
+              </span>
+              <span className="action-copy">
+                <strong>Draw card</strong>
+                <small>Draw from your deck</small>
+              </span>
             </button>
             <button
               className="action-button fast-action"
@@ -412,7 +480,13 @@ export function Game({
               aria-label="Fast abilities · all investigators"
               title="Fast abilities · all investigators"
             >
-              <StarFour size={16} /> Fast abilities
+              <span className="action-emblem">
+                <StarFour size={22} weight="thin" />
+              </span>
+              <span className="action-copy">
+                <strong>Fast abilities</strong>
+                <small>Open player window</small>
+              </span>
             </button>
             <button
               className="end-turn"
@@ -423,7 +497,10 @@ export function Game({
               }
               disabled={locked}
             >
-              End turn <ArrowRight size={17} />
+              End turn{" "}
+              <span className="end-turn-arrow">
+                <ArrowRight size={17} />
+              </span>
             </button>
           </div>
           {tools.length > 0 && (
@@ -722,15 +799,36 @@ export function Game({
                   />
                   <button
                     className="play-card"
+                    aria-label={
+                      card(c.code).type_code === "skill"
+                        ? "Commit during a test"
+                        : canPlay(s, c.id)?.includes("reaction")
+                          ? "Reaction window"
+                          : `Play · ${card(c.code).cost || 0} resources`
+                    }
                     disabled={!!canPlay(s, c.id)}
                     title={canPlay(s, c.id) || `Play ${card(c.code).name}`}
                     onClick={() => dispatch({ type: "play", id: c.id })}
                   >
-                    {card(c.code).type_code === "skill"
-                      ? "Commit during a test"
-                      : canPlay(s, c.id)?.includes("reaction")
-                        ? "Reaction window"
-                        : `Play · ${card(c.code).cost || 0} resources`}
+                    {card(c.code).type_code === "skill" ? (
+                      <>
+                        <StarFour size={14} /> Commit during a test
+                      </>
+                    ) : canPlay(s, c.id)?.includes("reaction") ? (
+                      <>
+                        <ClockCounterClockwise size={14} /> Reaction window
+                      </>
+                    ) : (
+                      <>
+                        <span className="play-label">
+                          Play <ArrowRight size={13} />
+                        </span>
+                        <span className="play-cost">
+                          <Coins size={13} aria-hidden="true" />
+                          {card(c.code).cost || 0}
+                        </span>
+                      </>
+                    )}
                   </button>
                 </div>
               ))}
@@ -889,6 +987,15 @@ export function Game({
               hand does not use its attack ability.
             </p>
           )}
+          {s.test.kind === "investigate" && (
+            <p className="investigation-source-summary">
+              {testTool && INVESTIGATION_ABILITIES[testTool.code]
+                ? `Using ${card(testTool.code).name}. ${INVESTIGATION_ABILITIES[testTool.code].cost} — already paid. ${INVESTIGATION_ABILITIES[testTool.code].effect}`
+                : s.test.source
+                  ? "Resolving the chosen investigation effect."
+                  : "Basic investigation. No asset ability used or supplies spent."}
+            </p>
+          )}
           <div className="test-values" data-motion-target="test-scene">
             <div>
               <SkillIcon skill={s.test.skill} size={23} />
@@ -985,8 +1092,11 @@ export function Game({
                   ))}
               </div>
               <Button
-                className="full"
-                onClick={() => dispatch({ type: "reveal" })}
+                className="full chaos-draw-trigger"
+                onClick={() => {
+                  setChaosDrawRequested(true);
+                  dispatch({ type: "reveal" });
+                }}
               >
                 Draw from the chaos bag <StarFour size={18} />
               </Button>
@@ -995,30 +1105,12 @@ export function Game({
               </p>
             </>
           ) : (
-            <>
-              <div className="token-reveal">
-                {s.test.tokens.map((t, i) => (
-                  <span
-                    className="revealed-token"
-                    key={i}
-                    style={{ animationDelay: `${i * 130}ms` }}
-                  >
-                    <Token token={t} large />
-                  </span>
-                ))}
-              </div>
-              <div
-                className={`test-outcome ${s.test.success ? "passed" : "failed"}`}
-              >
-                <h2>
-                  {s.test.success ? "A steady hand." : "The darkness answers."}
-                </h2>
-                <p>
-                  {s.test.tokens.includes("auto_fail")
-                    ? "Automatic failure"
-                    : `${testValue(s)} ${s.test.modifier >= 0 ? "+" : "−"} ${Math.abs(s.test.modifier)} = ${Math.max(0, testValue(s) + s.test.modifier)} · ${s.test.success ? "Success" : "Failure"}`}
-                </p>
-              </div>
+            <ChaosDraw
+              test={s.test}
+              value={testValue(s)}
+              animate={chaosDrawRequested}
+              onPresented={setChaosDrawRequested}
+            >
               {s.player.hand
                 .filter(
                   (c) =>
@@ -1041,7 +1133,7 @@ export function Game({
               >
                 Resolve the test <ArrowRight size={17} />
               </Button>
-            </>
+            </ChaosDraw>
           )}
         </Modal>
       )}

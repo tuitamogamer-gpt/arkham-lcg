@@ -212,17 +212,25 @@ export function TypeIcon({ type, size = 28 }: { type: string; size?: number }) {
 export function Token({
   token,
   large = false,
+  size,
 }: {
   token: string;
   large?: boolean;
+  size?: number;
 }) {
   return (
     <span
       className={`chaos-token ${large ? "large" : ""} ${token === "auto_fail" ? "fail" : token === "elder_sign" ? "bless" : ""}`}
       title={token.replaceAll("_", " ")}
+      style={
+        size ? { width: size, height: size, fontSize: size * 0.5 } : undefined
+      }
     >
       {token in GAME_SYMBOLS ? (
-        <GameSymbol symbol={token} size={large ? 38 : 18} />
+        <GameSymbol
+          symbol={token}
+          size={size ? size * 0.58 : large ? 38 : 18}
+        />
       ) : (
         token
       )}
@@ -306,10 +314,12 @@ export function CardDetail({
   code,
   game,
   onClose,
+  actions,
 }: {
   code: string;
   game: GameState | null;
   onClose: () => void;
+  actions?: ReactNode;
 }) {
   const c = card(code);
   const [flipped, setFlipped] = useState(false);
@@ -399,6 +409,7 @@ export function CardDetail({
               }
             />
           </p>
+          {actions}
           {c.flavor && <blockquote>{plain(c.flavor)}</blockquote>}
           {c.back_text && canReadReverse(game, code) && (
             <details>
