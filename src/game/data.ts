@@ -1,6 +1,7 @@
 import scans from "../../public/data/art-manifest.json";
 import raw from "../../public/data/core-2026.json";
 import type { Card, Difficulty } from "./types";
+import { SPREADING_FLAMES } from "./scenario";
 export const cards = raw as Card[];
 export const cardMap = Object.fromEntries(cards.map((c) => [c.code, c]));
 export const card = (code: string) => cardMap[code];
@@ -20,12 +21,29 @@ export const TRISH_DECK = [
   8, 44, 45, 46, 47, 48, 49, 30, 31, 32, 33, 34, 35, 86, 86, 88, 88, 50, 51, 52,
   36, 37, 38, 89, 89, 53, 39, 91, 91, 93, 93, 9, 103,
 ].map(code);
+// Rulebook pages 28–29: Dexter Drake and Isabelle Barnes starter decks.
+export const DEXTER_DECK = [
+  58, 59, 60, 61, 62, 63, 44, 45, 46, 47, 48, 49, 86, 86, 88, 88, 11, 64, 65,
+  66, 50, 51, 52, 89, 89, 67, 53, 90, 90, 91, 91, 12, 101,
+].map(code);
+export const ISABELLE_DECK = [
+  14, 72, 73, 74, 75, 76, 77, 58, 59, 60, 61, 62, 63, 86, 86, 88, 88, 78, 79,
+  64, 65, 66, 89, 89, 80, 81, 67, 94, 94, 90, 90, 15, 102,
+].map(code);
 export const STARTER_DECKS: Record<string, string[]> = {
   "12004": JOE_DECK,
   "12001": DANIELA_DECK,
   "12007": TRISH_DECK,
+  "12010": DEXTER_DECK,
+  "12013": ISABELLE_DECK,
 };
-export const PLAYABLE_INVESTIGATORS = ["12004", "12001", "12007"];
+export const PLAYABLE_INVESTIGATORS = [
+  "12004",
+  "12001",
+  "12007",
+  "12010",
+  "12013",
+];
 export const BAGS: Record<Difficulty, string[]> = {
   easy: [
     "+1",
@@ -103,14 +121,8 @@ export const BAGS: Record<Difficulty, string[]> = {
     "elder_sign",
   ],
 };
-export const CONNECTIONS: Record<string, string[]> = {
-  "12113": ["12117"],
-  "12117": ["12113", "12116"],
-  "12116": ["12117", "12118", "12119", "12120"],
-  "12118": ["12116"],
-  "12119": ["12116"],
-  "12120": ["12116"],
-};
+export const CONNECTIONS: Record<string, string[]> =
+  SPREADING_FLAMES.connections;
 export const MAP_POS: Record<string, [number, number]> = {
   "12113": [10, 50],
   "12117": [29, 50],

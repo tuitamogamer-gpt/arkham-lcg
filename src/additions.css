@@ -406,3 +406,25 @@
     width: auto;
   }
 }
+
+/* Five investigators in setup and on the home page */
+@media (min-width: 1100px) {
+  .party-choices {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .night-dossiers {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+@media (min-width: 701px) and (max-width: 1099px) {
+  .party-choices,
+  .night-dossiers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.sealed-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

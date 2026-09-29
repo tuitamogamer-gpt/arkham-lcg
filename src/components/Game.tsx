@@ -56,6 +56,8 @@ import {
   successChance,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
+import { BOOSTS, REMOVABLE_THREATS, WEAPONS, isTool, isWeapon } from "../game/cards";
+import { SPREADING_FLAMES as SCENARIO } from "../game/scenario";
 import {
   Button,
   CardFace,
@@ -86,12 +88,9 @@ export function Game({
   useTableMotion(s);
   const roster = party(s),
     member = card(s.player.code);
-  const actText = [
-    `Find ${2 * partySize(s)} clues as a group. Advance at the end of the round.`,
-    "Get every surviving investigator to Miskatonic Quad.",
-    `Bring ${3 * partySize(s)} group clues to Orne Library at the end of the round.`,
-    "Defeat the Servant of Flame. Spend group clues to deal damage.",
-  ];
+  const actText = [1, 2, 3, 4].map((act) =>
+    SCENARIO.actObjective(act, partySize(s)),
+  );
   const [mulligan, setMulligan] = useState<string[]>([]);
   const [chaosDrawRequested, setChaosDrawRequested] = useState(false);
   const [investigateSource, setInvestigateSource] = useState("");
@@ -147,12 +146,8 @@ export function Game({
     !!s.window ||
     s.status !== "playing" ||
     s.phase !== "investigation";
-  const tools = s.player.assets.filter((a) =>
-    ["12031", "12033", "12049", "12088"].includes(a.code),
-  );
-  const weapons = s.player.assets.filter((a) =>
-    ["12002", "12019", "12020", "12045", "12077", "12086"].includes(a.code),
-  );
+  const tools = s.player.assets.filter((a) => isTool(a.code));
+  const weapons = s.player.assets.filter((a) => isWeapon(a.code));
   const source = tools.some((a) => a.id === investigateSource)
     ? investigateSource
     : "";
@@ -574,7 +569,7 @@ export function Game({
                 <Fire size={16} /> Extinguish fire · 1 action
               </Button>
             )}
-            {loc.code === "12117" && (
+            {loc.code === SCENARIO.dormitories && (
               <Button
                 secondary
                 disabled={!!canAct(s, "rest")}
@@ -583,7 +578,7 @@ export function Game({
                 Rest · heal 1 damage & 1 horror
               </Button>
             )}
-            {loc.code === "12120" && (
+            {loc.code === SCENARIO.library && (
               <Button
                 secondary
                 disabled={!!canAct(s, "library")}
@@ -610,6 +605,26 @@ export function Game({
                   onClick={() => a("olivier", c)}
                 >
                   Olivier · move to {card(c).name}
+                </Button>
+              ))}
+            {s.player.threats.includes("12012") && (
+              <Button
+                secondary
+                disabled={!!canAct(s, "necronomicon")}
+                onClick={() => a("necronomicon")}
+              >
+                The Necronomicon · test willpower (5) · 1 action
+              </Button>
+            )}
+            {s.player.assets.some((x) => x.code === "12061") &&
+              (["damage", "horror"] as const).map((type) => (
+                <Button
+                  secondary
+                  key={`charm-${type}`}
+                  disabled={!!canAct(s, "charm", type)}
+                  onClick={() => a("charm", type)}
+                >
+                  Lucky Charm · move 1 {type} · 1 charge
                 </Button>
               ))}
             {s.player.assets.some((a) => a.code === "12075") && (
@@ -641,7 +656,7 @@ export function Game({
               )
               .flatMap((p) =>
                 p.threats
-                  .filter((c) => ["12125", "12103", "12104"].includes(c))
+                  .filter((c) => REMOVABLE_THREATS.has(c))
                   .map((c) => (
                     <Button
                       secondary
@@ -729,7 +744,7 @@ export function Game({
                             onClick={() => a("fight", e.id, w.id || undefined)}
                           >
                             <SkillIcon
-                              skill={w.code === "12045" ? "agility" : "combat"}
+                              skill={(w.code && WEAPONS[w.code]?.skill) || "combat"}
                               size={16}
                             />
                             <span>
@@ -737,13 +752,16 @@ export function Game({
                               <small>
                                 {reason && !locked
                                   ? reason
-                                  : w.code === "12019"
-                                    ? `1 action + 1 ammo · ${w.uses} left · +1 combat, 2 damage`
-                                    : w.code === "12045"
-                                      ? `1 action + 1 ammo · ${w.uses} left · ${e.exhausted ? 2 : 1} damage`
-                                      : w.code
-                                        ? "1 action · use Fight ability"
-                                        : "1 action · 1 damage"}
+                                  : w.code && WEAPONS[w.code]?.uses === "ammo"
+                                    ? `1 action + 1 ammo · ${w.uses} left · ${WEAPONS[w.code].bonus ? `+${WEAPONS[w.code].bonus} ${WEAPONS[w.code].skill}, ` : ""}${
+                                        WEAPONS[w.code].damage === "always" ||
+                                        (WEAPONS[w.code].damage === "targetExhausted" && e.exhausted)
+                                          ? 2
+                                          : 1
+                                      } damage`
+                                    : w.code
+                                      ? "1 action · use Fight ability"
+                                      : "1 action · 1 damage"}
                               </small>
                             </span>
                           </button>
@@ -1097,17 +1115,7 @@ export function Game({
               )}
               <div className="boost-list">
                 {s.player.assets
-                  .filter(
-                    (a) =>
-                      (a.code === "12017" &&
-                        ["combat", "agility"].includes(s.test!.skill)) ||
-                      (a.code === "12035" &&
-                        ["willpower", "intellect"].includes(s.test!.skill)) ||
-                      (a.code === "12047" &&
-                        ["intellect", "agility"].includes(s.test!.skill)) ||
-                      (a.code === "12076" &&
-                        ["willpower", "agility"].includes(s.test!.skill)),
-                  )
+                  .filter((a) => BOOSTS[a.code]?.skills.includes(s.test!.skill))
                   .map((a) => (
                     <Button
                       key={a.id}

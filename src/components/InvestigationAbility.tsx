@@ -4,36 +4,11 @@ import { card } from "../game/data";
 import type { Action, Asset, GameState } from "../game/types";
 import "../investigation-ability.css";
 
+import { TOOLS } from "../game/cards";
 export const INVESTIGATION_ABILITIES: Record<
   string,
-  {
-    cost: string;
-    effect: string;
-    counter?: string;
-  }
-> = {
-  "12031": {
-    cost: "1 action · 1 supply · exhaust this card",
-    effect: "+1 intellect. On success, discover 1 additional clue.",
-    counter: "supplies",
-  },
-  "12033": {
-    cost: "1 action · 1 secret",
-    effect:
-      "+1 intellect at a revealed connecting location. On success, you may exhaust this card to move there.",
-    counter: "secrets",
-  },
-  "12049": {
-    cost: "1 action · 1 supply",
-    effect: "Choose intellect or agility. On success, gain 1 resource.",
-    counter: "supplies",
-  },
-  "12088": {
-    cost: "1 action",
-    effect:
-      "+1 intellect. On success, you may discard this card to lower this location’s shroud by 1 this round.",
-  },
-};
+  { cost: string; effect: string; counter?: string }
+> = TOOLS;
 
 export function investigationAbilityStatus(asset: Asset) {
   const ability = INVESTIGATION_ABILITIES[asset.code];
@@ -61,14 +36,14 @@ export function InvestigationAbility({
   const targets = availableConnections(s).filter((code) =>
     s.locations.some((l) => l.code === code && l.active && l.revealed),
   );
-  const target =
-    asset.code === "12033"
-      ? targets.includes(selectedTarget)
-        ? selectedTarget
-        : targets[0]
-      : s.player.location;
+  const remote = !!TOOLS[asset.code]?.remote;
+  const target = remote
+    ? targets.includes(selectedTarget)
+      ? selectedTarget
+      : targets[0]
+    : s.player.location;
   const reason =
-    asset.code === "12033" && !target
+    remote && !target
       ? "No revealed connecting location is available."
       : canAct(s, "investigate", target, asset.id);
   return (
@@ -85,7 +60,7 @@ export function InvestigationAbility({
       </strong>
       <p className="ability-cost">{ability.cost}</p>
       <p className="ability-effect">{ability.effect}</p>
-      {asset.code === "12033" && targets.length > 0 && (
+      {remote && targets.length > 0 && (
         <label className="ability-target">
           Investigate at
           <select

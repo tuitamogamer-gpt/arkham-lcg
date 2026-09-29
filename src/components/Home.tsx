@@ -240,12 +240,13 @@ export function Home({
           <div className="night-party-intro">
             <span className="eyebrow">YOU DON’T HAVE TO GO ALONE</span>
             <h2>
-              Three lives. <br />
+              Five investigators. <br />
               One investigation.
             </h2>
             <p>
-              Lead a lone investigator or control a party of two or three.
-              Switch seats, combine strengths, and face the darkness together.
+              Lead a lone investigator or control a party of two or three
+              from the five core-set investigators. Switch seats, combine
+              strengths, and face the darkness together.
             </p>
             <Button secondary onClick={onStart} arrow>
               {game ? "Start a new investigation" : "Assemble your party"}

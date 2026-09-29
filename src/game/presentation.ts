@@ -422,6 +422,22 @@ export function presentEffect(
     move: "Investigator moves",
     returnAsset: "Item returned to hand",
     giveArmitage: "Armitage joins an investigator",
+    dexter: "A magician’s trick",
+    dexterSign: "Dexter’s elder sign",
+    payAndEquip: "Asset enters play",
+    nextTrick: "For my next trick…",
+    trickPlay: "For my next trick…",
+    twin45: "Second shot",
+    twinShot: "Second shot",
+    flameSkull: "Cosmic Flame · skull",
+    cloak: "Cloak of Resonance",
+    jim: "Jim Culver",
+    charmMove: "Lucky Charm",
+    breakingPoint: "Breaking Point",
+    cosmosClue: "Will of the Cosmos",
+    threatToDeck: "Shuffled into the deck",
+    revealEncounter: "Revelation resolves",
+    discardCanceled: "Revelation cancelled",
   };
   const actionTitles: Record<string, string> = {
     resource: "Resource gained",
@@ -433,6 +449,9 @@ export function presentEffect(
     wrench: "Wrench provokes an attack",
     engage: "Enemy engaged",
     jumpsuit: "Jumpsuit discarded",
+    charm: "Lucky Charm",
+    necronomicon: "The Necronomicon",
+    isabelle: "Isabelle’s resolve",
   };
   let title =
     titles[e.kind] ||

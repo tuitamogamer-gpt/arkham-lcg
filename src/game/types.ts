@@ -50,6 +50,8 @@ export interface Asset extends Instance {
   uses: number;
   damage: number;
   horror: number;
+  /** A chaos token sealed on the card (Premonition). */
+  sealed?: string;
 }
 export interface Enemy extends Instance {
   location: string;
@@ -114,6 +116,8 @@ export interface Test {
   margin?: number;
   extraDamage?: number;
   commitClosed?: boolean;
+  /** Card-specific variant of a test, such as a weapon's follow-up attack. */
+  variant?: string;
 }
 export interface PlayerWindow {
   timing: "phase" | "turn" | "beforeCommit" | "beforeToken";
@@ -206,7 +210,7 @@ export interface GameState {
   bag: string[];
   queue: Effect[];
   // Optional for compatibility with saves made before the July-rules audit.
-  limbo?: (Instance & { owner: string })[];
+  limbo?: (Instance & { owner: string; returnToDeck?: boolean })[];
   peril?: string;
   testInProgress?: boolean;
   queuedTests?: { actor: string; test: Test }[];

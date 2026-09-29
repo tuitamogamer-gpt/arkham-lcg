@@ -128,7 +128,7 @@ test("1–3 unique investigators each receive their exact official 33-card start
   }
   assert.throws(() => createGame("easy", 1, []));
   assert.throws(() => createGame("easy", 1, ["12004", "12004"]));
-  assert.throws(() => createGame("easy", 1, ["12010"]));
+  assert.throws(() => createGame("easy", 1, ["12005"]));
 });
 test("seat changes preserve ownership and cannot interleave investigator turns", () => {
   let s = ready();

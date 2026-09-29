@@ -82,12 +82,16 @@ const parties = [
   ["12004", "12001", "12007"],
   ["12004", "12001", "12007"],
   ["12007", "12004", "12001"],
+  ["12010"],
+  ["12013"],
+  ["12010", "12013"],
+  ["12013", "12010", "12004"],
 ];
 const difficulties = ["easy", "standard", "hard", "expert"] as const;
 
 test("random legal play never throws, never corrupts saves and never loops on a decision", () => {
   let finished = 0;
-  for (let g = 0; g < 40; g++) {
+  for (let g = 0; g < 48; g++) {
     let seed = 1000 + g * 7919;
     const rnd = () => {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
@@ -127,5 +131,5 @@ test("random legal play never throws, never corrupts saves and never loops on a 
       }
     }
   }
-  assert.ok(finished > 10, `most random games reach a resolution (${finished}/40)`);
+  assert.ok(finished > 10, `most random games reach a resolution (${finished}/48)`);
 });

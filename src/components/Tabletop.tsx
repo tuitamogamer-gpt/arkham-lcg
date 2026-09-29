@@ -33,6 +33,8 @@ import {
   stats,
 } from "../game/engine";
 import type { GameState } from "../game/types";
+import { usesKind } from "../game/cards";
+import { SPREADING_FLAMES as SCENARIO, agendaDoomLimit } from "../game/scenario";
 import { CardFace, Modal, SkillStats, Token, HoverPreview } from "./Common";
 import {
   INVESTIGATION_ABILITIES,
@@ -128,8 +130,8 @@ export function ScenarioTray({
   const clues = party(s)
     .filter((p) => p.status === "active")
     .reduce((n, p) => n + p.clues, 0);
-  const target =
-    s.act === 1 ? 2 * partySize(s) : s.act === 3 ? 3 * partySize(s) : null;
+  const rule = SCENARIO.actClueCost[s.act];
+  const target = rule ? rule.perInvestigator * partySize(s) : null;
   return (
     <section
       className="story-track scenario-tray"
@@ -162,12 +164,12 @@ export function ScenarioTray({
           />
           <span className="story-progress-copy">
             <strong>
-              {s.doom} / {[3, 5, 10][s.agenda - 1]}
+              {s.doom} / {agendaDoomLimit(s.agenda)}
             </strong>{" "}
             <small>doom</small>
           </span>
           <div className="doom-pips" aria-hidden="true">
-            {Array.from({ length: [3, 5, 10][s.agenda - 1] }, (_, i) => (
+            {Array.from({ length: agendaDoomLimit(s.agenda) }, (_, i) => (
               <i key={i} className={i < s.doom ? "filled" : ""} />
             ))}
           </div>
@@ -245,37 +247,11 @@ export function LocationTable({
   const near = availableConnections(s);
   const roster = party(s);
   const active = s.locations.filter((l) => l.active);
-  const positions: Record<string, [number, number]> =
-    s.act <= 2
-      ? { "12113": [18, 50], "12117": [50, 50], "12116": [82, 50] }
-      : {
-          "12117": [12, 50],
-          "12116": [39, 50],
-          "12118": [65, 24],
-          "12119": [65, 76],
-          "12120": [89, 50],
-        };
+  const positions = SCENARIO.map[s.act <= 2 ? "early" : "late"];
   const pos = (code: string): [number, number] => {
     if (active.length === 1) return [50, 50];
-    if (narrow && s.act === 2)
-      return [
-        50,
-        ({ "12113": 17, "12117": 50, "12116": 83 } as Record<string, number>)[
-          code
-        ] || 50,
-      ];
-    if (narrow && s.act >= 3)
-      return (
-        (
-          {
-            "12117": [24, 17],
-            "12116": [50, 50],
-            "12118": [76, 17],
-            "12119": [24, 83],
-            "12120": [76, 83],
-          } as Record<string, [number, number]>
-        )[code] || [50, 50]
-      );
+    if (narrow && s.act === 2) return SCENARIO.map.narrowEarly[code] || [50, 50];
+    if (narrow && s.act >= 3) return SCENARIO.map.narrowLate[code] || [50, 50];
     return positions[code] || [50, 50];
   };
   return (
@@ -351,7 +327,7 @@ export function LocationTable({
                 aria-label={`${canMove ? "Move to" : "Inspect"} ${card(l.code).name}`}
                 title={
                   canMove
-                    ? `Move to ${card(l.code).name} · ${partySize(s) <= 2 && s.player.location === "12116" && !s.flags.quad ? "free" : "1 action"}`
+                    ? `Move to ${card(l.code).name} · ${partySize(s) <= 2 && s.player.location === SCENARIO.quad && !s.flags.quad ? "free" : "1 action"}`
                     : card(l.code).name
                 }
               >
@@ -741,18 +717,22 @@ export function InvestigatorMat({
                   />
                 </HoverPreview>
                 <div className="asset-counters">
-                  {(asset.uses > 0 ||
-                    ["12019", "12045"].includes(asset.code)) && (
+                  {(asset.uses > 0 || usesKind(asset.code) === "ammo") && (
                     <span
                       className="uses-counter"
                       data-motion-target={`uses-${asset.id}`}
-                      title={`${asset.uses} ${["12019", "12045"].includes(asset.code) ? "ammo" : "uses"}`}
+                      title={`${asset.uses} ${usesKind(asset.code) || "uses"}`}
                     >
                       <Coins size={10} />
-                      {asset.uses}{" "}
-                      {["12019", "12045"].includes(asset.code)
-                        ? "ammo"
-                        : "uses"}
+                      {asset.uses} {usesKind(asset.code) || "uses"}
+                    </span>
+                  )}
+                  {asset.sealed && (
+                    <span
+                      className="uses-counter sealed-token"
+                      title={`Sealed token: ${asset.sealed.replaceAll("_", " ")}`}
+                    >
+                      Sealed <Token token={asset.sealed} size={16} />
                     </span>
                   )}
                   {asset.damage > 0 && (

@@ -138,8 +138,8 @@ function Guide() {
           <h3>What you can play in this first build</h3>
           <p>
             Spreading Flames with 1–3 investigators, all controlled by you.
-            Choose Joe Diamond, Daniela Reyes, and Trish Scarborough with their
-            official 2026 starter decks. Each investigator has a separate hand,
+            Choose from Joe Diamond, Daniela Reyes, Trish Scarborough, Dexter
+            Drake and Isabelle Barnes with their official 2026 starter decks. Each investigator has a separate hand,
             deck, resources, clues, health, sanity, and three-action turn. Trish
             also has her extra evade action.
           </p>
@@ -148,8 +148,8 @@ function Guide() {
             a different ready investigator before taking your first action. At
             the same location, teammates can each commit one card to your test.
             The shared scenario scales with the original party size, even after
-            an investigator is eliminated. Dexter, Isabelle, later scenarios,
-            custom decks and campaign upgrades remain in development.
+            an investigator is eliminated. Later scenarios, custom decks and
+            campaign upgrades remain in development.
           </p>
         </div>
       </section>
@@ -641,11 +641,15 @@ export default function App() {
                       <span className="choice-details">
                         <small>
                           {investigator.faction_code} ·{" "}
-                          {c === "12004"
-                            ? "Clues & combat"
-                            : c === "12001"
-                              ? "Protection & combat"
-                              : "Evasion & clues"}
+                          {
+                            {
+                              "12004": "Clues & combat",
+                              "12001": "Protection & combat",
+                              "12007": "Evasion & clues",
+                              "12010": "Spells & sleight of hand",
+                              "12013": "Grit & twin pistols",
+                            }[c]
+                          }
                         </small>
                         <strong>{investigator.name}</strong>
                         <span>
@@ -977,7 +981,7 @@ export default function App() {
           <div className="build-info">
             <span>BUILD 0.2.0</span>
             <p>
-              Spreading Flames · Joe Diamond, Daniela Reyes, Trish Scarborough
+              Spreading Flames · Joe, Daniela, Trish, Dexter and Isabelle
               <br />
               Card data snapshot · 23 September 2026
             </p>

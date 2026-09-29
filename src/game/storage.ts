@@ -1,5 +1,6 @@
 import type { Difficulty, GameState, VisibleEvent } from "./types";
 import { card, STARTER_DECKS } from "./data";
+import { SPREADING_FLAMES } from "./scenario";
 import { recordDiscoveries } from "./knowledge";
 // Legacy single-slot key from the first builds; migrated into a slot on load.
 export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
@@ -256,9 +257,7 @@ export function validSave(x: unknown): x is GameState {
       )
         return false;
       if (
-        !["12113", "12116", "12117", "12118", "12119", "12120"].includes(
-          member.location,
-        ) ||
+        !SPREADING_FLAMES.locations.includes(member.location) ||
         ![member.hand, member.deck, member.discard, member.assets].every(
           instances,
         ) ||
@@ -271,7 +270,9 @@ export function validSave(x: unknown): x is GameState {
             integer(a.uses) &&
             integer(a.damage) &&
             integer(a.horror) &&
-            typeof a.exhausted === "boolean",
+            typeof a.exhausted === "boolean" &&
+            (a.sealed === undefined ||
+              (typeof a.sealed === "string" && a.sealed.length <= 20)),
         )
       )
         return false;
@@ -302,9 +303,7 @@ export function validSave(x: unknown): x is GameState {
       return false;
     if (
       ![p.resources, p.clues, p.damage, p.horror].every((n) => integer(n)) ||
-      !["12113", "12116", "12117", "12118", "12119", "12120"].includes(
-        p.location,
-      )
+      !SPREADING_FLAMES.locations.includes(p.location)
     )
       return false;
     if (
@@ -321,7 +320,9 @@ export function validSave(x: unknown): x is GameState {
           integer(a.uses) &&
           integer(a.damage) &&
           integer(a.horror) &&
-          typeof a.exhausted === "boolean",
+          typeof a.exhausted === "boolean" &&
+          (a.sealed === undefined ||
+            (typeof a.sealed === "string" && a.sealed.length <= 20)),
       )
     )
       return false;
