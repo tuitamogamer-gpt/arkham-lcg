@@ -295,7 +295,7 @@
   box-shadow: none;
   background:
     radial-gradient(ellipse, #263b30c2, #1e2d27ee 78%),
-    url("/art/miskatonic.png") center / cover;
+    url("/art/miskatonic.webp") center / cover;
   overflow: visible;
 }
 .in-game .location-board.act-3,

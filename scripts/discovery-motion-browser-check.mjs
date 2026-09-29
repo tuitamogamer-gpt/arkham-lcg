@@ -31,7 +31,7 @@ await page.addInitScript(() => {
   };
 });
 const save = () =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), key);
 async function shot(name, wait = 850, fullPage = false) {
   await page.evaluate(() =>
     Promise.all([...document.images].map((i) => i.decode().catch(() => {}))),

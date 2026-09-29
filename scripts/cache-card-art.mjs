@@ -36,14 +36,14 @@ const previous = JSON.parse(
 const sources = new Map((previous.images || []).map((c) => [c.code, c]));
 const failed = [];
 let cursor = 0;
-await mkdir("public/art/cards", { recursive: true });
+// Originals stay in art-source/; the served WebP faces come from
+// scripts/optimize-art.mjs, which must run after this script.
+await mkdir("art-source/cards", { recursive: true });
 async function worker() {
   while (cursor < targets.length) {
     const c = targets[cursor++];
     const ext = new URL(c.url).pathname.split(".").pop();
-    let path = manifest[c.code]
-      ? `public${manifest[c.code]}`
-      : `public/art/cards/${c.code}.${ext}`;
+    let path = `art-source/cards/${c.code}.${ext}`;
     let downloadedFrom;
     let error;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -59,11 +59,11 @@ async function worker() {
             throw new Error(`HTTP ${r.status}`);
           const bytes = new Uint8Array(await r.arrayBuffer());
           if (bytes.length < 1000) throw new Error("Incomplete image");
-          path = `public/art/cards/${c.code}.${r.headers.get("content-type").includes("png") ? "png" : "jpg"}`;
+          path = `art-source/cards/${c.code}.${r.headers.get("content-type").includes("png") ? "png" : "jpg"}`;
           await writeFile(path, bytes);
           downloadedFrom = url;
         }
-        manifest[c.code] = path.replace(/^public/, "");
+        manifest[c.code] = `/art/cards/${c.code}.webp`;
         if (downloadedFrom || !sources.has(c.code))
           sources.set(c.code, { ...c, url: downloadedFrom || c.url });
         error = undefined;

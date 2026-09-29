@@ -8,6 +8,59 @@ import type {
   VisibleEvent,
 } from "./types";
 
+// Pacing preference. "detailed" pauses on every recorded event, "smart" only
+// on notable and critical ones, "fast" only on critical ones. Every event is
+// recorded in the history regardless of the tempo.
+export type Tempo = "detailed" | "smart" | "fast";
+let tempo: Tempo = "detailed";
+export function setTempo(value: Tempo) {
+  tempo = value;
+}
+export function currentTempo() {
+  return tempo;
+}
+export type Importance = "minor" | "notable" | "critical";
+export function eventImportance(
+  e: Pick<VisibleEvent, "title" | "story" | "encounter" | "changes" | "card">,
+): Importance {
+  if (
+    e.story ||
+    e.title === "Scenario resolution" ||
+    e.title === "The agenda advances" ||
+    e.title === "The story advances" ||
+    /^(Investigator defeated|Deck exhausted|Investigator resigns)/.test(e.title) ||
+    e.changes.some((c) => c.after === "defeated" || c.after === "resigned")
+  )
+    return "critical";
+  if (e.encounter?.stage === "revealed") return "critical";
+  if (/^(Enemy attack|Attack of opportunity|Retaliation)$/.test(e.title))
+    return "critical";
+  if (e.encounter?.stage === "resolving")
+    return e.card && card(e.card)?.type_code === "enemy" ? "notable" : "minor";
+  if (
+    /^(Damage and horror resolved|Cards drawn and horror resolved|Fire damage|Fire spreads|Fire burns the enemies|Hunter moves|Doom placed|Investigator defeated)$/.test(
+      e.title,
+    ) ||
+    /^Mythos · Round/.test(e.title)
+  )
+    return "notable";
+  if (
+    e.title === "Enemy damaged" &&
+    e.changes.some((c) =>
+      ["Victory display", "Encounter discard", "Leaves play"].includes(c.after),
+    )
+  )
+    return "notable";
+  return "minor";
+}
+export function pausesAt(importance: Importance) {
+  return (
+    tempo === "detailed" ||
+    importance === "critical" ||
+    (tempo === "smart" && importance === "notable")
+  );
+}
+
 // Only public information belongs in the chronicle. Never store future draw order.
 export function visibleSnapshot(s: GameState) {
   return structuredClone({
@@ -293,7 +346,7 @@ export function rememberEvent(
   s.eventHistory.push(entry);
   recordDiscoveries(s);
   if (s.eventHistory.length > 500) s.eventHistory.shift();
-  if (pause) s.event = entry;
+  if (pause && pausesAt(eventImportance(entry))) s.event = entry;
 }
 export function presentEffect(
   s: GameState,
@@ -540,6 +593,15 @@ export function presentAction(
     s.event.changes = changes;
     const stored = s.eventHistory.find((e) => e.id === s.event!.id);
     if (stored) stored.changes = changes;
+    return;
+  }
+  const fresh = s.eventHistory.filter((e) => e.id > previousSerial);
+  if (fresh.length) {
+    // Events that resolved without pausing already itemize their own changes.
+    // Attach only the action's own payment to the first of them.
+    const seen = new Set(fresh.flatMap((e) => e.changes.map((c) => c.label)));
+    const extra = changes.filter((c) => !seen.has(c.label));
+    if (extra.length) fresh[0].changes = [...extra, ...fresh[0].changes];
     return;
   }
   const notes = s.log.filter((l) => l.id > before.logId);

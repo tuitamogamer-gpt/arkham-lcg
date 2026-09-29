@@ -1,0 +1,408 @@
+/* Additions: tempo, undo, success chance, save slots, record, tutorial,
+   bottom navigation on phones. Loaded last; keeps the established palette. */
+
+/* Undo, next to End turn */
+.undo-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ceb87c;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  background: #060f0a40;
+  border: 1px solid #96895350;
+  padding: 10px 12px;
+  border-radius: 2px;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.undo-button:hover:not(:disabled) {
+  background: #b39e5a25;
+  color: #e5d3a5;
+}
+.undo-button:disabled {
+  opacity: 0.35;
+}
+
+/* Chance of success inside the skill test */
+.test-chance {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0;
+  padding: 9px 13px;
+  background: #0f1d17;
+  border: 1px solid #bfa36444;
+  color: #cfc39c;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.test-chance strong {
+  font-family: var(--font-reading);
+  font-size: 22px;
+  color: #e6d3a3;
+  letter-spacing: 0;
+}
+.test-chance small {
+  color: #98a58c;
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Event footer: tempo and undo */
+.event-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.event-footer > div > span {
+  flex-basis: 100%;
+  margin-bottom: 0;
+}
+.event-tempo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #98a58c;
+}
+.event-tempo select {
+  background: #0a1914;
+  color: #e4d5ad;
+  border: 1px solid #bfa36466;
+  padding: 5px 8px;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Settings */
+.sound-toggles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+.save-slots {
+  border: 1px solid #bfa36455;
+  background: #14271f;
+  padding: 14px 16px 6px;
+  color: #e4d5ad;
+}
+.save-slots-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.save-slots-heading small {
+  color: #b2b5a0;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.save-slots ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.save-slots li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid #bfa36422;
+}
+.save-slots li.active {
+  background: linear-gradient(90deg, #b49d6014, transparent);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.save-slot-copy strong {
+  font-family: var(--font-reading);
+  font-size: 15px;
+  color: #e6d3a3;
+}
+.save-slot-copy small {
+  display: block;
+  margin-top: 3px;
+  color: #98a58c;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.save-slot-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.save-slot-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid #bfa36455;
+  color: #c2bd95;
+  font-size: 10px;
+  padding: 6px 9px;
+  border-radius: 2px;
+}
+.save-slot-actions button:hover {
+  background: #b39e5a25;
+  color: #e5d3a5;
+}
+.save-slot-actions button.danger {
+  color: #e6ad97;
+  border-color: #c47b6a99;
+}
+.save-current {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #b9ab70;
+  padding: 6px 4px;
+}
+.save-io {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.save-io .button {
+  flex: 1;
+}
+
+/* Home: closed cases */
+.night-record {
+  margin-top: 44px;
+}
+.record-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  margin-top: 16px;
+}
+.record-stats span {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #b7b49a;
+}
+.record-stats b {
+  font-family: var(--font-reading);
+  font-size: 26px;
+  color: #e4d5ad;
+  margin-right: 7px;
+}
+.record-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  border-top: 1px solid #bfa36422;
+}
+.record-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid #bfa36422;
+}
+.record-list strong {
+  color: #e4d5ad;
+  font-weight: 500;
+}
+.record-list span {
+  color: #98a58c;
+  font-size: 11px;
+}
+
+/* Tutorial */
+.tutorial-highlight {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+  border: 2px solid #e2cd93;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 4px #e2cd9333,
+    0 0 34px #b49d6088;
+  transition:
+    left 0.3s var(--ease),
+    top 0.3s var(--ease),
+    width 0.3s var(--ease),
+    height 0.3s var(--ease);
+}
+.tutorial-card {
+  position: fixed;
+  z-index: 1000;
+  right: 22px;
+  bottom: 22px;
+  width: min(360px, calc(100% - 44px));
+  padding: 16px 18px 14px;
+  color: #e4d5ad;
+  background: #15271ef8;
+  border: 1px solid #c5a366;
+  border-radius: 4px;
+  box-shadow:
+    0 12px 45px #000b,
+    inset 0 0 0 4px #c5a36612;
+}
+.tutorial-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #b3ad85;
+}
+.tutorial-card header button {
+  margin-left: auto;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  padding: 4px;
+}
+.tutorial-card h3 {
+  font-family: var(--font-reading);
+  font-size: 22px;
+  margin: 8px 0 6px;
+  color: #e6d3a3;
+}
+.tutorial-card p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #cfc9ad;
+}
+.tutorial-card .tutorial-hint {
+  margin-top: 8px;
+  color: #e2cd93;
+  font-style: italic;
+}
+.tutorial-card footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.tutorial-card footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #bfa36455;
+  color: #c2bd95;
+  font-size: 11px;
+  padding: 7px 11px;
+  border-radius: 2px;
+}
+.tutorial-card footer button.tutorial-next {
+  background: #b49d6030;
+  color: #e2cd93;
+  border-color: #bba36b55;
+}
+
+/* Phones: the side bar becomes a bottom bar */
+@media (max-width: 700px) {
+  .sidebar {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 62px;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 0 4px;
+    border-right: 0;
+    border-top: 1px solid #ba94553b;
+    background: #0b1412f2;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .sidebar .brand,
+  .sidebar-rule,
+  .edition-plaque,
+  .sidebar-foot {
+    display: none;
+  }
+  .sidebar nav {
+    flex: 1;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 0;
+    margin: 0;
+  }
+  .sidebar nav button {
+    position: relative;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 2px;
+    min-height: 62px;
+    min-width: 0;
+  }
+  .sidebar nav button > span {
+    display: block;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .sidebar nav button > small {
+    display: none;
+  }
+  .sidebar nav button.active:before {
+    left: 10px;
+    right: 10px;
+    top: 0;
+    bottom: auto;
+    width: auto;
+    height: 2px;
+  }
+  .sidebar-bottom {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .sidebar-control {
+    min-height: 62px;
+    padding: 6px 8px;
+    align-items: center;
+    justify-content: center;
+  }
+  .sidebar-control > span,
+  .sidebar-control > i {
+    display: none;
+  }
+  .app-main {
+    margin-left: 0;
+    padding-bottom: 70px;
+  }
+  .pause-dock {
+    left: 12px;
+    right: 12px;
+    bottom: 74px;
+    width: auto;
+    transform: none;
+  }
+  .toast {
+    bottom: 80px;
+  }
+  .tutorial-card {
+    right: 12px;
+    left: 12px;
+    bottom: 76px;
+    width: auto;
+  }
+}

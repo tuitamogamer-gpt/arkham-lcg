@@ -1,5 +1,11 @@
 import { BAGS, CONNECTIONS, STARTER_DECKS, card, code } from "./data";
-import { visibleSnapshot, presentEffect, presentAction } from "./presentation";
+import {
+  visibleSnapshot,
+  presentEffect,
+  presentAction,
+  setTempo,
+  type Tempo,
+} from "./presentation";
 import { recordDiscoveries } from "./knowledge";
 import type {
   Action,
@@ -3886,6 +3892,44 @@ function resolve(s: GameState) {
 function hardDifficulty(s: GameState) {
   return s.difficulty === "hard" || s.difficulty === "expert";
 }
+// Probability that a test at the given skill value succeeds against the
+// difficulty, following the scenario's token rules. The bag is public, so this
+// reveals nothing the player could not compute by hand.
+export function successChance(
+  s: GameState,
+  value: number,
+  difficulty: number,
+  p = s.player,
+): number {
+  const hard = hardDifficulty(s);
+  const elder = p.code === C(7) ? 0 : 1;
+  const passes = (mod: number) => Math.max(0, value + mod) >= difficulty;
+  const modifier = (token: string) =>
+    token === "elder_sign"
+      ? elder
+      : token === "skull"
+        ? -(s.act + (hard ? 1 : 0))
+        : token === "elder_thing"
+          ? -(hard ? 4 : 3)
+          : Number(token) || 0;
+  const others = s.bag.filter((t) => t !== "tablet");
+  const tablets = s.bag.length - others.length;
+  const penalty = hard ? 2 : 1;
+  // Tablets are interchangeable, so the draw only depends on how many have
+  // been revealed so far. Like reveal(), the chain stops after 20 tokens.
+  const walk = (drawn: number): number => {
+    const remaining = s.bag.length - drawn;
+    if (!remaining) return 0;
+    const mod = -drawn * penalty;
+    if (drawn >= 20) return passes(mod) ? 1 : 0;
+    let total = 0;
+    for (const token of others)
+      if (token !== "auto_fail" && passes(mod + modifier(token))) total += 1;
+    if (tablets > drawn) total += (tablets - drawn) * walk(drawn + 1);
+    return total / remaining;
+  };
+  return walk(0);
+}
 function beginTurn(s: GameState) {
   if (s.player.turnStarted) return;
   s.player.turnStarted = true;
@@ -3978,7 +4022,13 @@ function actionCost(s: GameState, n: number, safe: boolean, isAction = n > 0) {
       }),
     );
 }
-export function reduceGame(state: GameState, action: Action): GameState {
+export function reduceGame(
+  state: GameState,
+  action: Action,
+  options: { tempo?: Tempo } = {},
+): GameState {
+  // Presentation pacing only: which recorded events wait for confirmation.
+  setTempo(options.tempo || "detailed");
   if (state.introduction && state.introduction !== "complete") {
     if (
       action.type !== "continueIntroduction" ||
@@ -4108,8 +4158,25 @@ function reduceCore(state: GameState, action: Action): GameState {
     const c = s.decision.choices.find((c) => c.id === action.id);
     if (!c) return state;
     s.decision = null;
+    // Scenario bookkeeping (engagement, fire, ordering) may ask for a choice
+    // while an eliminated investigator is still focused. Its consequences must
+    // belong to an investigator who is still in play; otherwise they are
+    // skipped and the same decision repeats forever.
+    if (s.player.status !== "active" && survivors(s).length)
+      focus(s, survivors(s)[0].code);
     front(s, ...c.effects);
     drain(s);
+    const signature = (d: Decision | null) =>
+      d &&
+      JSON.stringify([d.title, d.description, d.choices.map((c) => [c.id, c.label])]);
+    if (
+      s.decision &&
+      signature(s.decision) === signature(state.decision) &&
+      JSON.stringify(visibleSnapshot(s)) ===
+        JSON.stringify(visibleSnapshot(state))
+    )
+      s.error =
+        "This choice changed nothing and the same decision returned. Use Undo, or export the save and report the problem.";
     return s;
   }
   if (action.type === "commit") {

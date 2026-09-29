@@ -19,7 +19,7 @@ page.on("console", (message) => {
   if (message.type() === "error") errors.push(message.text());
 });
 const saved = () =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), key);
 const summary = () =>
   page.evaluate(() => JSON.parse(window.render_game_to_text()));
 async function load(s) {
@@ -162,7 +162,7 @@ assert.deepEqual(
   "reading a connected location costs no action",
 );
 const hidden = page.locator(".map-location.unrevealed .location-card img");
-assert.ok((await hidden.getAttribute("src")).endsWith("12118.jpg"));
+assert.ok((await hidden.getAttribute("src")).endsWith("12118.webp"));
 assert.equal(
   await page.locator(".map-location.unrevealed .token-clue").count(),
   0,
@@ -288,7 +288,7 @@ await page
   .click();
 assert.ok(
   (await page.locator(".bag-reference img").getAttribute("src")).endsWith(
-    "12105b.jpg",
+    "12105b.webp",
   ),
 );
 assert.ok(

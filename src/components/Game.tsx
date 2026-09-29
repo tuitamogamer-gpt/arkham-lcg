@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  ArrowCounterClockwise,
   ArrowRight,
   BookOpen,
   Brain,
@@ -52,6 +53,7 @@ import {
   canSwitch,
   commitOwner,
   commitCards,
+  successChance,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
 import {
@@ -69,6 +71,8 @@ export function Game({
   onHome,
   onExport,
   onHistory,
+  canUndo = false,
+  onUndo,
 }: {
   game: GameState;
   dispatch: (a: Action) => void;
@@ -76,6 +80,8 @@ export function Game({
   onHome: () => void;
   onExport: () => void;
   onHistory: () => void;
+  canUndo?: boolean;
+  onUndo?: () => void;
 }) {
   useTableMotion(s);
   const roster = party(s),
@@ -487,6 +493,19 @@ export function Game({
                 <strong>Fast abilities</strong>
                 <small>Open player window</small>
               </span>
+            </button>
+            <button
+              className="undo-button"
+              onClick={onUndo}
+              disabled={!canUndo}
+              aria-label="Undo last action"
+              title={
+                canUndo
+                  ? "Take back the last action of this turn (Ctrl+Z or ⌘Z)"
+                  : "Nothing to undo in this turn"
+              }
+            >
+              <ArrowCounterClockwise size={16} /> Undo
             </button>
             <button
               className="end-turn"
@@ -1009,6 +1028,18 @@ export function Game({
               <span>DIFFICULTY</span>
             </div>
           </div>
+          {s.test.stage === "commit" && (
+            <p className="test-chance" aria-live="polite">
+              <span>Chance of success</span>
+              <strong>
+                {Math.round(
+                  successChance(s, testValue(s), s.test.difficulty) * 100,
+                )}
+                %
+              </strong>
+              <small>from the {s.bag.length} tokens in the bag</small>
+            </p>
+          )}
           {s.test.stage === "commit" ? (
             <>
               <p className="test-instructions">

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type CSSProperties } from "react";
 import type { GameState } from "../game/types";
 import { tableMotion, type MotionKind } from "../game/motion";
+import { audio } from "../audio";
 
 export type MotionPreference = "full" | "subtle" | "off";
 export function readMotionPreference(): MotionPreference {
@@ -179,13 +180,16 @@ export function useTableMotion(s: GameState) {
     const currentPositions = new Map(
       [...elements].map(([id, el]) => [id, position(el)]),
     );
+    const cues = tableMotion(previous.current, s);
+    // Sound follows the same public cues and, like motion, never advances play.
+    audio.cues(cues.map((cue) => cue.kind));
     const preference =
       document.documentElement.dataset.motion || readMotionPreference();
     if (
       preference === "full" &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
-      for (const cue of tableMotion(previous.current, s)) {
+      for (const cue of cues) {
         let el = elements.get(cue.target);
         const removed = !el;
         if (!el && ["defeat", "discard", "commit"].includes(cue.kind)) {

@@ -19,7 +19,7 @@ page.on("console", (e) => {
 });
 page.setDefaultTimeout(10000);
 const save = () =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), key);
 const asset = (id = "kit", code = "12031") => ({
   id,
   code,

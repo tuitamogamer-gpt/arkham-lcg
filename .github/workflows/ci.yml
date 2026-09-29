@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    name: Types, rules tests, build and browser smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: TypeScript
+        run: npx tsc -b
+      - name: Rules, save, presentation and fuzz tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Serve the production build
+        run: |
+          npx vite preview --port 5187 --host 127.0.0.1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5187/ > /dev/null && break
+            sleep 1
+          done
+      - name: Browser smoke test (real clicks through a first turn)
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node scripts/browser-check.mjs
+      - name: Keep screenshots when the browser check fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-check
+          path: output/browser
+          if-no-files-found: ignore

@@ -31,7 +31,7 @@ for (const [name, engine] of [
     if (e.type() === "error") errors.push(e.text());
   });
   const saved = () =>
-    page.evaluate((key) => JSON.parse(localStorage.getItem(key)), saveKey);
+    page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), saveKey);
   const resolve = () =>
     page.getByRole("button", { name: "Resolve the test", exact: true });
   async function load(s, motion = "full") {

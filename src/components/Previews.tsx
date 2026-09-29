@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import scans from "../../public/data/art-manifest.json";
-import { card, CARD_ART, LOCATION_ART, plain } from "../game/data";
+import { card, CARD_ART, CARD_BACKS, LOCATION_ART, plain } from "../game/data";
 import { canInspectCard, canReadReverse } from "../game/knowledge";
 import type { Action, GameState } from "../game/types";
 import { RulesText } from "./Common";
@@ -33,7 +33,7 @@ function previewFor(el: HTMLElement, game: GameState | null): Preview | null {
       title: back === "encounter" ? "Encounter deck" : "Investigator deck",
       label: "Card back",
       text: "Cards remain facedown. The next card is revealed only when it is drawn.",
-      art: `/art/backs/${back}.png`,
+      art: CARD_BACKS[back as "player" | "encounter"],
     };
   if (!code)
     return title ? { title, text: text || "", label: "Campaign log" } : null;
@@ -180,6 +180,11 @@ export function CardPreviewLayer({
       if (target) show(target, 240);
     }
     function leave(e: PointerEvent) {
+      // A pointer leaving an unrelated element (for example after the page
+      // scrolled under a resting cursor) must not close a preview that was
+      // opened from another card or by keyboard focus.
+      const from = e.target as Node | null;
+      if (!anchor?.contains(from) && !tooltip.current?.contains(from)) return;
       const next = e.relatedTarget as Node | null;
       if (anchor?.contains(next) || tooltip.current?.contains(next)) return;
       if (tooltip.current?.contains(document.activeElement)) return;

@@ -27,7 +27,12 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - Four acts, three agendas, campus reveal progression, Servant of Flame, Dr. Armitage, victory/defeat/resignation, XP, trauma and campaign records.
 - **Player-controlled event progression**: every visible scripted step pauses with its source card, affected investigator, and before/after changes. Attacks and encounter revelations wait for confirmation before their effects resolve. Phase transitions, draws, injuries, and reactions unfold step by step, with no timers or autoplay.
 - Inspect the table or cards while paused; review the most recent 500 events in the read-only event history. Closing a checkpoint only minimizes it. Unrelated actions and stale confirmations cannot skip it.
-- Local autosave, save export/import, preservation of pending events, tests and choices, automatic migration of older solo and party saves, keyboard-accessible dialogs, fullscreen (F), optional synthesized ambience.
+- **Game tempo**: Detailed pauses on every recorded event, Smart pauses only on attacks, encounters, injuries, fire, hunters, new rounds and story, Fast pauses on story, attacks, encounter reveals and defeat. Every event is still written to the history. Enter continues an event; the tempo can be changed from the event window, the setup screen or Settings.
+- **Undo** of the last action within the current investigator turn (button, Ctrl+Z or ⌘Z). Undo never crosses a chaos-token reveal, an encounter draw, a seat change or a phase change, so it cannot look ahead.
+- **Chance of success** shown before drawing, computed from the public chaos bag and the scenario's token rules, including tablet redraws and each investigator's elder sign.
+- **Saved investigations**: every game keeps its own slot (up to 12) with open, export and delete controls in Settings & saves; starting a new case no longer replaces the previous one. Older single-slot saves migrate automatically. Closed cases are recorded on the home page.
+- **Interactive tutorial** through the first turn, shown once and available again from Settings. **Procedural sound**: synthesized ambience and effects for cards, tokens, attacks, injuries, fire, healing and story, off by default. **Installable and offline**: an app manifest and service worker keep the app shell available without a network; card art is cached as it is seen. Phones get a bottom navigation bar.
+- Local autosave, save export/import, preservation of pending events, tests and choices, automatic migration of older solo and party saves, keyboard-accessible dialogs, fullscreen (F).
 - Physical tabletop based on the 2026 rulebook and real session photography: landscape act/agenda stacks, full location faces, miniature investigator markers, tactile counters, sideways exhausted assets, player/encounter piles and a public chaos-bag/victory viewer. See [design research and sources](docs/tabletop-design-research.md).
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
 - Catalog of **196 normalized 2026 card definitions**; the searchable archive shows player cards and discoveries from your current case. Future chapters, unexplored location faces, campaign rewards and unearned story reverses stay sealed. All five investigator dossiers are available.
@@ -44,7 +49,7 @@ This is a **playable first-scenario implementation**, not a completed implementa
 
 The engine scripts these three fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions, **142 passing tests**, and the limits of that coverage. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions and the limits of that coverage. The suite now has **178 passing tests**, including a random-play fuzz test that found and now guards against a decision loop when an eliminated investigator was still focused during upkeep engagement. The [improvement plan](docs/plan-poboljsanja.md) records what was changed on 29 September 2026 and what remains. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 
@@ -77,7 +82,11 @@ Official references:
 - `src/game/knowledge.ts`: shared discovery policy for the archive, card inspection and story reverses; persisted independently of the bounded journal.
 - `src/game/motion.ts` and `src/components/Motion.tsx`: presentation cues from resolved public state and cancellable table animations, independent of the rules queue.
 - `src/game/data.ts`: normalized catalog, three exact starter lists, chaos bags and map connections.
-- `src/game/storage.ts`: guarded local storage, portable version 3 saves, and migration of version 1 and 2 saves without changing the storage key.
+- `src/game/storage.ts`: guarded local storage, portable version 3 saves, migration of version 1 and 2 saves, per-investigation save slots with an index, and the record of closed cases.
+- `src/audio.ts`: procedural ambience and sound effects driven by the same public motion cues as the animations; never gates a rules action.
+- `src/components/Tutorial.tsx`: the first-turn tutorial, anchored to table elements and advanced by the player's own actions.
+- `scripts/optimize-art.mjs`: generates the served WebP faces (full size and thumbnails) from the originals kept in `art-source/`; run `npm run art` after caching new scans.
+- `.github/workflows/ci.yml`: TypeScript, the test suite, the production build and a real Chromium smoke test on every push and pull request.
 - `src/components/`: game table, campaign home, archive, investigator files and shared dialogs.
 - `tests/`: rules regressions, save validation and explicit checkpoint tests. Legacy rules fixtures acknowledge checkpoints and pass Fast opportunities through `tests/helpers.ts`; timing and pacing tests exercise the reducer directly.
 - `scripts/browser-check.mjs` and `scripts/party-browser-check.mjs`: real Chromium interaction checks and desktop/mobile captures.
@@ -90,6 +99,7 @@ Official references:
 ```sh
 npm test
 npm run build
+npm run check   # types, tests and build in one step
 # With the dev server running:
 node scripts/browser-check.mjs
 DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
@@ -109,8 +119,8 @@ Browser artifacts are written under ignored `output/browser/`, `output/party-bro
 
 ## Deployment
 
-The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.com/tuitamogamer-gpt/arkham-lcg). Vercel is connected to this repository; pushes to `main` deploy to production. `vercel.json` uses `npm ci`, `npm run build`, and the `dist` output directory. Local Vercel configuration and environment files are ignored by Git and excluded from uploads.
+The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.com/tuitamogamer-gpt/arkham-lcg). Vercel is connected to this repository; pushes to `main` deploy to production. `vercel.json` uses `npm ci`, `npm run build`, the `dist` output directory, and long-lived immutable cache headers for `/art`, `/fonts` and hashed `/assets`; art files therefore need a new file name when a scan changes. GitHub Actions runs the CI workflow on every push; to make a green check a condition for deployment, require the `verify` job in the repository's branch protection for `main` and merge through pull requests. Local Vercel configuration and environment files are ignored by Git and excluded from uploads. The page carries a `noindex` robots tag so the fan build stays out of search results.
 
 ## Art and attribution
 
-This is an independent fan project, not an official Fantasy Flight Games product. Arkham Horror, its cards, text and the official card images remain the property of their respective owners. Preview image source URLs are in `docs/art-sources.json`; downloaded original scans, exact source URLs, and unavailable images are recorded in `docs/card-image-sources.json`. Refresh them with `node scripts/cache-card-art.mjs` after a card sync, optionally selecting a comma-separated `CARD_CODES` list. The campus illustration was created with the built-in image generation tool; its prompt and saved location are in `docs/art-direction.md`. Typography: Cinzel, Cormorant Garamond and DM Sans. Interface icons: Phosphor. Game symbols: ArkhamCards’ Arkham icon font (provenance in `docs/icon-sources.json`).
+This is an independent fan project, not an official Fantasy Flight Games product. Arkham Horror, its cards, text and the official card images remain the property of their respective owners. Preview image source URLs are in `docs/art-sources.json`; downloaded original scans, exact source URLs, and unavailable images are recorded in `docs/card-image-sources.json`. Originals live in `art-source/` and are not served; `npm run art` converts them into the WebP faces under `public/art/` (233 full faces of about 70–160 KB plus 360-pixel thumbnails of about 25–40 KB, instead of the former 250–350 KB JPEG scans). Refresh scans with `node scripts/cache-card-art.mjs` after a card sync, optionally selecting a comma-separated `CARD_CODES` list, then run `npm run art`. The campus illustration was created with the built-in image generation tool; its prompt and saved location are in `docs/art-direction.md`. Typography: Cinzel, Cormorant Garamond and DM Sans. Interface icons: Phosphor. Game symbols: ArkhamCards’ Arkham icon font (provenance in `docs/icon-sources.json`).

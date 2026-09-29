@@ -423,7 +423,7 @@ body:after {
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: url("/art/miskatonic.png") center center/cover;
+  background: url("/art/miskatonic.webp") center center/cover;
 }
 .hero-image:after {
   content: "";
@@ -661,7 +661,7 @@ body:after {
   overflow: hidden;
   background:
     linear-gradient(0deg, #132d29a0, #1d322344),
-    url("/art/miskatonic.png") 65% 42% / cover;
+    url("/art/miskatonic.webp") 65% 42% / cover;
 }
 .scenario-2 .scenario-art {
   background-position: 85% 28%;
@@ -802,7 +802,7 @@ body:after {
   width: 48px;
   height: 60px;
   flex-shrink: 0;
-  background: #867b65 url("/art/joe-card.png") 10% 28%/325%;
+  background: #867b65 url("/art/joe-card.webp") 10% 28%/325%;
   border-radius: 7px;
   border: 3px solid #e8e6d5;
   outline: 1px solid #8b8e6940;
@@ -1218,7 +1218,7 @@ body:after {
 }
 .dossier-portrait {
   height: 195px;
-  background: #6d715f url("/art/joe-card.png") 0% 13%/180%;
+  background: #6d715f url("/art/joe-card.webp") 0% 13%/180%;
   border-radius: 7px;
 }
 .dossier-initials {
@@ -1434,7 +1434,7 @@ body:after {
   min-height: 555px;
   background:
     linear-gradient(0deg, #172f20dd, transparent),
-    url("/art/miskatonic.png") 70% center/auto 100%;
+    url("/art/miskatonic.webp") 70% center/auto 100%;
   padding: 35px;
   color: #dcd6b7;
 }
@@ -2008,7 +2008,7 @@ body:after {
   border-radius: 4px;
   background:
     linear-gradient(0deg, #3e4b31b0, #596f3120),
-    url("/art/miskatonic.png") center/cover;
+    url("/art/miskatonic.webp") center/cover;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2789,7 +2789,7 @@ body:after {
   z-index: -1;
   background:
     linear-gradient(90deg, #f4f3ecff 25%, #f4f3ece6 55%, #f4f3ec50),
-    url("/art/miskatonic.png") 68% center/cover;
+    url("/art/miskatonic.webp") 68% center/cover;
   opacity: 0.55;
 }
 .resolution-content {

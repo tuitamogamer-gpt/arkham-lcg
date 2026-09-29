@@ -18,7 +18,7 @@ for (const code of [
 ]) {
   const c = cards.find((c) => c.code === code);
   const url = new URL(c.backimagesrc, "https://arkhamdb.com").href;
-  const path = `public/art/cards/${code}b.jpg`;
+  const path = `art-source/cards/${code}b.jpg`;
   try {
     try {
       await access(path);
@@ -31,7 +31,7 @@ for (const code of [
         throw new Error(`Image unavailable (${response.status})`);
       await writeFile(path, new Uint8Array(await response.arrayBuffer()));
     }
-    manifest[`${code}b`] = `/art/cards/${code}b.jpg`;
+    manifest[`${code}b`] = `/art/cards/${code}b.webp`;
     sources.push({ code: `${code}b`, url, cached: true });
   } catch (error) {
     sources.push({

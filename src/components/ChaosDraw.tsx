@@ -10,6 +10,7 @@ import { ArrowRight, Check, Eye, StarFour, X } from "@phosphor-icons/react";
 import type { Test } from "../game/types";
 import { Token } from "./Common";
 import { readMotionPreference } from "./Motion";
+import { audio } from "../audio";
 
 type DrawPhase = "stirring" | "drawing" | "revealing" | "settled";
 
@@ -200,6 +201,19 @@ export function ChaosDraw({
     return () => timers.forEach(window.clearTimeout);
   }, [playEntrance, cinematic, skipped, tail]);
 
+  useEffect(() => {
+    if (visiblePhase === "revealing") audio.play("token");
+  }, [visiblePhase]);
+  useEffect(() => {
+    if (!ready) return;
+    if (instant) audio.play("token");
+    window.setTimeout(
+      () => audio.play(test.success ? "success" : "failure"),
+      instant ? 120 : 0,
+    );
+    // The outcome sound belongs to the moment the verdict becomes visible.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
   const autoFail = test.tokens.includes("auto_fail");
   const outcome = test.success ? "passed" : "failed";
   const names = test.tokens.map((t) => t.replaceAll("_", " ")).join(", ");

@@ -18,7 +18,7 @@ page.on("console", (e) => {
 });
 const saved = () =>
   page.evaluate(() =>
-    JSON.parse(localStorage.getItem("arkham-chronicle:spreading-flames:v1")),
+    JSON.parse(localStorage.getItem("arkham-chronicle:spreading-flames:v1") || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))),
   );
 const shot = async (name) => {
   await page.screenshot({ path: `${out}/${name}.png`, animations: "disabled" });

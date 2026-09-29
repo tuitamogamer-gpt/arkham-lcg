@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  ArrowCounterClockwise,
   ArrowRight,
   BookOpen as BookOpenIcon,
   ClockCounterClockwise,
@@ -22,7 +23,8 @@ import {
   ArrowBendUpRight,
 } from "@phosphor-icons/react";
 import { eventMotion } from "../game/motion";
-import { card, plain } from "../game/data";
+import { card, CARD_BACKS, plain } from "../game/data";
+import type { Tempo } from "../game/presentation";
 import type { Action, GameState, VisibleEvent } from "../game/types";
 import { CardFace, Modal, RulesText } from "./Common";
 import { TableCard } from "./Tabletop";
@@ -53,15 +55,42 @@ export function EventController({
   dispatch,
   inspect,
   obscured = false,
+  tempo = "detailed",
+  onTempo,
+  canUndo = false,
+  onUndo,
 }: {
   game: GameState;
   dispatch: (a: Action) => void;
   inspect: (c: string) => void;
   obscured?: boolean;
+  tempo?: Tempo;
+  onTempo?: (tempo: Tempo) => void;
+  canUndo?: boolean;
+  onUndo?: () => void;
 }) {
   const [minimized, setMinimized] = useState(false);
   useEffect(() => setMinimized(false), [s.event?.id]);
   const e = s.event;
+  const eventId = e?.id;
+  useEffect(() => {
+    if (!eventId || obscured) return;
+    // Enter continues when no other control owns the key.
+    const key = (ev: KeyboardEvent) => {
+      if (ev.key !== "Enter" || ev.repeat) return;
+      const target = ev.target as HTMLElement | null;
+      if (
+        target?.closest(
+          "button, a, select, input, textarea, summary, [role=button]",
+        )
+      )
+        return;
+      ev.preventDefault();
+      dispatch({ type: "continue", eventId });
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [eventId, obscured, dispatch]);
   if (!e || obscured) return null;
   const source = e.card ? card(e.card) : undefined;
   const previousStory = e.story ? card(e.story.previous) : undefined;
@@ -204,7 +233,7 @@ export function EventController({
                 {e.encounter?.stage === "revealed" && (
                   <img
                     className="encounter-flip-back"
-                    src="/art/backs/encounter.png"
+                    src={CARD_BACKS.encounter}
                     alt=""
                     aria-hidden="true"
                   />
@@ -299,7 +328,7 @@ export function EventController({
         </div>
         <footer className="event-footer">
           <div>
-            <span>Continue when you are ready.</span>
+            <span>Continue when you are ready · Enter</span>
             <button
               className="event-table-button"
               onClick={() => setMinimized(true)}
@@ -307,6 +336,26 @@ export function EventController({
               <Eye size={16} />
               View table · keep paused
             </button>
+            {onTempo && (
+              <label className="event-tempo">
+                Pause on
+                <select
+                  aria-label="Game tempo"
+                  value={tempo}
+                  onChange={(ev) => onTempo(ev.target.value as Tempo)}
+                >
+                  <option value="detailed">every event</option>
+                  <option value="smart">important events</option>
+                  <option value="fast">story and attacks only</option>
+                </select>
+              </label>
+            )}
+            {canUndo && onUndo && (
+              <button className="event-table-button" onClick={onUndo}>
+                <ArrowCounterClockwise size={16} />
+                Undo last action
+              </button>
+            )}
           </div>
           {advance}
         </footer>

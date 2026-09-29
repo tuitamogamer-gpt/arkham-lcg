@@ -1,7 +1,31 @@
-import type { GameState, VisibleEvent } from "./types";
+import type { Difficulty, GameState, VisibleEvent } from "./types";
 import { card, STARTER_DECKS } from "./data";
 import { recordDiscoveries } from "./knowledge";
+// Legacy single-slot key from the first builds; migrated into a slot on load.
 export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
+const INDEX_KEY = "arkham-chronicle:saves";
+const RECORD_KEY = "arkham-chronicle:record";
+const slotKey = (id: string) => `arkham-chronicle:save:${id}`;
+export const MAX_SLOTS = 12;
+export interface SaveSummary {
+  id: string;
+  updatedAt: string;
+  round: number;
+  act: number;
+  party: string[];
+  difficulty: Difficulty;
+  status: GameState["status"];
+  result: string | null;
+}
+export interface ResultRecord {
+  id: string;
+  finishedAt: string;
+  party: string[];
+  difficulty: Difficulty;
+  result: string;
+  rounds: number;
+  xp: number;
+}
 const integer = (n: unknown, min = 0, max = 100000): n is number =>
   typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
 const record = (x: unknown): x is Record<string, unknown> =>
@@ -511,16 +535,131 @@ export function decodeSave(value: unknown): GameState | null {
     return null;
   }
 }
-export function readSave(): GameState | null {
+function readIndex(): { active: string | null; slots: SaveSummary[] } {
   try {
-    const data = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
-    return decodeSave(data);
+    const x: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) || "null");
+    if (
+      record(x) &&
+      Array.isArray(x.slots) &&
+      x.slots.every(
+        (v) =>
+          record(v) &&
+          typeof v.id === "string" &&
+          typeof v.updatedAt === "string",
+      )
+    )
+      return {
+        active: typeof x.active === "string" ? x.active : null,
+        slots: x.slots as SaveSummary[],
+      };
+  } catch {
+    /* No index yet. */
+  }
+  return { active: null, slots: [] };
+}
+function writeIndex(index: { active: string | null; slots: SaveSummary[] }) {
+  localStorage.setItem(INDEX_KEY, JSON.stringify(index));
+}
+export function summarize(s: GameState): SaveSummary {
+  return {
+    id: s.id,
+    updatedAt: new Date().toISOString(),
+    round: s.round,
+    act: s.act,
+    party: [...s.partyOrder],
+    difficulty: s.difficulty,
+    status: s.status,
+    result: s.campaign.result,
+  };
+}
+export function listSaves(): SaveSummary[] {
+  return [...readIndex().slots].sort((a, b) =>
+    b.updatedAt.localeCompare(a.updatedAt),
+  );
+}
+export function activeSaveId(): string | null {
+  return readIndex().active;
+}
+export function loadSave(id: string): GameState | null {
+  try {
+    return decodeSave(JSON.parse(localStorage.getItem(slotKey(id)) || "null"));
   } catch {
     return null;
   }
 }
+/** Returns the active investigation, migrating the legacy single slot first. */
+export function readSave(): GameState | null {
+  try {
+    // The legacy key only exists when an older build (or automation) wrote
+    // it, so its content is the newest state of that investigation.
+    const legacy = localStorage.getItem(SAVE_KEY);
+    if (legacy) {
+      const s = decodeSave(JSON.parse(legacy));
+      if (s) writeSave(s);
+      localStorage.removeItem(SAVE_KEY);
+    }
+    const active = readIndex().active;
+    return active ? loadSave(active) : null;
+  } catch {
+    return null;
+  }
+}
+export function setActiveSave(id: string) {
+  const index = readIndex();
+  if (index.slots.some((v) => v.id === id)) writeIndex({ ...index, active: id });
+}
+/** Stores the game in its own slot and makes it the active investigation. */
 export function writeSave(s: GameState) {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+  const index = readIndex();
+  const existing = index.slots.findIndex((v) => v.id === s.id);
+  if (existing < 0 && index.slots.length >= MAX_SLOTS)
+    throw new Error("slots");
+  localStorage.setItem(slotKey(s.id), JSON.stringify(s));
+  const summary = summarize(s);
+  const slots =
+    existing < 0
+      ? [...index.slots, summary]
+      : index.slots.map((v, i) => (i === existing ? summary : v));
+  writeIndex({ active: s.id, slots });
+}
+export function deleteSave(id: string) {
+  const index = readIndex();
+  localStorage.removeItem(slotKey(id));
+  writeIndex({
+    active: index.active === id ? null : index.active,
+    slots: index.slots.filter((v) => v.id !== id),
+  });
+}
+export function readRecord(): ResultRecord[] {
+  try {
+    const x: unknown = JSON.parse(localStorage.getItem(RECORD_KEY) || "null");
+    return Array.isArray(x)
+      ? (x.filter(
+          (v) =>
+            record(v) &&
+            typeof v.id === "string" &&
+            typeof v.result === "string",
+        ) as ResultRecord[])
+      : [];
+  } catch {
+    return [];
+  }
+}
+/** Appends a finished investigation once; the game id keeps it idempotent. */
+export function recordResult(s: GameState) {
+  if (s.status !== "resolution" || !s.campaign.result) return;
+  const entries = readRecord();
+  if (entries.some((v) => v.id === s.id)) return;
+  entries.push({
+    id: s.id,
+    finishedAt: new Date().toISOString(),
+    party: [...s.partyOrder],
+    difficulty: s.difficulty,
+    result: s.campaign.result,
+    rounds: s.round,
+    xp: s.campaign.xp,
+  });
+  localStorage.setItem(RECORD_KEY, JSON.stringify(entries.slice(-200)));
 }
 export function exportSave(s: GameState) {
   const url = URL.createObjectURL(

@@ -17,7 +17,7 @@ const state = async () =>
   JSON.parse(await page.evaluate(() => window.render_game_to_text()));
 const saved = async () =>
   page.evaluate(() =>
-    JSON.parse(localStorage.getItem("arkham-chronicle:spreading-flames:v1")),
+    JSON.parse(localStorage.getItem("arkham-chronicle:spreading-flames:v1") || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))),
   );
 const shot = async (name) => {
   await page.evaluate(() => document.fonts.ready);

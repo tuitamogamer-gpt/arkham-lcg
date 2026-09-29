@@ -15,7 +15,15 @@ import {
   StarFour,
 } from "@phosphor-icons/react";
 import scans from "../../public/data/art-manifest.json";
-import { card, CARD_ART, CONNECTIONS, LOCATION_ART, plain } from "../game/data";
+import {
+  card,
+  CARD_ART,
+  CARD_BACKS,
+  CONNECTIONS,
+  LOCATION_ART,
+  plain,
+  thumbArt,
+} from "../game/data";
 import {
   availableConnections,
   health,
@@ -42,11 +50,13 @@ export function TableCard({
 }) {
   const c = card(code);
   const faces = LOCATION_ART[code];
-  const src = faces
-    ? nativeArt[back ? faces.unrevealed : faces.revealed]
-    : back
-      ? nativeArt[`${code}b`]
-      : nativeArt[code] || CARD_ART[code];
+  const src = thumbArt(
+    faces
+      ? nativeArt[back ? faces.unrevealed : faces.revealed]
+      : back
+        ? nativeArt[`${code}b`]
+        : nativeArt[code] || CARD_ART[code],
+  );
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [src]);
   return src && !failed ? (
@@ -56,6 +66,7 @@ export function TableCard({
       data-preview-code={code}
       data-preview-face={back ? "back" : "front"}
       src={src}
+      decoding="async"
       alt={`${c.name}${faces ? (back ? " · unrevealed" : " · revealed") : back ? " · reverse face" : ""}`}
     />
   ) : (
@@ -398,7 +409,7 @@ export function LocationTable({
                     onClick={() => inspect(enemy.code)}
                     aria-label={`Inspect ${card(enemy.code).name} at ${card(l.code).name}`}
                   >
-                    <img src={CARD_ART[enemy.code]} alt="" />
+                    <img src={thumbArt(CARD_ART[enemy.code])} alt="" />
                     <span>
                       {enemy.exhausted
                         ? "Z"
@@ -463,7 +474,7 @@ function CardBack({ encounter = false }: { encounter?: boolean }) {
     <span className={`table-card-back ${kind}-back`} data-preview-back={kind}>
       {!failed ? (
         <img
-          src={`/art/backs/${kind}.png`}
+          src={CARD_BACKS[kind]}
           alt={`${encounter ? "Encounter" : "Player"} card back`}
           onError={() => setFailed(true)}
         />

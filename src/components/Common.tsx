@@ -25,7 +25,14 @@ import {
   Heart,
   Shield,
 } from "@phosphor-icons/react";
-import { card, CARD_ART, LOCATION_ART, plain } from "../game/data";
+import {
+  card,
+  CARD_ART,
+  CARD_BACKS,
+  LOCATION_ART,
+  plain,
+  thumbArt,
+} from "../game/data";
 import scans from "../../public/data/art-manifest.json";
 import type { Card, GameState, Skill } from "../game/types";
 import { canInspectCard, canReadReverse } from "../game/knowledge";
@@ -259,9 +266,10 @@ export function CardFace({
         onClick={onClick}
       >
         <img
-          src={CARD_ART[c.code]}
+          src={compact ? thumbArt(CARD_ART[c.code]) : CARD_ART[c.code]}
           alt={`${c.name} card`}
           loading="lazy"
+          decoding="async"
           onError={() => setFailed(true)}
         />
         <span className="scan-caption">{c.name}</span>
@@ -333,7 +341,7 @@ export function CardDetail({
       ? "encounter"
       : "player";
   const backSrc = genericBack
-    ? `/art/backs/${backKind}.png`
+    ? CARD_BACKS[backKind]
     : (scans as Record<string, string>)[
         LOCATION_ART[code]?.unrevealed || `${code}b`
       ];

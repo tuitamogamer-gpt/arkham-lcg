@@ -32,7 +32,7 @@ await page.addInitScript(() => {
   };
 });
 const save = () =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), key);
 const summary = () =>
   page.evaluate(() => JSON.parse(window.render_game_to_text()));
 const shot = async (name) => {

@@ -66,7 +66,7 @@ async function load(s) {
   await page.evaluate(() => document.fonts.ready);
 }
 const save = () =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), key);
 async function shot(name, fullPage = false) {
   await page.evaluate(() =>
     Promise.all([...document.images].map((i) => i.decode().catch(() => {}))),
@@ -247,7 +247,7 @@ for (const width of [1280, 390]) {
 }
 // Even a corrupt local image must leave a bounded, readable card fallback.
 await page.setViewportSize({ width: 1280, height: 900 });
-await page.route("**/art/cards/12122.jpg", (route) =>
+await page.route("**/art/cards/**12122.webp", (route) =>
   route.fulfill({
     status: 200,
     contentType: "image/jpeg",
@@ -282,7 +282,7 @@ assert.ok(
   "fallback text stays inside the enemy card",
 );
 await shot("image-fallback-table", true);
-await page.unroute("**/art/cards/12122.jpg");
+await page.unroute("**/art/cards/**12122.webp");
 assert.deepEqual(errors, []);
 await writeFile(
   `${out}/results.json`,

@@ -16,7 +16,7 @@ page.on("console", (e) => {
 });
 const key = "arkham-chronicle:spreading-flames:v1";
 const saved = () =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key);
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) || localStorage.getItem("arkham-chronicle:save:" + (JSON.parse(localStorage.getItem("arkham-chronicle:saves") || "{}").active || ""))), key);
 const summary = () =>
   page.evaluate(() => JSON.parse(window.render_game_to_text()));
 const dialog = () => page.getByRole("dialog");

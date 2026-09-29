@@ -11,6 +11,10 @@ import "./story.css";
 import "./chaos-bag.css";
 import "./premium-table.css";
 import "./chaos-draw.css";
+import "./additions.css";
+import { registerSW } from "virtual:pwa-register";
+// Installable, offline-capable shell. Updates apply on the next load.
+registerSW({ immediate: true });
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

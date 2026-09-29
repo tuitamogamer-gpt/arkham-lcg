@@ -8,10 +8,71 @@ import {
   FloppyDisk,
 } from "@phosphor-icons/react";
 import type { GameState } from "../game/types";
-import { card, CARD_ART, PLAYABLE_INVESTIGATORS } from "../game/data";
+import {
+  card,
+  CARD_ART,
+  PLAYABLE_INVESTIGATORS,
+  thumbArt,
+} from "../game/data";
 import { party } from "../game/engine";
+import { readRecord } from "../game/storage";
 import { Button, HoverPreview } from "./Common";
 import { Embers } from "./Motion";
+function Record() {
+  const record = readRecord();
+  if (!record.length) return null;
+  const won = record.filter((r) => ["saved", "pursuer"].includes(r.result));
+  const best = Math.max(...record.map((r) => r.xp));
+  return (
+    <section className="night-record" aria-label="Your record">
+      <div className="night-section-title">
+        <div>
+          <span className="eyebrow">YOUR RECORD</span>
+          <h2>What the chronicle remembers.</h2>
+        </div>
+        <span>
+          {record.length} CASE{record.length === 1 ? "" : "S"} CLOSED
+        </span>
+      </div>
+      <div className="record-stats">
+        <span>
+          <b>{won.length}</b> pursuer defeated
+        </span>
+        <span>
+          <b>{won.filter((r) => r.result === "saved").length}</b> Miskatonic
+          saved
+        </span>
+        <span>
+          <b>{record.length - won.length}</b> lost
+        </span>
+        <span>
+          <b>{best}</b> best experience
+        </span>
+      </div>
+      <ul className="record-list">
+        {[...record]
+          .reverse()
+          .slice(0, 5)
+          .map((r) => (
+            <li key={r.id}>
+              <strong>{r.party.map((c) => card(c).name).join(" · ")}</strong>
+              <span>
+                {r.difficulty} · {r.rounds} rounds ·{" "}
+                {r.result === "saved"
+                  ? "Miskatonic saved"
+                  : r.result === "pursuer"
+                    ? "pursuer defeated"
+                    : r.result === "overrun"
+                      ? "campus overrun"
+                      : r.result}{" "}
+                · {r.xp} XP · {new Date(r.finishedAt).toLocaleDateString()}
+              </span>
+            </li>
+          ))}
+      </ul>
+    </section>
+  );
+}
 export function Home({
   game,
   onStart,
@@ -203,7 +264,7 @@ export function Home({
               >
                 <div
                   className="dossier-photo"
-                  style={{ backgroundImage: `url(${CARD_ART[c]})` }}
+                  style={{ backgroundImage: `url(${thumbArt(CARD_ART[c])})` }}
                 />
                 <span className="dossier-tab">{card(c).faction_code}</span>
                 <div className="dossier-note">
@@ -228,6 +289,7 @@ export function Home({
             Open field guide <ArrowRight size={17} />
           </button>
         </div>
+        <Record />
         {game && (
           <div className="night-saved">
             <FloppyDisk size={14} />

@@ -7,18 +7,35 @@ import {
   Compass,
   FolderOpen,
   Gear,
+  GraduationCap,
   House,
   MoonStars,
+  Play,
   SpeakerHigh,
   SpeakerSlash,
   Stack,
+  Trash,
   UploadSimple,
   UsersThree,
   X,
 } from "@phosphor-icons/react";
 import { createGame, gameSummary, reduceGame } from "./game/engine";
-import { exportSave, readSave, decodeSave, writeSave } from "./game/storage";
+import type { Tempo } from "./game/presentation";
+import {
+  MAX_SLOTS,
+  deleteSave,
+  exportSave,
+  listSaves,
+  loadSave,
+  readSave,
+  recordResult,
+  decodeSave,
+  writeSave,
+  type SaveSummary,
+} from "./game/storage";
 import type { Action, Difficulty, GameState } from "./game/types";
+import { audio, readAudioPreference } from "./audio";
+import { Tutorial, resetTutorial, tutorialPending } from "./components/Tutorial";
 import { Archive, Investigators } from "./components/Archive";
 import {
   Button,
@@ -40,6 +57,27 @@ import {
   type MotionPreference,
 } from "./components/Motion";
 type Page = "home" | "investigators" | "archive" | "guide" | "game";
+function readTempoPreference(): Tempo {
+  try {
+    const value = localStorage.getItem("arkham-chronicle:tempo");
+    if (value === "smart" || value === "fast") return value;
+  } catch {
+    /* Optional preference. */
+  }
+  return "detailed";
+}
+const resultLabel = (result: string | null) =>
+  result === "saved"
+    ? "Miskatonic saved"
+    : result === "pursuer"
+      ? "Pursuer defeated, campus burned"
+      : result === "overrun"
+        ? "The campus was overrun"
+        : result === "resigned"
+          ? "Resigned"
+          : result === "defeat"
+            ? "Defeated"
+            : "In progress";
 declare global {
   interface Window {
     render_game_to_text: () => string;
@@ -111,8 +149,7 @@ function Guide() {
             the same location, teammates can each commit one card to your test.
             The shared scenario scales with the original party size, even after
             an investigator is eliminated. Dexter, Isabelle, later scenarios,
-            custom decks, campaign upgrades, and general timing windows remain
-            in development.
+            custom decks and campaign upgrades remain in development.
           </p>
         </div>
       </section>
@@ -140,7 +177,34 @@ function Guide() {
 }
 export default function App() {
   const [page, setPage] = useState<Page>("home");
-  const [game, setGame] = useState<GameState | null>(readSave);
+  const [game, setGameState] = useState<GameState | null>(readSave);
+  const gameRef = useRef<GameState | null>(null);
+  const undoStack = useRef<GameState[]>([]);
+  const [undoDepth, setUndoDepth] = useState(0);
+  const [tempo, setTempo] = useState<Tempo>(readTempoPreference);
+  const tempoRef = useRef(tempo);
+  tempoRef.current = tempo;
+  const [saves, setSaves] = useState<SaveSummary[]>(listSaves);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [ambience, setAmbience] = useState(() =>
+    readAudioPreference("ambience"),
+  );
+  const [effects, setEffects] = useState(() => readAudioPreference("effects"));
+  const [tutorial, setTutorial] = useState(tutorialPending);
+  const commitGame = useCallback((next: GameState | null) => {
+    gameRef.current = next;
+    setGameState(next);
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("arkham-chronicle:tempo", tempo);
+    } catch {
+      /* Optional preference. */
+    }
+  }, [tempo]);
+  useEffect(() => {
+    audio.setEffects(effects);
+  }, [effects]);
   const [inspect, setInspect] = useState<string | null>(null);
   const [inspectAssetId, setInspectAssetId] = useState<string | null>(null);
   const [setup, setSetup] = useState(false);
@@ -151,7 +215,6 @@ export default function App() {
   const [scenario, setScenario] = useState<number | null>(null);
   const [settings, setSettings] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [sound, setSound] = useState(false);
   const [motion, setMotion] = useState<MotionPreference>(readMotionPreference);
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -172,27 +235,78 @@ export default function App() {
     if (motion !== "full") document.getAnimations().forEach((a) => a.cancel());
   }, [motion]);
   const [notice, setNotice] = useState("");
-  const soundRef = useRef<AudioContext | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const navigate = (p: Page) => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
   const dispatch = useCallback(
-    (a: Action) => setGame((s) => (s ? reduceGame(s, a) : null)),
-    [],
-  );
-  useEffect(() => {
-    if (game) {
-      try {
-        writeSave(game);
-      } catch {
-        setNotice(
-          "Your browser could not save this game. Use Export save in settings to keep a copy.",
+    (a: Action) => {
+      const s = gameRef.current;
+      if (!s) return;
+      const next = reduceGame(s, a, { tempo: tempoRef.current });
+      if (next === s) return;
+      // Undo is limited to the current investigator turn and never crosses a
+      // chaos-token reveal or an encounter draw, so it cannot peek at fate.
+      const barrier =
+        next.id !== s.id ||
+        a.type === "reveal" ||
+        a.type === "mulligan" ||
+        a.type === "continueIntroduction" ||
+        next.status !== "playing" ||
+        next.phase !== "investigation" ||
+        next.round !== s.round ||
+        next.turnInvestigator !== s.turnInvestigator ||
+        next.eventHistory.some(
+          (e) => e.id > s.eventSerial && e.encounter?.stage === "revealed",
         );
-      }
+      if (barrier) undoStack.current = [];
+      else if (!["continue", "clearError"].includes(a.type))
+        undoStack.current = [...undoStack.current.slice(-29), s];
+      setUndoDepth(undoStack.current.length);
+      commitGame(next);
+    },
+    [commitGame],
+  );
+  const undo = useCallback(() => {
+    const previous = undoStack.current.pop();
+    if (!previous) return;
+    setUndoDepth(undoStack.current.length);
+    commitGame(previous);
+  }, [commitGame]);
+  useEffect(() => {
+    gameRef.current = game;
+    if (!game) return;
+    try {
+      writeSave(game);
+      if (game.status === "resolution") recordResult(game);
+      setSaves(listSaves());
+    } catch (error) {
+      setNotice(
+        error instanceof Error && error.message === "slots"
+          ? `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves so this one can be saved.`
+          : "Your browser could not save this game. Use Export save in settings to keep a copy.",
+      );
     }
   }, [game]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        e.key.toLowerCase() === "z" &&
+        page === "game" &&
+        !(e.target as HTMLElement | null)?.closest(
+          "input, textarea, select, [contenteditable=true]",
+        )
+      ) {
+        e.preventDefault();
+        undo();
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [page, undo]);
   useEffect(() => {
     window.render_game_to_text = () =>
       JSON.stringify({
@@ -227,46 +341,45 @@ export default function App() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
-  useEffect(
-    () => () => {
-      void soundRef.current?.close();
-    },
-    [],
-  );
   const toggleSound = () => {
-    if (sound) {
-      void soundRef.current?.close();
-      soundRef.current = null;
-      setSound(false);
+    const next = !ambience;
+    setAmbience(next);
+    if (!audio.setAmbience(next))
+      setNotice("Ambient sound is unavailable in this browser.");
+  };
+  const toggleEffects = () => setEffects((value) => !value);
+  const openSave = (id: string) => {
+    const loaded = loadSave(id);
+    if (!loaded) {
+      setNotice("This saved investigation could not be read.");
       return;
     }
-    try {
-      const ctx = new AudioContext();
-      soundRef.current = ctx;
-      const buffer = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < data.length; i++) {
-        last = (last + Math.random() * 0.025 - 0.0125) * 0.998;
-        data[i] = last;
-      }
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      src.loop = true;
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = 250;
-      const gain = ctx.createGain();
-      gain.gain.value = 0.16;
-      src.connect(filter).connect(gain).connect(ctx.destination);
-      src.start();
-      setSound(true);
-    } catch {
-      setNotice("Ambient sound is unavailable in this browser.");
+    undoStack.current = [];
+    setUndoDepth(0);
+    commitGame(loaded);
+    setSettings(false);
+    navigate("game");
+  };
+  const removeSave = (id: string) => {
+    deleteSave(id);
+    setConfirmDelete(null);
+    setSaves(listSaves());
+    if (game?.id === id) {
+      commitGame(null);
+      navigate("home");
     }
+    setNotice("Saved investigation deleted.");
   };
   const start = () => {
-    setGame(
+    if (saves.length >= MAX_SLOTS) {
+      setNotice(
+        `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves first.`,
+      );
+      return;
+    }
+    undoStack.current = [];
+    setUndoDepth(0);
+    commitGame(
       createGame(
         difficulty,
         crypto.getRandomValues(new Uint32Array(1))[0] || 1,
@@ -341,13 +454,13 @@ export default function App() {
             aria-label="Toggle ambient sound"
             onClick={toggleSound}
           >
-            {sound ? (
+            {ambience ? (
               <SpeakerHigh size={18} weight="light" />
             ) : (
               <SpeakerSlash size={18} weight="light" />
             )}
             <span>Ambience</span>
-            <i className={sound ? "on" : ""} />
+            <i className={ambience ? "on" : ""} />
           </button>
           <button
             className="sidebar-control"
@@ -428,6 +541,8 @@ export default function App() {
             onHome={() => navigate("home")}
             onExport={() => exportSave(game)}
             onHistory={() => setHistoryOpen(true)}
+            canUndo={undoDepth > 0}
+            onUndo={undo}
           />
         )}
       </div>
@@ -437,8 +552,26 @@ export default function App() {
           dispatch={dispatch}
           inspect={setInspect}
           obscured={!!inspect || settings || setup || historyOpen}
+          tempo={tempo}
+          onTempo={setTempo}
+          canUndo={undoDepth > 0}
+          onUndo={undo}
         />
       )}
+      {page === "game" &&
+        game &&
+        tutorial &&
+        game.status === "playing" &&
+        !game.event &&
+        !game.test &&
+        !game.decision &&
+        !game.window &&
+        !settings &&
+        !setup &&
+        !inspect &&
+        !historyOpen && (
+          <Tutorial game={game} onFinish={() => setTutorial(false)} />
+        )}
       {page === "game" && game && historyOpen && (
         <EventJournal game={game} onClose={() => setHistoryOpen(false)} />
       )}
@@ -493,7 +626,11 @@ export default function App() {
                         )
                       }
                     >
-                      <img src={CARD_ART[c]} alt={investigator.name} />
+                      <img
+                        src={CARD_ART[c]}
+                        alt={investigator.name}
+                        decoding="async"
+                      />
                       <span className="choice-check">
                         {selected ? (
                           <CheckCircle size={19} weight="fill" />
@@ -574,13 +711,44 @@ export default function App() {
                   }[difficulty]
                 }
               </p>
+              <div className="difficulty-label" id="tempo-label">
+                Choose your tempo
+              </div>
+              <div
+                className="difficulty-options tempo-options"
+                role="group"
+                aria-labelledby="tempo-label"
+              >
+                {(["detailed", "smart", "fast"] as Tempo[]).map((t) => (
+                  <button
+                    key={t}
+                    className={t === tempo ? "selected" : ""}
+                    aria-pressed={t === tempo}
+                    onClick={() => setTempo(t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <p className="difficulty-description">
+                {
+                  {
+                    detailed:
+                      "Pause on every event. Best while learning the rules.",
+                    smart:
+                      "Pause on important events only: attacks, encounters, injuries and story. Recommended.",
+                    fast: "Pause on story and attacks only. For experienced investigators.",
+                  }[tempo]
+                }
+              </p>
               <ChaosBagPreview
                 difficulty={difficulty}
                 investigators={selectedInvestigators}
               />
               {game && (
                 <p className="replace-note">
-                  Starting a new case replaces your current local save.{" "}
+                  Your current investigation stays saved in its own slot and
+                  can be reopened from Settings & saves.{" "}
                   <button onClick={() => exportSave(game)}>
                     Export current save
                   </button>
@@ -626,16 +794,40 @@ export default function App() {
         </Modal>
       )}
       {settings && (
-        <Modal title="Settings and saves" onClose={() => setSettings(false)}>
+        <Modal
+          title="Settings and saves"
+          onClose={() => {
+            setSettings(false);
+            setConfirmDelete(null);
+          }}
+        >
           <div className="modal-intro">
             <div className="eyebrow">Your investigator’s desk</div>
             <h2>Settings & saves</h2>
             <p>
-              Your game is saved in this browser. Export a copy to back it up or
-              continue on another device.
+              Each investigation is saved in this browser in its own slot.
+              Export a copy to back it up or continue on another device.
             </p>
           </div>
           <div className="settings-actions">
+            <label className="motion-setting">
+              <span>Game tempo</span>
+              <select
+                aria-label="Game tempo"
+                value={tempo}
+                onChange={(e) => setTempo(e.target.value as Tempo)}
+              >
+                <option value="detailed">Detailed · pause on every event</option>
+                <option value="smart">Smart · pause on important events</option>
+                <option value="fast">
+                  Fast · pause on story and attacks only
+                </option>
+              </select>
+              <small>
+                Every event is still recorded in the history. Smart skips
+                routine bookkeeping such as resources gained and cards drawn.
+              </small>
+            </label>
             <label className="motion-setting">
               <span>Table animations</span>
               <select
@@ -652,20 +844,104 @@ export default function App() {
                 control. Your device’s reduced motion preference is respected.
               </small>
             </label>
-            <Button
-              secondary
-              disabled={!game}
-              onClick={() => game && exportSave(game)}
-            >
-              <FolderOpen size={18} /> Export saved game
-            </Button>
-            <Button secondary onClick={() => input.current?.click()}>
-              <UploadSimple size={18} /> Import saved game
-            </Button>
-            <Button secondary onClick={toggleSound}>
-              {sound ? <SpeakerHigh size={18} /> : <SpeakerSlash size={18} />}{" "}
-              Ambient sound: {sound ? "on" : "off"}
-            </Button>
+            <div className="sound-toggles">
+              <Button secondary onClick={toggleSound}>
+                {ambience ? (
+                  <SpeakerHigh size={18} />
+                ) : (
+                  <SpeakerSlash size={18} />
+                )}{" "}
+                Ambience: {ambience ? "on" : "off"}
+              </Button>
+              <Button secondary onClick={toggleEffects}>
+                {effects ? <SpeakerHigh size={18} /> : <SpeakerSlash size={18} />}{" "}
+                Sound effects: {effects ? "on" : "off"}
+              </Button>
+              <Button
+                secondary
+                onClick={() => {
+                  resetTutorial();
+                  setTutorial(true);
+                  setSettings(false);
+                  if (game) navigate("game");
+                }}
+              >
+                <GraduationCap size={18} /> Show the tutorial again
+              </Button>
+            </div>
+            <section className="save-slots" aria-label="Saved investigations">
+              <div className="save-slots-heading">
+                <span className="eyebrow">Saved investigations</span>
+                <small>
+                  {saves.length} / {MAX_SLOTS}
+                </small>
+              </div>
+              {saves.length === 0 && (
+                <p className="quiet-note">No saved investigation yet.</p>
+              )}
+              <ul>
+                {saves.map((v) => (
+                  <li key={v.id} className={v.id === game?.id ? "active" : ""}>
+                    <div className="save-slot-copy">
+                      <strong>
+                        {v.party.map((c) => card(c).name).join(" · ")}
+                      </strong>
+                      <small>
+                        {v.status === "resolution"
+                          ? `Case closed · ${resultLabel(v.result)}`
+                          : v.status === "mulligan"
+                            ? "Opening hands"
+                            : `Round ${v.round} · Act ${v.act}`}{" "}
+                        · {v.difficulty} ·{" "}
+                        {new Date(v.updatedAt).toLocaleDateString()}
+                      </small>
+                    </div>
+                    <div className="save-slot-actions">
+                      {v.id === game?.id ? (
+                        <span className="save-current">Open now</span>
+                      ) : (
+                        <button onClick={() => openSave(v.id)}>
+                          <Play size={14} /> Open
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          const loaded =
+                            v.id === game?.id ? game : loadSave(v.id);
+                          if (loaded) exportSave(loaded);
+                        }}
+                      >
+                        <FolderOpen size={14} /> Export
+                      </button>
+                      {confirmDelete === v.id ? (
+                        <button
+                          className="danger"
+                          onClick={() => removeSave(v.id)}
+                        >
+                          <Trash size={14} /> Confirm delete
+                        </button>
+                      ) : (
+                        <button onClick={() => setConfirmDelete(v.id)}>
+                          <Trash size={14} /> Delete
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <div className="save-io">
+              <Button
+                secondary
+                disabled={!game}
+                onClick={() => game && exportSave(game)}
+              >
+                <FolderOpen size={18} /> Export saved game
+              </Button>
+              <Button secondary onClick={() => input.current?.click()}>
+                <UploadSimple size={18} /> Import saved game
+              </Button>
+            </div>
           </div>
           <input
             type="file"
@@ -680,7 +956,9 @@ export default function App() {
                 const value: unknown = JSON.parse(await file.text());
                 const decoded = decodeSave(value);
                 if (!decoded) throw new Error("invalid");
-                setGame(decoded);
+                undoStack.current = [];
+                setUndoDepth(0);
+                commitGame(decoded);
                 navigate("game");
                 setSettings(false);
                 setNotice("Saved investigation restored.");
@@ -693,12 +971,13 @@ export default function App() {
             }}
           />
           <p className="quiet-note">
-            Press F for fullscreen. Sound starts only when you enable it.
+            Press F for fullscreen, Enter to continue an event, Ctrl+Z or ⌘Z to
+            undo. Sound starts only when you enable it.
           </p>
           <div className="build-info">
-            <span>FIRST PLAYABLE BUILD · 0.1.0</span>
+            <span>BUILD 0.2.0</span>
             <p>
-              Spreading Flames / Joe Diamond
+              Spreading Flames · Joe Diamond, Daniela Reyes, Trish Scarborough
               <br />
               Card data snapshot · 23 September 2026
             </p>

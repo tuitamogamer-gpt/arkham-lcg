@@ -36,7 +36,7 @@ export function ChaosBagPreview({
       <div className="chaos-bag-overview">
         <figure className="chaos-bag-art">
           <img
-            src="/art/chaos-bag.jpg"
+            src="/art/chaos-bag.webp"
             alt="An open green velvet chaos bag with brass drawstrings and scattered tokens"
             width="1254"
             height="1254"

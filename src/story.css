@@ -13,7 +13,7 @@
   z-index: -1;
   background:
     linear-gradient(90deg, #081610d9, #08161060, #081610e6),
-    url("/art/miskatonic.png") center/cover;
+    url("/art/miskatonic.webp") center/cover;
 }
 .story-paper {
   width: min(710px, 100%);
@@ -669,7 +669,7 @@
 .resolution-art {
   background:
     linear-gradient(90deg, #091b13fa 0%, #091b13eb 47%, #091b1375 100%),
-    url("/art/miskatonic.png") 68% center/cover;
+    url("/art/miskatonic.webp") 68% center/cover;
   opacity: 1;
 }
 .resolution-content {
