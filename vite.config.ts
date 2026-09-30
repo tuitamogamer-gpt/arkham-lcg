@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["sigil.svg", "fonts/*.ttf", "icons/*.png"],
       manifest: {
         name: "Arkham Chronicle",
@@ -36,11 +36,18 @@ export default defineConfig({
         navigateFallback: "/index.html",
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/art/"),
-            handler: "CacheFirst",
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && url.pathname.startsWith("/art/"),
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "arkham-art",
-              expiration: { maxEntries: 900, maxAgeSeconds: 60 * 60 * 24 * 180 },
+              // Artwork has stable filenames. Revalidate even an older
+              // browser response marked immutable by a previous deployment.
+              fetchOptions: { cache: "no-cache" },
+              expiration: {
+                maxEntries: 900,
+                maxAgeSeconds: 60 * 60 * 24 * 180,
+              },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

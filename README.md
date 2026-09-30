@@ -15,7 +15,7 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 ## Playable now
 
-- **Spreading Flames** with **1–3 investigators controlled by one person**: Joe Diamond (12004), Daniela Reyes (12001), and Trish Scarborough (12007), each using their exact official **33-card starter deck**.
+- **Spreading Flames** with **1–3 investigators controlled by one person**: Joe Diamond (12004), Daniela Reyes (12001), Trish Scarborough (12007), Dexter Drake (12010) and Isabelle Barnes (12013), each using their exact official **33-card starter deck**.
 - Choose the party and lead investigator, mulligan each hand, then select a ready investigator to take a complete turn. Each seat keeps its own actions, hand, resources, assets, clues, injuries, weaknesses and once-per-round abilities.
 - Shared rounds, one encounter per investigator, party-scaled clues and boss health, group clue contributions, nearby skill assistance, owned enemy engagements and friendly fire. Defeated or resigned investigators leave while the others continue.
 - One-time opening mulligan; three-action turns; resources, draw, movement, investigation, combat, evasion and parley.
@@ -28,11 +28,12 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - **Player-controlled event progression**: every visible scripted step pauses with its source card, affected investigator, and before/after changes. Attacks and encounter revelations wait for confirmation before their effects resolve. Phase transitions, draws, injuries, and reactions unfold step by step, with no timers or autoplay.
 - Inspect the table or cards while paused; review the most recent 500 events in the read-only event history. Closing a checkpoint only minimizes it. Unrelated actions and stale confirmations cannot skip it.
 - **Game tempo**: Detailed pauses on every recorded event, Smart pauses only on attacks, encounters, injuries, fire, hunters, new rounds and story, Fast pauses on story, attacks, encounter reveals and defeat. Every event is still written to the history. Enter continues an event; the tempo can be changed from the event window, the setup screen or Settings.
-- **Undo** of the last action within the current investigator turn (button, Ctrl+Z or ⌘Z). Undo never crosses a chaos-token reveal, an encounter draw, a seat change or a phase change, so it cannot look ahead.
+- **Undo** of the last public action within the current investigator turn (button, Ctrl+Z or ⌘Z). Card draws, hidden-deck searches/shuffles, newly explored locations, chaos-token reveals, story transitions, seat changes and phase changes clear earlier undo snapshots, so undo cannot look ahead.
 - **Chance of success** shown before drawing, computed from the public chaos bag and the scenario's token rules, including tablet redraws and each investigator's elder sign.
 - **Saved investigations**: every game keeps its own slot (up to 12) with open, export and delete controls in Settings & saves; starting a new case no longer replaces the previous one. Older single-slot saves migrate automatically. Closed cases are recorded on the home page.
 - **Interactive tutorial** through the first turn, shown once and available again from Settings. **Procedural sound**: synthesized ambience and effects for cards, tokens, attacks, injuries, fire, healing and story, off by default. **Installable and offline**: an app manifest and service worker keep the app shell available without a network; card art is cached as it is seen. Phones get a bottom navigation bar.
 - Local autosave, save export/import, preservation of pending events, tests and choices, automatic migration of older solo and party saves, keyboard-accessible dialogs, fullscreen (F).
+- Save-slot metadata recovers from its payload when damaged. Failed imports preserve the open case; quota failures retain the previous saved copy. PWA updates wait for **Save & update** in Settings and do not interrupt another open game tab. Visited artwork remains available offline and revalidates online.
 - Physical tabletop based on the 2026 rulebook and real session photography: landscape act/agenda stacks, full location faces, miniature investigator markers, tactile counters, sideways exhausted assets, player/encounter piles and a public chaos-bag/victory viewer. See [design research and sources](docs/tabletop-design-research.md).
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
 - Catalog of **196 normalized 2026 card definitions**; the searchable archive shows player cards and discoveries from your current case. Future chapters, unexplored location faces, campaign rewards and unearned story reverses stay sealed. All five investigator dossiers are available.
@@ -45,11 +46,11 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 ## Scope and next milestones
 
-This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. Dexter Drake, Isabelle Barnes, Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
+This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. All five investigators are playable with fixed starters. Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
 
-The engine scripts these three fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
+The engine scripts these five fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline, errata reconciliation, corrected interactions and the limits of that coverage. The suite now has **178 passing tests**, including a random-play fuzz test that found and now guards against a decision loop when an eliminated investigator was still focused during upkeep engagement. The [improvement plan](docs/plan-poboljsanja.md) records what was changed on 29 September 2026 and what remains. Next content milestones: the two remaining investigators and starter decks, Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The suite now has **230 passing tests**, including random legal play across all five investigators. Next content milestones: Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 
@@ -81,7 +82,7 @@ Official references:
 - `src/game/presentation.ts`: public-state changes, source-card attribution, event history and confirmation checkpoints. Hidden future draws are excluded from presentation snapshots.
 - `src/game/knowledge.ts`: shared discovery policy for the archive, card inspection and story reverses; persisted independently of the bounded journal.
 - `src/game/motion.ts` and `src/components/Motion.tsx`: presentation cues from resolved public state and cancellable table animations, independent of the rules queue.
-- `src/game/data.ts`: normalized catalog, three exact starter lists, chaos bags and map connections.
+- `src/game/data.ts`: normalized catalog, five exact starter lists, chaos bags and map connections.
 - `src/game/storage.ts`: guarded local storage, portable version 3 saves, migration of version 1 and 2 saves, per-investigation save slots with an index, and the record of closed cases.
 - `src/audio.ts`: procedural ambience and sound effects driven by the same public motion cues as the animations; never gates a rules action.
 - `src/components/Tutorial.tsx`: the first-turn tutorial, anchored to table elements and advanced by the player's own actions.
@@ -109,6 +110,9 @@ node --import tsx scripts/timing-browser-check.mjs
 node --import tsx scripts/tabletop-browser-check.mjs
 node --import tsx scripts/refinements-browser-check.mjs
 node --import tsx scripts/discovery-motion-browser-check.mjs
+node --import tsx scripts/review-browser-check.mjs
+# Build and serve the production output first; set BASE_URL to its port
+node --import tsx scripts/pwa-browser-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs
@@ -119,7 +123,7 @@ Browser artifacts are written under ignored `output/browser/`, `output/party-bro
 
 ## Deployment
 
-The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.com/tuitamogamer-gpt/arkham-lcg). Vercel is connected to this repository; pushes to `main` deploy to production. `vercel.json` uses `npm ci`, `npm run build`, the `dist` output directory, and long-lived immutable cache headers for `/art`, `/fonts` and hashed `/assets`; art files therefore need a new file name when a scan changes. GitHub Actions runs the CI workflow on every push; to make a green check a condition for deployment, require the `verify` job in the repository's branch protection for `main` and merge through pull requests. Local Vercel configuration and environment files are ignored by Git and excluded from uploads. The page carries a `noindex` robots tag so the fan build stays out of search results.
+The private GitHub repository is [tuitamogamer-gpt/arkham-lcg](https://github.com/tuitamogamer-gpt/arkham-lcg). Vercel is connected to this repository; pushes to `main` deploy to production. `vercel.json` uses `npm ci`, `npm run build`, the `dist` output directory, and immutable cache headers for `/fonts` and hashed `/assets`. Stable artwork paths revalidate online, while the service worker serves cached artwork immediately and keeps visited images available offline. GitHub Actions runs the CI workflow on every push; to make a green check a condition for deployment, require the `verify` job in the repository's branch protection for `main` and merge through pull requests. Local Vercel configuration and environment files are ignored by Git and excluded from uploads. The page carries a `noindex` robots tag so the fan build stays out of search results.
 
 ## Art and attribution
 

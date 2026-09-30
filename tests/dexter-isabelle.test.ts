@@ -9,8 +9,10 @@ import {
   stats,
   fastOptions,
   testValue,
+  totalDoom,
 } from "../src/game/engine";
 import { card, code as C, STARTER_DECKS } from "../src/game/data";
+import { decodeSave } from "../src/game/storage";
 import type { GameState, Investigator } from "../src/game/types";
 
 const DEXTER = C(10),
@@ -67,7 +69,14 @@ function addEnemy(
 }
 function equip(s: GameState, n: number, uses = 0, p: Investigator = s.player) {
   const id = `asset-${s.nextId++}`;
-  p.assets.push({ id, code: C(n), uses, exhausted: false, damage: 0, horror: 0 });
+  p.assets.push({
+    id,
+    code: C(n),
+    uses,
+    exhausted: false,
+    damage: 0,
+    horror: 0,
+  });
   return id;
 }
 function give(s: GameState, n: number, p: Investigator = s.player) {
@@ -104,7 +113,10 @@ test("Dexter's reaction after playing an asset can return another asset to hand 
   assert.equal(s.decision?.title, "Dexter Drake · a magician’s trick");
   s = reduceGame(s, { type: "choose", id: `return:${jim}` });
   s = settle(s);
-  assert.ok(s.player.hand.some((c) => c.id === jim), "Jim returns to hand");
+  assert.ok(
+    s.player.hand.some((c) => c.id === jim),
+    "Jim returns to hand",
+  );
   assert.deepEqual(
     s.player.assets.map((a) => a.code),
     [C(61)],
@@ -125,10 +137,7 @@ test("Dexter's reaction can play a different asset from hand without spending an
   assert.ok(s.decision!.choices.some((c) => c.id === `play:${cloak}`));
   s = reduceGame(s, { type: "choose", id: `play:${cloak}` });
   s = settle(s);
-  assert.deepEqual(
-    s.player.assets.map((a) => a.code).sort(),
-    [C(58), C(61)],
-  );
+  assert.deepEqual(s.player.assets.map((a) => a.code).sort(), [C(58), C(61)]);
   assert.equal(s.player.resources, 0);
   assert.equal(s.player.actions, 2, "only the first play cost an action");
 });
@@ -186,7 +195,10 @@ test("The Necronomicon forbids asset play and abilities until a willpower (5) te
   f = reduceGame(f, { type: "act", kind: "necronomicon" });
   f = settle(f);
   assert.ok(!f.player.threats.includes(C(12)));
-  assert.ok(f.player.deck.some((c) => c.code === C(12)), "shuffled into the deck");
+  assert.ok(
+    f.player.deck.some((c) => c.code === C(12)),
+    "shuffled into the deck",
+  );
   assert.equal(f.player.horror, 1);
 });
 
@@ -198,7 +210,9 @@ test("Isabelle takes 1 direct horror to commit a skill from her discard pile, wh
   s = raw(s, { type: "act", kind: "investigate", source: sight });
   while (s.event) s = raw(s, { type: "continue", eventId: s.event.id });
   assert.equal(s.window?.timing, "beforeCommit");
-  const option = fastOptions(s).find((o) => o.id === `${ISABELLE}:isabelle:guts`);
+  const option = fastOptions(s).find(
+    (o) => o.id === `${ISABELLE}:isabelle:guts`,
+  );
   assert.ok(option, "the discard pile skill is offered");
   s = raw(s, { type: "fast", id: option!.id });
   while (s.event) s = raw(s, { type: "continue", eventId: s.event.id });
@@ -212,9 +226,16 @@ test("Isabelle takes 1 direct horror to commit a skill from her discard pile, wh
   assert.equal(testValue(s), 4 + icons(C(90), "willpower"));
   assert.ok(!fastOptions(s).length);
   s = reduceGame(s, { type: "commit", id: "guts" });
-  assert.deepEqual(s.test!.committed, ["guts"], "the recovered card cannot be taken back");
+  assert.deepEqual(
+    s.test!.committed,
+    ["guts"],
+    "the recovered card cannot be taken back",
+  );
   s = settle(s);
-  assert.ok(s.player.deck.some((c) => c.id === "guts"), "back in the deck");
+  assert.ok(
+    s.player.deck.some((c) => c.id === "guts"),
+    "back in the deck",
+  );
   assert.ok(!s.player.discard.some((c) => c.id === "guts"));
   assert.equal(s.player.flags.isabelle, true);
 });
@@ -234,10 +255,18 @@ test("Isabelle's Twin .45s fire a second agility shot for 1 ammo and an exhaust"
   const guns = equip(s, 14, 6);
   const enemy = addEnemy(s, 132);
   s.bag = ["+1"];
-  s = reduceGame(s, { type: "act", kind: "fight", target: enemy, source: guns });
+  s = reduceGame(s, {
+    type: "act",
+    kind: "fight",
+    target: enemy,
+    source: guns,
+  });
   assert.equal(s.test?.skill, "combat");
   s = settle(s, { "Isabelle’s Twin .45s": "fire" });
-  assert.ok(!s.enemies.some((e) => e.id === enemy), "two shots of 2 damage defeat it");
+  assert.ok(
+    !s.enemies.some((e) => e.id === enemy),
+    "two shots of 2 damage defeat it",
+  );
   const a = s.player.assets.find((x) => x.id === guns)!;
   assert.equal(a.uses, 4);
   assert.equal(a.exhausted, true);
@@ -251,10 +280,17 @@ test("Breaking Point deals extra direct damage at low remaining sanity", () => {
   ] as const) {
     let s = ready([ISABELLE]);
     s.player.horror = horror;
-    s.player.deck = [{ id: "bp", code: C(15) }, { id: "cache", code: C(89) }];
+    s.player.deck = [
+      { id: "bp", code: C(15) },
+      { id: "cache", code: C(89) },
+    ];
     s = reduceGame(s, { type: "act", kind: "draw" });
     s = settle(s);
-    assert.equal(s.player.damage, expected, `${horror} horror → ${expected} damage`);
+    assert.equal(
+      s.player.damage,
+      expected,
+      `${horror} horror → ${expected} damage`,
+    );
     assert.ok(s.player.discard.some((c) => c.id === "bp"));
   }
 });
@@ -281,10 +317,18 @@ test("Cosmic Flame fights with willpower, may spend a charge for damage, and los
   const flame = equip(s, 59, 3);
   const cantor = addEnemy(s, 121);
   s.bag = ["skull"];
-  s = reduceGame(s, { type: "act", kind: "fight", target: cantor, source: flame });
+  s = reduceGame(s, {
+    type: "act",
+    kind: "fight",
+    target: cantor,
+    source: flame,
+  });
   assert.equal(s.test?.skill, "willpower");
   s = settle(s, { "Cosmic Flame": "spend" });
-  assert.ok(!s.enemies.some((e) => e.id === cantor), "2 damage defeats the Cantor");
+  assert.ok(
+    !s.enemies.some((e) => e.id === cantor),
+    "2 damage defeats the Cantor",
+  );
   assert.equal(s.player.assets.find((x) => x.id === flame)?.uses, 1);
 });
 
@@ -292,7 +336,11 @@ test("Jim Culver adds willpower and draws a card after damage", () => {
   let s = ready([ISABELLE]);
   const jim = equip(s, 60);
   assert.equal(stats(s, "willpower"), 5);
-  s.player.deck = [{ id: "bp", code: C(15) }, { id: "cache", code: C(89) }, { id: "guts", code: C(90) }];
+  s.player.deck = [
+    { id: "bp", code: C(15) },
+    { id: "cache", code: C(89) },
+    { id: "guts", code: C(90) },
+  ];
   const hand = s.player.hand.length;
   s = reduceGame(s, { type: "act", kind: "draw" });
   s = settle(s, { "Jim Culver": "draw" });
@@ -363,8 +411,13 @@ test("Will of the Cosmos places doom on a player card and discovers two clues", 
   dorm.clues = 1;
   const will = give(s, 66);
   s = reduceGame(s, { type: "play", id: will });
-  s = settle(s, { "Will of the Cosmos": C(117) });
-  assert.equal(s.doom, 1);
+  s = settle(s, {
+    "Will of the Cosmos · place doom": DEXTER,
+    "Will of the Cosmos": C(117),
+  });
+  assert.equal(s.doom, 0, "doom is on the chosen player card");
+  assert.equal(s.player.doom, 1);
+  assert.equal(totalDoom(s), 1);
   assert.equal(s.player.clues, 2);
   assert.equal(dorm.clues, 1, "the fixture object is not mutated in place");
   assert.equal(s.locations.find((l) => l.code === C(117))!.clues, 0);
@@ -384,7 +437,10 @@ test("Soul Link costs 1 horror to commit and cannot be withdrawn", () => {
 
 test("Paranoia loses every resource and Pursued punishes an enemy entering the location", () => {
   let s = ready([DEXTER]);
-  s.player.deck = [{ id: "paranoia", code: C(101) }, { id: "cache", code: C(89) }];
+  s.player.deck = [
+    { id: "paranoia", code: C(101) },
+    { id: "cache", code: C(89) },
+  ];
   s = reduceGame(s, { type: "act", kind: "draw" });
   s = settle(s);
   assert.equal(s.player.resources, 0);
@@ -394,7 +450,13 @@ test("Paranoia loses every resource and Pursued punishes an enemy entering the l
   p.decision = {
     title: "Fixture",
     description: "",
-    choices: [{ id: "go", label: "Go", effects: [{ kind: "revelation", code: C(121) }] }],
+    choices: [
+      {
+        id: "go",
+        label: "Go",
+        effects: [{ kind: "revelation", code: C(121) }],
+      },
+    ],
   };
   p = reduceGame(p, { type: "choose", id: "go" });
   p = settle(p);
@@ -422,9 +484,276 @@ test("Spiritual Intuition boosts willpower by 2 on a Spell test", () => {
   const intuition = equip(s, 63);
   const flame = equip(s, 59, 3);
   const enemy = addEnemy(s, 121);
-  s = reduceGame(s, { type: "act", kind: "fight", target: enemy, source: flame });
+  s = reduceGame(s, {
+    type: "act",
+    kind: "fight",
+    target: enemy,
+    source: flame,
+  });
   const before = testValue(s);
   s = reduceGame(s, { type: "boost", id: intuition });
   assert.equal(testValue(s), before + 2);
   assert.equal(s.player.resources, 4);
+});
+
+test("Second Sight resolves its cultist charge loss before skill test results", () => {
+  let s = ready([ISABELLE]);
+  const sight = equip(s, 62, 1);
+  s.bag = ["cultist"];
+  s = reduceGame(s, { type: "act", kind: "investigate", source: sight });
+  s = reduceGame(s, { type: "reveal" });
+  assert.equal(s.test?.stage, "revealed");
+  assert.equal(s.player.assets.find((a) => a.id === sight)?.uses, 0);
+  assert.equal(s.player.horror, 0);
+  s = settle(s);
+  assert.equal(
+    s.player.clues,
+    1,
+    "the drained charge cannot buy an extra clue",
+  );
+});
+
+test("An empty Second Sight takes horror and is discarded on cultist reveal", () => {
+  let s = ready([ISABELLE]);
+  const sight = equip(s, 62, 0);
+  s.bag = ["cultist"];
+  assert.equal(canAct(s, "investigate", undefined, sight), null);
+  s = reduceGame(s, { type: "act", kind: "investigate", source: sight });
+  s = reduceGame(s, { type: "reveal" });
+  assert.equal(s.test?.stage, "revealed");
+  assert.equal(
+    s.player.horror,
+    1,
+    "the symbol drawback applies before resolving the test",
+  );
+  assert.ok(!s.player.assets.some((a) => a.id === sight));
+  assert.ok(s.player.discard.some((c) => c.id === sight));
+  s = settle(s);
+  assert.equal(s.player.clues, 1);
+});
+
+test("Cosmic Flame loses its last charge at reveal without taking damage or discarding", () => {
+  let s = ready([DEXTER]);
+  const flame = equip(s, 59, 1);
+  const enemy = addEnemy(s, 121);
+  s.bag = ["skull"];
+  s = reduceGame(s, {
+    type: "act",
+    kind: "fight",
+    target: enemy,
+    source: flame,
+  });
+  s = reduceGame(s, { type: "reveal" });
+  assert.equal(s.test?.stage, "revealed");
+  assert.equal(s.player.assets.find((a) => a.id === flame)?.uses, 0);
+  s = settle(s);
+  assert.equal(s.enemies.find((e) => e.id === enemy)?.damage, 1);
+  assert.equal(s.player.damage, 0);
+  assert.ok(s.player.assets.some((a) => a.id === flame));
+});
+
+test("Twin .45s can choose another enemy after the first shot defeats its target", () => {
+  let s = ready([ISABELLE]);
+  const guns = equip(s, 14, 6);
+  const first = addEnemy(s, 121);
+  const second = addEnemy(s, 121);
+  s.bag = ["+1"];
+  s = reduceGame(s, {
+    type: "act",
+    kind: "fight",
+    target: first,
+    source: guns,
+  });
+  while (s.test)
+    s = reduceGame(s, {
+      type: s.test.stage === "commit" ? "reveal" : "resolve",
+    });
+  assert.equal(s.decision?.title, "Isabelle’s Twin .45s");
+  const shot = s.decision!.choices.find((choice) =>
+    choice.effects.some(
+      (effect) => effect.kind === "twinShot" && effect.target === second,
+    ),
+  );
+  assert.ok(shot, "the remaining enemy is a legal target for the second shot");
+  s = reduceGame(s, { type: "choose", id: shot!.id });
+  assert.equal(s.test?.skill, "agility");
+  assert.equal(s.test?.target, second);
+  s = settle(s);
+  assert.equal(s.enemies.length, 0);
+  assert.equal(s.player.assets.find((a) => a.id === guns)?.uses, 4);
+  assert.equal(s.player.actions, 2, "the reaction spends no additional action");
+});
+
+test("Soul Link's horror cost can be assigned to a controlled asset before the test continues", () => {
+  let s = ready([ISABELLE]);
+  const charm = equip(s, 61, 4);
+  const link = give(s, 67);
+  s = reduceGame(s, { type: "act", kind: "investigate" });
+  s = reduceGame(s, { type: "commit", id: link });
+  assert.equal(s.decision?.title, "Assign 1 horror");
+  assert.equal(
+    s.test,
+    null,
+    "the test waits while the additional cost is assigned",
+  );
+  s = reduceGame(s, { type: "choose", id: charm });
+  assert.equal(s.player.horror, 0);
+  assert.equal(s.player.assets.find((a) => a.id === charm)?.horror, 1);
+  assert.deepEqual(s.test?.committed, [link]);
+  assert.equal(s.test?.stage, "commit");
+});
+
+test("Soul Link's lethal cost defeats its investigator before a token can be revealed", () => {
+  let s = ready([ISABELLE, C(4)]);
+  s.player.horror = 8;
+  const link = give(s, 67);
+  s = reduceGame(s, { type: "act", kind: "investigate" });
+  s = reduceGame(s, { type: "commit", id: link });
+  const isabelle = party(s).find((p) => p.code === ISABELLE)!;
+  assert.equal(isabelle.status, "defeated");
+  assert.equal(s.test, null, "the defeated investigator cannot reveal a token");
+  assert.equal(s.testInProgress, false);
+  assert.equal(s.status, "playing", "the surviving investigator can continue");
+});
+
+test("Isabelle cannot recover a second copy of a Max 1 committed skill", () => {
+  let s = ready([ISABELLE]);
+  const sight = equip(s, 62, 3);
+  equip(s, 63);
+  const guts = give(s, 90);
+  s.player.discard.push({ id: "discard-guts", code: C(90) });
+  s = reduceGame(s, { type: "act", kind: "investigate", source: sight });
+  s = reduceGame(s, { type: "commit", id: guts });
+  s = raw(s, { type: "reveal" });
+  while (s.event) s = raw(s, { type: "continue", eventId: s.event.id });
+  assert.equal(s.window?.timing, "beforeToken");
+  assert.ok(
+    !fastOptions(s).some((o) => o.id === `${ISABELLE}:isabelle:discard-guts`),
+  );
+});
+
+test("Isabelle pays Soul Link's additional horror cost when recovering it from discard", () => {
+  let s = ready([ISABELLE]);
+  s.player.discard.push({ id: "discard-link", code: C(67) });
+  s = raw(s, { type: "act", kind: "investigate" });
+  while (s.event) s = raw(s, { type: "continue", eventId: s.event.id });
+  const option = fastOptions(s).find(
+    (o) => o.id === `${ISABELLE}:isabelle:discard-link`,
+  );
+  assert.ok(option);
+  s = raw(s, { type: "fast", id: option!.id });
+  while (s.event) s = raw(s, { type: "continue", eventId: s.event.id });
+  assert.equal(
+    s.player.horror,
+    2,
+    "1 direct horror for Isabelle and 1 horror to commit Soul Link",
+  );
+  assert.deepEqual((s.test || s.window?.test)?.committed, ["discard-link"]);
+});
+
+test("Lucky Charm can move damage from an enemy at its controller's location", () => {
+  let s = ready([ISABELLE]);
+  const charm = equip(s, 61, 4);
+  const enemy = addEnemy(s, 121);
+  s.enemies.find((e) => e.id === enemy)!.damage = 1;
+  assert.equal(canAct(s, "charm", "damage"), null);
+  s = reduceGame(s, { type: "act", kind: "charm", target: "damage" });
+  assert.ok(s.decision!.choices.some((choice) => choice.id === enemy));
+  s = reduceGame(s, { type: "choose", id: enemy });
+  s = reduceGame(s, { type: "choose", id: ISABELLE });
+  s = settle(s);
+  assert.equal(s.enemies.find((e) => e.id === enemy)?.damage, 0);
+  assert.equal(s.player.damage, 1);
+  assert.equal(s.player.assets.find((a) => a.id === charm)?.uses, 3);
+});
+
+test("Will of the Cosmos lets its controller choose a player card and does not advance the agenda early", () => {
+  let s = ready([DEXTER, ISABELLE]);
+  const jim = equip(s, 60);
+  const teammateCharm = equip(
+    s,
+    61,
+    4,
+    party(s).find((p) => p.code === ISABELLE)!,
+  );
+  s.doom = 2;
+  const will = give(s, 66);
+  s = reduceGame(s, { type: "play", id: will });
+  assert.equal(s.decision?.title, "Will of the Cosmos · place doom");
+  assert.ok(s.decision!.choices.some((choice) => choice.id === DEXTER));
+  assert.ok(s.decision!.choices.some((choice) => choice.id === jim));
+  assert.ok(
+    !s.decision!.choices.some((choice) =>
+      [ISABELLE, teammateCharm].includes(choice.id),
+    ),
+  );
+  s = reduceGame(s, { type: "choose", id: jim });
+  s = settle(s);
+  assert.equal(s.player.assets.find((a) => a.id === jim)?.doom, 1);
+  assert.equal(s.doom, 2);
+  assert.equal(totalDoom(s), 3);
+  assert.equal(
+    s.agenda,
+    1,
+    "only the mythos threshold check advances ordinary player-card doom",
+  );
+  const saved = decodeSave(JSON.parse(JSON.stringify(s)));
+  assert.ok(saved, "player-card doom remains portable");
+  assert.equal(saved!.player.assets.find((a) => a.id === jim)?.doom, 1);
+  assert.equal(totalDoom(saved!), 3);
+});
+
+test("Returning a doomed asset removes its doom from play", () => {
+  let s = ready([DEXTER]);
+  const jim = equip(s, 60);
+  s.player.assets.find((a) => a.id === jim)!.doom = 1;
+  s.doom = 1;
+  assert.equal(totalDoom(s), 2);
+  const charm = give(s, 61);
+  s = reduceGame(s, { type: "play", id: charm });
+  s = reduceGame(s, { type: "choose", id: `return:${jim}` });
+  s = settle(s);
+  assert.equal(totalDoom(s), 1);
+  assert.ok(s.player.hand.some((c) => c.id === jim));
+});
+
+test("The mythos doom check counts and clears doom on every player card when the agenda advances", () => {
+  let s = ready([DEXTER]);
+  const jim = equip(s, 60);
+  s.player.assets.find((a) => a.id === jim)!.doom = 1;
+  s.player.doom = 1;
+  s.bag = ["+1"];
+  s.player.deck = [{ id: "upkeep-cache", code: C(89) }];
+  s.encounterDeck = [C(123)];
+  s = reduceGame(s, { type: "endTurn" });
+  s = settle(s);
+  assert.equal(
+    s.agenda,
+    2,
+    "two player-card doom plus one mythos doom meets the threshold",
+  );
+  assert.equal(totalDoom(s), 0);
+  assert.equal(s.player.doom || 0, 0);
+  assert.equal(s.player.assets.find((a) => a.id === jim)?.doom || 0, 0);
+});
+
+test("Cloak of Resonance can react to its final horror before it is defeated", () => {
+  let s = ready([ISABELLE]);
+  const cloak = equip(s, 58);
+  s.player.assets.find((a) => a.id === cloak)!.horror = 2;
+  const enemy = addEnemy(s, 122);
+  s = reduceGame(s, { type: "act", kind: "resource" });
+  assert.equal(s.decision?.title, "Assign 1 horror");
+  s = reduceGame(s, { type: "choose", id: cloak });
+  assert.equal(s.decision?.title, "Cloak of Resonance");
+  assert.equal(
+    s.player.assets.find((a) => a.id === cloak)?.horror,
+    2,
+    "the when reaction resolves before the horror is placed",
+  );
+  s = reduceGame(s, { type: "choose", id: enemy });
+  s = settle(s);
+  assert.equal(s.enemies.find((e) => e.id === enemy)?.damage, 1);
+  assert.ok(!s.player.assets.some((a) => a.id === cloak));
+  assert.ok(s.player.discard.some((c) => c.id === cloak));
 });

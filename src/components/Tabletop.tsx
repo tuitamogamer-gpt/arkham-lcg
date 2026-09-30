@@ -31,10 +31,14 @@ import {
   partySize,
   sanity,
   stats,
+  totalDoom,
 } from "../game/engine";
 import type { GameState } from "../game/types";
 import { usesKind } from "../game/cards";
-import { SPREADING_FLAMES as SCENARIO, agendaDoomLimit } from "../game/scenario";
+import {
+  SPREADING_FLAMES as SCENARIO,
+  agendaDoomLimit,
+} from "../game/scenario";
 import { CardFace, Modal, SkillStats, Token, HoverPreview } from "./Common";
 import {
   INVESTIGATION_ABILITIES,
@@ -159,21 +163,26 @@ export function ScenarioTray({
           <TableToken
             kind="doom"
             motionTarget="doom"
-            value={s.doom}
-            label={`${s.doom} doom on the agenda`}
+            value={totalDoom(s)}
+            label={`${totalDoom(s)} doom in play; ${s.doom} on the agenda`}
           />
           <span className="story-progress-copy">
             <strong>
-              {s.doom} / {agendaDoomLimit(s.agenda)}
+              {totalDoom(s)} / {agendaDoomLimit(s.agenda)}
             </strong>{" "}
             <small>doom</small>
           </span>
           <div className="doom-pips" aria-hidden="true">
             {Array.from({ length: agendaDoomLimit(s.agenda) }, (_, i) => (
-              <i key={i} className={i < s.doom ? "filled" : ""} />
+              <i key={i} className={i < totalDoom(s) ? "filled" : ""} />
             ))}
           </div>
         </div>
+        {totalDoom(s) > s.doom && (
+          <p className="doom-source-note">
+            {s.doom} on agenda · {totalDoom(s) - s.doom} on player cards
+          </p>
+        )}
       </div>
       <div className="story-pile">
         <div className="pile-heading">
@@ -250,7 +259,8 @@ export function LocationTable({
   const positions = SCENARIO.map[s.act <= 2 ? "early" : "late"];
   const pos = (code: string): [number, number] => {
     if (active.length === 1) return [50, 50];
-    if (narrow && s.act === 2) return SCENARIO.map.narrowEarly[code] || [50, 50];
+    if (narrow && s.act === 2)
+      return SCENARIO.map.narrowEarly[code] || [50, 50];
     if (narrow && s.act >= 3) return SCENARIO.map.narrowLate[code] || [50, 50];
     return positions[code] || [50, 50];
   };
@@ -688,6 +698,16 @@ export function InvestigatorMat({
             />
             <small>Clues</small>
           </div>
+          {!!p.doom && (
+            <div>
+              <TableToken
+                kind="doom"
+                value={p.doom}
+                label={`${p.doom} doom on ${card(p.code).name}`}
+              />
+              <small>Doom</small>
+            </div>
+          )}
         </div>
       </div>
       <div className="mat-assets">
@@ -740,6 +760,13 @@ export function InvestigatorMat({
                   )}
                   {asset.horror > 0 && (
                     <TableToken kind="horror" value={asset.horror} />
+                  )}
+                  {!!asset.doom && (
+                    <TableToken
+                      kind="doom"
+                      value={asset.doom}
+                      label={`${asset.doom} doom on ${card(asset.code).name}`}
+                    />
                   )}
                 </div>
                 <span className="asset-name">{card(asset.code).name}</span>

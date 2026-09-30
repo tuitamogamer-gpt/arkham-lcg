@@ -28,7 +28,9 @@ export function eventImportance(
     e.title === "Scenario resolution" ||
     e.title === "The agenda advances" ||
     e.title === "The story advances" ||
-    /^(Investigator defeated|Deck exhausted|Investigator resigns)/.test(e.title) ||
+    /^(Investigator defeated|Deck exhausted|Investigator resigns)/.test(
+      e.title,
+    ) ||
     e.changes.some((c) => c.after === "defeated" || c.after === "resigned")
   )
     return "critical";
@@ -68,7 +70,17 @@ export function visibleSnapshot(s: GameState) {
     phase: s.phase,
     act: s.act,
     agenda: s.agenda,
-    doom: s.doom,
+    doom:
+      s.doom +
+      [s.player, ...s.companions]
+        .filter((p) => p.status === "active")
+        .reduce(
+          (n, p) =>
+            n +
+            (p.doom || 0) +
+            p.assets.reduce((sum, a) => sum + (a.doom || 0), 0),
+          0,
+        ),
     status: s.status,
     actor: s.player.code,
     party: [s.player, ...s.companions].map((p) => ({
@@ -78,12 +90,13 @@ export function visibleSnapshot(s: GameState) {
       clues: p.clues,
       damage: p.damage,
       horror: p.horror,
+      doom: p.doom || 0,
       actions: p.actions,
       status: p.status,
       turnEnded: p.turnEnded,
       hand: p.hand,
       discard: p.discard,
-      assets: p.assets,
+      assets: p.assets.map((a) => ({ ...a, doom: a.doom || 0 })),
       threats: p.threats,
       xp: p.xp,
       physicalTrauma: p.physicalTrauma,
@@ -127,6 +140,7 @@ export function visibleChanges(
       ["clues", "Clues"],
       ["damage", "Damage"],
       ["horror", "Horror"],
+      ["doom", "Doom"],
       ["actions", "Actions"],
       ["xp", "Experience"],
       ["physicalTrauma", "Physical trauma"],
@@ -185,6 +199,7 @@ export function visibleChanges(
         ["damage", "Damage"],
         ["horror", "Horror"],
         ["uses", "Uses"],
+        ["doom", "Doom"],
       ] as const)
         if (old[field] !== a[field])
           changes.push(
@@ -315,6 +330,7 @@ function sourceCard(
   if (e.code && card(e.code)) return e.code;
   if (["fire", "attachFire", "fireEnemies"].includes(e.kind)) return code(129);
   if (e.kind === "doom") return code(105 + Math.min(3, s.agenda));
+  if (e.kind === "playerDoom") return code(66);
   if (before.act !== s.act) return code(108 + s.act);
   const id =
     e.id ||
@@ -403,6 +419,7 @@ export function presentEffect(
     fire: "Fire spreads",
     attachFire: "Fire spreads",
     doom: before.agenda !== s.agenda ? "The agenda advances" : "Doom placed",
+    playerDoom: "Doom placed",
     advanceAct: "The story advances",
     discover: "Clues discovered",
     gain: "Resources gained",
@@ -430,6 +447,7 @@ export function presentEffect(
     twin45: "Second shot",
     twinShot: "Second shot",
     flameSkull: "Cosmic Flame · skull",
+    sightCultist: "Second Sight · cultist",
     cloak: "Cloak of Resonance",
     jim: "Jim Culver",
     charmMove: "Lucky Charm",

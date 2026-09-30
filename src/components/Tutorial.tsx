@@ -51,10 +51,8 @@ const STEPS: Step[] = [
     done: (s) => !!s.test || s.player.actionsTaken > 0,
   },
   {
-    title: "The skill test",
-    text: "Commit cards with matching icons to raise your skill, check the chance of success, then draw a chaos token. Your modified skill must equal or beat the difficulty. Resolve the test when you are ready.",
-    hint: "Draw a token and resolve the test to continue.",
-    done: (s) => !s.test && s.player.actionsTaken > 0,
+    title: "How skill tests work",
+    text: "A test lets you commit cards with matching icons, check the chance of success, and draw a chaos token. Your modified skill must equal or beat the difficulty. The result stays visible until you choose Resolve. Keep this sequence in mind for your next action.",
   },
   {
     title: "Your hand",
@@ -76,9 +74,11 @@ const STEPS: Step[] = [
 ];
 export function Tutorial({
   game: s,
+  hidden = false,
   onFinish,
 }: {
   game: GameState;
+  hidden?: boolean;
   onFinish: () => void;
 }) {
   const [index, setIndex] = useState(0);
@@ -90,6 +90,7 @@ export function Tutorial({
   }, [s, step, last]);
   useLayoutEffect(() => {
     const measure = () => {
+      if (hidden) return;
       const el = step.anchor
         ? document.querySelector<HTMLElement>(step.anchor)
         : null;
@@ -98,8 +99,13 @@ export function Tutorial({
     const el = step.anchor
       ? document.querySelector<HTMLElement>(step.anchor)
       : null;
-    if (el && !document.querySelector('.modal[aria-modal="true"]'))
-      el.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (!hidden && el && !document.querySelector('.modal[aria-modal="true"]'))
+      el.scrollIntoView({
+        block: "center",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
     measure();
     const timer = window.setTimeout(measure, 450);
     window.addEventListener("resize", measure);
@@ -109,7 +115,7 @@ export function Tutorial({
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [index, step, s]);
+  }, [index, step, hidden]);
   const finish = () => {
     try {
       localStorage.setItem(TUTORIAL_KEY, "done");
@@ -118,6 +124,7 @@ export function Tutorial({
     }
     onFinish();
   };
+  if (hidden) return null;
   return (
     <>
       {box && (
@@ -156,7 +163,10 @@ export function Tutorial({
               Finish
             </button>
           ) : (
-            <button className="tutorial-next" onClick={() => setIndex((i) => i + 1)}>
+            <button
+              className="tutorial-next"
+              onClick={() => setIndex((i) => i + 1)}
+            >
               Next <ArrowRight size={14} />
             </button>
           )}

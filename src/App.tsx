@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { applyUpdate, getUpdateAvailable, subscribeUpdate } from "./pwa";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -20,6 +27,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { createGame, gameSummary, reduceGame } from "./game/engine";
+import { isUndoBarrier } from "./game/undo";
 import type { Tempo } from "./game/presentation";
 import {
   MAX_SLOTS,
@@ -35,7 +43,11 @@ import {
 } from "./game/storage";
 import type { Action, Difficulty, GameState } from "./game/types";
 import { audio, readAudioPreference } from "./audio";
-import { Tutorial, resetTutorial, tutorialPending } from "./components/Tutorial";
+import {
+  Tutorial,
+  resetTutorial,
+  tutorialPending,
+} from "./components/Tutorial";
 import { Archive, Investigators } from "./components/Archive";
 import {
   Button,
@@ -139,9 +151,10 @@ function Guide() {
           <p>
             Spreading Flames with 1–3 investigators, all controlled by you.
             Choose from Joe Diamond, Daniela Reyes, Trish Scarborough, Dexter
-            Drake and Isabelle Barnes with their official 2026 starter decks. Each investigator has a separate hand,
-            deck, resources, clues, health, sanity, and three-action turn. Trish
-            also has her extra evade action.
+            Drake and Isabelle Barnes with their official 2026 starter decks.
+            Each investigator has a separate hand, deck, resources, clues,
+            health, sanity, and three-action turn. Trish also has her extra
+            evade action.
           </p>
           <p>
             Finish an investigator’s turn before changing seats. You may choose
@@ -176,6 +189,11 @@ function Guide() {
   );
 }
 export default function App() {
+  const updateAvailable = useSyncExternalStore(
+    subscribeUpdate,
+    getUpdateAvailable,
+    () => false,
+  );
   const [page, setPage] = useState<Page>("home");
   const [game, setGameState] = useState<GameState | null>(readSave);
   const gameRef = useRef<GameState | null>(null);
@@ -235,6 +253,7 @@ export default function App() {
     if (motion !== "full") document.getAnimations().forEach((a) => a.cancel());
   }, [motion]);
   const [notice, setNotice] = useState("");
+  const [saveFailed, setSaveFailed] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const navigate = (p: Page) => {
     setPage(p);
@@ -246,20 +265,7 @@ export default function App() {
       if (!s) return;
       const next = reduceGame(s, a, { tempo: tempoRef.current });
       if (next === s) return;
-      // Undo is limited to the current investigator turn and never crosses a
-      // chaos-token reveal or an encounter draw, so it cannot peek at fate.
-      const barrier =
-        next.id !== s.id ||
-        a.type === "reveal" ||
-        a.type === "mulligan" ||
-        a.type === "continueIntroduction" ||
-        next.status !== "playing" ||
-        next.phase !== "investigation" ||
-        next.round !== s.round ||
-        next.turnInvestigator !== s.turnInvestigator ||
-        next.eventHistory.some(
-          (e) => e.id > s.eventSerial && e.encounter?.stage === "revealed",
-        );
+      const barrier = isUndoBarrier(s, next, a);
       if (barrier) undoStack.current = [];
       else if (!["continue", "clearError"].includes(a.type))
         undoStack.current = [...undoStack.current.slice(-29), s];
@@ -279,9 +285,11 @@ export default function App() {
     if (!game) return;
     try {
       writeSave(game);
+      setSaveFailed(false);
       if (game.status === "resolution") recordResult(game);
       setSaves(listSaves());
     } catch (error) {
+      setSaveFailed(true);
       setNotice(
         error instanceof Error && error.message === "slots"
           ? `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves so this one can be saved.`
@@ -296,6 +304,10 @@ export default function App() {
         !e.shiftKey &&
         e.key.toLowerCase() === "z" &&
         page === "game" &&
+        !inspect &&
+        !settings &&
+        !setup &&
+        !historyOpen &&
         !(e.target as HTMLElement | null)?.closest(
           "input, textarea, select, [contenteditable=true]",
         )
@@ -306,7 +318,7 @@ export default function App() {
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [page, undo]);
+  }, [page, undo, inspect, settings, setup, historyOpen]);
   useEffect(() => {
     window.render_game_to_text = () =>
       JSON.stringify({
@@ -316,7 +328,7 @@ export default function App() {
           : {
               status: "campaign selection",
               available:
-                "Spreading Flames · 1–3 investigators · Joe, Daniela, Trish",
+                "Spreading Flames · 1–3 investigators · Joe, Daniela, Trish, Dexter, Isabelle",
             }),
       });
     window.advanceTime = async () => {};
@@ -543,6 +555,7 @@ export default function App() {
             onHistory={() => setHistoryOpen(true)}
             canUndo={undoDepth > 0}
             onUndo={undo}
+            saved={!saveFailed}
           />
         )}
       </div>
@@ -558,20 +571,22 @@ export default function App() {
           onUndo={undo}
         />
       )}
-      {page === "game" &&
-        game &&
-        tutorial &&
-        game.status === "playing" &&
-        !game.event &&
-        !game.test &&
-        !game.decision &&
-        !game.window &&
-        !settings &&
-        !setup &&
-        !inspect &&
-        !historyOpen && (
-          <Tutorial game={game} onFinish={() => setTutorial(false)} />
-        )}
+      {page === "game" && game && tutorial && game.status === "playing" && (
+        <Tutorial
+          game={game}
+          hidden={
+            !!game.event ||
+            !!game.test ||
+            !!game.decision ||
+            !!game.window ||
+            settings ||
+            setup ||
+            !!inspect ||
+            historyOpen
+          }
+          onFinish={() => setTutorial(false)}
+        />
+      )}
       {page === "game" && game && historyOpen && (
         <EventJournal game={game} onClose={() => setHistoryOpen(false)} />
       )}
@@ -615,6 +630,7 @@ export default function App() {
                       data-preview-code={c}
                       className={`investigator-choice ${investigator.faction_code} ${selected ? "selected" : ""}`}
                       aria-pressed={selected}
+                      disabled={!selected && selectedInvestigators.length >= 3}
                       aria-label={`Select ${investigator.name}`}
                       onClick={() =>
                         setSelectedInvestigators((current) =>
@@ -622,7 +638,9 @@ export default function App() {
                             ? current.length > 1
                               ? current.filter((x) => x !== c)
                               : current
-                            : [...current, c],
+                            : current.length < 3
+                              ? [...current, c]
+                              : current,
                         )
                       }
                     >
@@ -751,8 +769,8 @@ export default function App() {
               />
               {game && (
                 <p className="replace-note">
-                  Your current investigation stays saved in its own slot and
-                  can be reopened from Settings & saves.{" "}
+                  Your current investigation stays saved in its own slot and can
+                  be reopened from Settings & saves.{" "}
                   <button onClick={() => exportSave(game)}>
                     Export current save
                   </button>
@@ -814,6 +832,30 @@ export default function App() {
             </p>
           </div>
           <div className="settings-actions">
+            {updateAvailable && (
+              <section className="app-update" aria-label="App update">
+                <strong>A new edition is ready.</strong>
+                <p>
+                  Save your current pause and reload to use the latest
+                  improvements.
+                </p>
+                <Button
+                  secondary
+                  onClick={async () => {
+                    try {
+                      if (game) writeSave(game);
+                      await applyUpdate();
+                    } catch {
+                      setNotice(
+                        "Your browser could not save this investigation. Export a copy before reloading for the update.",
+                      );
+                    }
+                  }}
+                >
+                  Save & update
+                </Button>
+              </section>
+            )}
             <label className="motion-setting">
               <span>Game tempo</span>
               <select
@@ -821,7 +863,9 @@ export default function App() {
                 value={tempo}
                 onChange={(e) => setTempo(e.target.value as Tempo)}
               >
-                <option value="detailed">Detailed · pause on every event</option>
+                <option value="detailed">
+                  Detailed · pause on every event
+                </option>
                 <option value="smart">Smart · pause on important events</option>
                 <option value="fast">
                   Fast · pause on story and attacks only
@@ -858,7 +902,11 @@ export default function App() {
                 Ambience: {ambience ? "on" : "off"}
               </Button>
               <Button secondary onClick={toggleEffects}>
-                {effects ? <SpeakerHigh size={18} /> : <SpeakerSlash size={18} />}{" "}
+                {effects ? (
+                  <SpeakerHigh size={18} />
+                ) : (
+                  <SpeakerSlash size={18} />
+                )}{" "}
                 Sound effects: {effects ? "on" : "off"}
               </Button>
               <Button
@@ -960,15 +1008,23 @@ export default function App() {
                 const value: unknown = JSON.parse(await file.text());
                 const decoded = decodeSave(value);
                 if (!decoded) throw new Error("invalid");
+                // Persist first: capacity/quota failure must preserve the open case.
+                writeSave(decoded);
                 undoStack.current = [];
                 setUndoDepth(0);
                 commitGame(decoded);
                 navigate("game");
                 setSettings(false);
                 setNotice("Saved investigation restored.");
-              } catch {
+              } catch (error) {
                 setNotice(
-                  "This is not a valid Arkham Chronicle save. Your current game is unchanged.",
+                  error instanceof Error && error.message === "slots"
+                    ? `All ${MAX_SLOTS} save slots are full. Delete a saved investigation before importing a new one.`
+                    : (error instanceof Error &&
+                          ["invalid", "too large"].includes(error.message)) ||
+                        error instanceof SyntaxError
+                      ? "This is not a valid Arkham Chronicle save. Your current game is unchanged."
+                      : "Your browser could not save the imported investigation. Your current game is unchanged; keep the import file and free storage before retrying.",
                 );
               }
               e.target.value = "";
@@ -992,17 +1048,32 @@ export default function App() {
         <CardDetail
           code={inspect}
           game={game}
-          onClose={() => { setInspect(null); setInspectAssetId(null); }}
-          actions={game && page === "game" && inspectAssetId &&
-            game.player.assets.some((a) => a.id === inspectAssetId && a.code === inspect) ? (
-            <InvestigationAbility game={game} assetId={inspectAssetId}
-              onDismiss={() => { setInspect(null); setInspectAssetId(null); }}
-              onActivate={(action) => {
-                setInspect(null);
-                setInspectAssetId(null);
-                dispatch(action);
-              }} />
-          ) : undefined}
+          onClose={() => {
+            setInspect(null);
+            setInspectAssetId(null);
+          }}
+          actions={
+            game &&
+            page === "game" &&
+            inspectAssetId &&
+            game.player.assets.some(
+              (a) => a.id === inspectAssetId && a.code === inspect,
+            ) ? (
+              <InvestigationAbility
+                game={game}
+                assetId={inspectAssetId}
+                onDismiss={() => {
+                  setInspect(null);
+                  setInspectAssetId(null);
+                }}
+                onActivate={(action) => {
+                  setInspect(null);
+                  setInspectAssetId(null);
+                  dispatch(action);
+                }}
+              />
+            ) : undefined
+          }
         />
       )}{" "}
       {notice && (

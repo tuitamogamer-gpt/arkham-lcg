@@ -36,10 +36,16 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node scripts/browser-check.mjs
+      - name: Review regressions (tutorial, undo, party and save import)
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node --import tsx scripts/review-browser-check.mjs
       - name: Keep screenshots when the browser check fails
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: browser-check
-          path: output/browser
+          path: |
+            output/browser
+            output/review
           if-no-files-found: ignore

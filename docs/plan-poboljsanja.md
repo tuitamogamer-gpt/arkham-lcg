@@ -2,6 +2,10 @@
 
 Datum analize: 28. septembar 2026. Pregledan je kompletan kod (engine, UI, stilovi, testovi, skripte), dokumentacija, produkcijski deploy u browseru (desktop i mobilni prikaz) i ponašanje engine-a pod nasumičnim igranjem (520 automatskih partija).
 
+## Dopuna — 30. septembar 2026.
+
+Claudeov naredni commit dodao je registar karata, podatke prvog scenarija i igrive startere Dextera i Isabelle. Svih pet istražitelja dostupno je za ekipe od 1–3 člana. Ponovni pregled ispravio je pravila i korisničke tokove navedene u [izvještaju pregleda](review-2026-09-30.md): nagrade suigrača, slotove, spell timing, troškove, doom na kartama, undo poslije otkrivanja, tutorial, save integritet i kontrolisana PWA ažuriranja. Završna zbirka ima 230 prolaznih testova. Stariji status ispod predstavlja stanje 29. septembra, prije tih izmjena. Scenario II/III, nadogradnje kampanje, konsolidacija CSS-a i prevod ostaju otvoreni.
+
 ## Status 29. septembar 2026.
 
 | Stavka | Stanje |

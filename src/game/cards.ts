@@ -11,7 +11,7 @@ export interface WeaponScript {
   skill: Skill;
   /** Printed skill bonus for the attack. */
   bonus: number;
-  /** Spent per attack; the attack is illegal without one. */
+  /** Counter on the weapon; ammo is an attack cost, charges are card-specific. */
   uses?: UsesKind;
   /** When the printed +1 damage applies. */
   damage?: "always" | "attackedThisTurn" | "targetExhausted";
@@ -22,11 +22,27 @@ export const WEAPONS: Record<string, WeaponScript> = {
   [C(2)]: { skill: "combat", bonus: 2, damage: "attackedThisTurn" },
   [C(19)]: { skill: "combat", bonus: 1, uses: "ammo", damage: "always" },
   [C(20)]: { skill: "combat", bonus: 1, ability: "machete" },
-  [C(45)]: { skill: "agility", bonus: 0, uses: "ammo", damage: "targetExhausted" },
+  [C(45)]: {
+    skill: "agility",
+    bonus: 0,
+    uses: "ammo",
+    damage: "targetExhausted",
+  },
   [C(77)]: { skill: "combat", bonus: 1, ability: "cleaver" },
   [C(86)]: { skill: "combat", bonus: 1, ability: "bottle" },
-  [C(14)]: { skill: "combat", bonus: 1, uses: "ammo", damage: "always", ability: "twin45" },
-  [C(59)]: { skill: "willpower", bonus: 0, uses: "charges", ability: "cosmicFlame" },
+  [C(14)]: {
+    skill: "combat",
+    bonus: 1,
+    uses: "ammo",
+    damage: "always",
+    ability: "twin45",
+  },
+  [C(59)]: {
+    skill: "willpower",
+    bonus: 0,
+    uses: "charges",
+    ability: "cosmicFlame",
+  },
 };
 export const isWeapon = (code: string) => code in WEAPONS;
 
@@ -40,7 +56,8 @@ export interface ToolScript {
   /** Investigate a revealed connecting location instead of your own. */
   remote?: boolean;
   /** Engine follow-up on success. */
-  ability?: "fingerprint" | "localMap" | "thievesKit" | "flashlight" | "secondSight";
+  ability?:
+    "fingerprint" | "localMap" | "thievesKit" | "flashlight" | "secondSight";
   cost: string;
   effect: string;
   counter?: string;
@@ -155,9 +172,9 @@ export const HAND_SIZE_BONUS: Record<string, number> = { [C(32)]: 2 };
 export const usesKind = (code: string): UsesKind | undefined =>
   WEAPONS[code]?.uses ||
   TOOLS[code]?.uses ||
-  (/Uses \(\d+ (ammo|charges|supplies|secrets)\)/.exec(card(code)?.text || "")?.[1] as
-    | UsesKind
-    | undefined);
+  (/Uses \(\d+ (ammo|charges|supplies|secrets)\)/.exec(
+    card(code)?.text || "",
+  )?.[1] as UsesKind | undefined);
 export const printedUses = (code: string) =>
   Number(/Uses \((\d+)/.exec(card(code)?.text || "")?.[1] || 0);
 /** Events offered automatically at their reaction window, never by hand. */

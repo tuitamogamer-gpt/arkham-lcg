@@ -50,6 +50,8 @@ export interface Asset extends Instance {
   uses: number;
   damage: number;
   horror: number;
+  /** Doom on this card; omitted by saves made before player-card doom support. */
+  doom?: number;
   /** A chaos token sealed on the card (Premonition). */
   sealed?: string;
 }
@@ -137,6 +139,8 @@ export interface Investigator {
   clues: number;
   damage: number;
   horror: number;
+  /** Doom on the investigator card, counted with the agenda's doom. */
+  doom?: number;
   hand: Instance[];
   deck: Instance[];
   discard: Instance[];

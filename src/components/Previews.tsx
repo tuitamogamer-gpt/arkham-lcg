@@ -89,6 +89,8 @@ export function CardPreviewLayer({
     let timer: ReturnType<typeof setTimeout>;
     let hideTimer: ReturnType<typeof setTimeout>;
     let open = false;
+    let keyboardNavigation = false;
+    const touchLayout = window.matchMedia("(hover: none)").matches;
     function close() {
       clearTimeout(timer);
       clearTimeout(hideTimer);
@@ -171,7 +173,7 @@ export function CardPreviewLayer({
       }, delay);
     }
     function enter(e: PointerEvent) {
-      if (e.pointerType === "touch") return;
+      if (e.pointerType === "touch" || touchLayout) return;
       if (tooltip.current?.contains(e.target as Node)) {
         clearTimeout(hideTimer);
         return;
@@ -197,6 +199,13 @@ export function CardPreviewLayer({
         clearTimeout(hideTimer);
         return;
       }
+      // Touch/click focus must not cover the table with a keyboard preview.
+      if (
+        !(e.target instanceof Element) ||
+        !e.target.matches(":focus-visible") ||
+        (touchLayout && !keyboardNavigation)
+      )
+        return;
       const target = find(e.target);
       if (target) show(target, 0);
     }
@@ -212,6 +221,7 @@ export function CardPreviewLayer({
       if (open && !tooltip.current?.contains(e.target as Node)) close();
     }
     function escape(e: KeyboardEvent) {
+      if (e.key === "Tab") keyboardNavigation = true;
       if (e.key === "Tab" && tooltip.current?.contains(e.target as Node)) {
         const controls = [
           ...tooltip.current.querySelectorAll<HTMLElement>(
@@ -249,6 +259,7 @@ export function CardPreviewLayer({
       }
     }
     function click(e: Event) {
+      keyboardNavigation = false;
       if (!tooltip.current?.contains(e.target as Node)) close();
     }
     const observer = new MutationObserver(() => {

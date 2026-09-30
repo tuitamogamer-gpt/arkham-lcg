@@ -12,9 +12,9 @@ import "./chaos-bag.css";
 import "./premium-table.css";
 import "./chaos-draw.css";
 import "./additions.css";
-import { registerSW } from "virtual:pwa-register";
-// Installable, offline-capable shell. Updates apply on the next load.
-registerSW({ immediate: true });
+import { registerOfflineShell } from "./pwa";
+// Installable shell; an available update waits for the player to save/refresh.
+registerOfflineShell();
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

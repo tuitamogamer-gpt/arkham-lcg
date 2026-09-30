@@ -13,7 +13,9 @@
   border: 1px solid #96895350;
   padding: 10px 12px;
   border-radius: 2px;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
 }
 .undo-button:hover:not(:disabled) {
   background: #b39e5a25;
@@ -408,6 +410,24 @@
 }
 
 /* Five investigators in setup and on the home page */
+.investigator-choice:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.app-update {
+  padding: 16px;
+  border: 1px solid var(--brass, #bba36b);
+  border-radius: 6px;
+}
+.app-update p {
+  margin: 6px 0 12px;
+}
+.doom-source-note {
+  margin: 6px 0 0;
+  color: #dfcea1;
+  font-size: 12px;
+  line-height: 1.4;
+}
 @media (min-width: 1100px) {
   .party-choices {
     grid-template-columns: repeat(5, minmax(0, 1fr));

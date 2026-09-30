@@ -100,6 +100,13 @@ const survivors = (s: GameState) => {
   return lead > 0 ? [...ps.slice(lead), ...ps.slice(0, lead)] : ps;
 };
 export const partySize = (s: GameState) => s.partyOrder.length;
+export const totalDoom = (s: GameState) =>
+  s.doom +
+  survivors(s).reduce(
+    (n, p) =>
+      n + (p.doom || 0) + p.assets.reduce((sum, a) => sum + (a.doom || 0), 0),
+    0,
+  );
 export const health = (s: GameState, p = s.player) => card(p.code).health || 7;
 export const sanity = (s: GameState, p = s.player) => card(p.code).sanity || 7;
 export const enemyHealth = (s: GameState, e: Enemy) =>
@@ -175,8 +182,13 @@ export function fastOptions(s: GameState): FastOption[] {
       for (const c of p.discard)
         if (
           card(c.code).type_code === "skill" &&
-          (card(c.code)[`skill_${t.skill}`] || 0) + (card(c.code).skill_wild || 0) >
-            0
+          (card(c.code)[`skill_${t.skill}`] || 0) +
+            (card(c.code).skill_wild || 0) >
+            0 &&
+          !(
+            card(c.code).text?.includes("Max 1 committed") &&
+            t.committed.some((id) => committedCard(s, id)?.code === c.code)
+          )
         )
           add(
             `isabelle:${c.id}`,
@@ -198,7 +210,8 @@ function boostAmount(s: GameState, a: Asset, t: Test): number {
   if (necronomicon(s.player)) return 0;
   // The boosted card is the asset (or event) that started the test, if any.
   const sourceCode =
-    asset(s, t.source)?.code || (t.source && card(t.source) ? t.source : undefined);
+    asset(s, t.source)?.code ||
+    (t.source && card(t.source) ? t.source : undefined);
   return registryBoost(a, t, sourceCode);
 }
 function openWindow(s: GameState, window: PlayerWindow) {
@@ -277,9 +290,11 @@ function timingEligible(s: GameState, g: TimingGroup) {
     case "cloak":
       return !!a && !a.exhausted;
     case "twin45": {
-      const en = activeEnemy(s, e.target);
       return (
-        !!a && !a.exhausted && a.uses > 0 && !!en && en.location === p.location
+        !!a &&
+        !a.exhausted &&
+        a.uses > 0 &&
+        s.enemies.some((en) => en.location === p.location)
       );
     }
     case "lessonLearned":
@@ -384,6 +399,7 @@ function elimination(s: GameState, status: "defeated" | "resigned") {
   location(s).clues += p.clues;
   p.clues = 0;
   p.resources = 0;
+  p.doom = 0;
   p.assets = [];
   p.threats.forEach((c) => {
     if (!card(c).subtype_code) s.encounterDiscard.push(c);
@@ -479,7 +495,8 @@ function leaveLimbo(s: GameState, ids: string[], discard = true) {
         s,
         `${card(c.code).name} is shuffled back into ${card(owner.code).name}’s deck.`,
       );
-    } else (discard ? owner.discard : owner.hand).push({ id: c.id, code: c.code });
+    } else
+      (discard ? owner.discard : owner.hand).push({ id: c.id, code: c.code });
   }
   s.limbo = (s.limbo || []).filter((c) => !ids.includes(c.id));
 }
@@ -488,34 +505,55 @@ type CardRef = {
   id: string;
   name: string;
   owner: string;
-  ref: Investigator | Asset;
+  ref: Investigator | Asset | Enemy;
 };
 function cardsAt(s: GameState, at: string): CardRef[] {
-  return survivors(s)
-    .filter((p) => p.location === at)
-    .flatMap((p) => [
-      { id: p.code, name: card(p.code).name, owner: p.code, ref: p },
-      ...p.assets
-        .filter((a) => card(a.code).health || card(a.code).sanity)
-        .map((a) => ({
-          id: a.id,
-          name: `${card(a.code).name} (${card(p.code).name})`,
-          owner: p.code,
-          ref: a,
-        })),
-    ]);
+  return [
+    ...survivors(s)
+      .filter((p) => p.location === at)
+      .flatMap((p) => [
+        { id: p.code, name: card(p.code).name, owner: p.code, ref: p },
+        ...p.assets
+          .filter((a) => card(a.code).health || card(a.code).sanity)
+          .map((a) => ({
+            id: a.id,
+            name: `${card(a.code).name} (${card(p.code).name})`,
+            owner: p.code,
+            ref: a,
+          })),
+      ]),
+    ...s.enemies
+      .filter((en) => en.location === at)
+      .map((en) => ({
+        id: en.id,
+        name: card(en.code).name,
+        owner: en.owner || "scenario",
+        ref: en,
+      })),
+  ];
 }
 function findCard(s: GameState, id: string): CardRef | undefined {
   for (const p of party(s)) {
-    if (p.code === id) return { id, name: card(p.code).name, owner: p.code, ref: p };
+    if (p.code === id)
+      return { id, name: card(p.code).name, owner: p.code, ref: p };
     const a = p.assets.find((a) => a.id === id);
     if (a) return { id, name: card(a.code).name, owner: p.code, ref: a };
   }
+  const en = activeEnemy(s, id);
+  if (en)
+    return {
+      id: en.id,
+      name: card(en.code).name,
+      owner: en.owner || "scenario",
+      ref: en,
+    };
   return undefined;
 }
 const charmSources = (s: GameState, type?: string) =>
-  cardsAt(s, s.player.location).filter(
-    (c) => (type === "damage" || type === "horror") && c.ref[type] > 0,
+  cardsAt(s, s.player.location).filter((c) =>
+    type === "damage"
+      ? c.ref.damage > 0
+      : type === "horror" && "horror" in c.ref && c.ref.horror > 0,
   );
 const charmDestinations = (s: GameState, type: string, exclude: string) =>
   cardsAt(s, s.player.location).filter(
@@ -523,9 +561,10 @@ const charmDestinations = (s: GameState, type: string, exclude: string) =>
       c.owner === s.player.code &&
       c.id !== exclude &&
       ("status" in c.ref ||
-        (type === "damage"
-          ? (card(c.ref.code).health || 0) > c.ref.damage
-          : (card(c.ref.code).sanity || 0) > c.ref.horror)),
+        ("horror" in c.ref &&
+          (type === "damage"
+            ? (card(c.ref.code).health || 0) > c.ref.damage
+            : (card(c.ref.code).sanity || 0) > c.ref.horror))),
   );
 function enemyEntered(s: GameState, at: string) {
   for (const p of survivors(s))
@@ -1076,8 +1115,12 @@ function fire(s: GameState) {
 }
 function advanceAgenda(s: GameState) {
   const limit = agendaDoomLimit(s.agenda);
-  if (s.doom < limit) return;
+  if (totalDoom(s) < limit) return;
   s.doom = 0;
+  for (const p of party(s)) {
+    p.doom = 0;
+    for (const a of p.assets) a.doom = 0;
+  }
   s.agenda++;
   log(
     s,
@@ -1979,7 +2022,10 @@ function drain(s: GameState) {
         if (owner && a) {
           owner.assets = owner.assets.filter((x) => x.id !== a.id);
           owner.hand.push({ id: a.id, code: a.code });
-          log(s, `${card(a.code).name} returns to ${card(owner.code).name}’s hand.`);
+          log(
+            s,
+            `${card(a.code).name} returns to ${card(owner.code).name}’s hand.`,
+          );
         }
         break;
       }
@@ -2067,6 +2113,7 @@ function drain(s: GameState) {
           removeHand(s, c.id, false);
           s.player.threats.push(c.code);
           log(s, `Revelation: ${card(c.code).name}.`, "bad");
+          if (card(c.code).slot) front(s, eff("checkSlots", { code: c.code }));
         } else if (c.code === C(101)) {
           removeHand(s, c.id);
           log(
@@ -2157,6 +2204,31 @@ function drain(s: GameState) {
       }
       case "applyDamage": {
         const allocations = e.data!.allocations as Allocation;
+        if (!e.data!.whenHandled) {
+          const when: TimingGroup[] = [];
+          for (const p of survivors(s))
+            for (const a of p.assets)
+              if (
+                a.code === C(58) &&
+                !a.exhausted &&
+                (allocations[a.id]?.horror || 0) > 0
+              )
+                when.push(
+                  group("Cloak of Resonance · strike back", [
+                    eff("cloak", { actor: p.code, id: a.id }),
+                  ]),
+                );
+          if (when.length) {
+            front(s, { ...e, data: { ...e.data, whenHandled: true } });
+            ordered(
+              s,
+              "Choose damage interrupt order",
+              when,
+              s.leadInvestigator,
+            );
+            break;
+          }
+        }
         const defeated: string[] = [];
         const hurt: string[] = [];
         const reactions: Effect[] = [];
@@ -2187,20 +2259,15 @@ function drain(s: GameState) {
           } else if (en) {
             en.damage += n.damage;
           }
-          if (p && (n.damage > 0 || n.horror > 0) && mayParticipate(s, p.code)) {
+          if (
+            p &&
+            (n.damage > 0 || n.horror > 0) &&
+            mayParticipate(s, p.code)
+          ) {
             const jim = p.assets.find((x) => x.code === C(60) && !x.exhausted);
             if (jim)
               reactions.push(
                 eff("jim", { actor: p.code, id: jim.id, target: p.code }),
-              );
-          }
-          if (a && n.horror > 0 && a.code === C(58) && !a.exhausted) {
-            const owner = party(s).find((p) =>
-              p.assets.some((x) => x.id === a.id),
-            )!;
-            if (mayParticipate(s, owner.code))
-              reactions.push(
-                eff("cloak", { actor: owner.code, id: a.id, target: owner.code }),
               );
           }
           if (
@@ -2416,7 +2483,7 @@ function drain(s: GameState) {
         s.doom += e.amount || 1;
         log(
           s,
-          `Place ${e.amount || 1} doom. The agenda has ${s.doom} of ${agendaDoomLimit(s.agenda)} doom.`,
+          `Place ${e.amount || 1} doom. There is ${totalDoom(s)} of ${agendaDoomLimit(s.agenda)} doom in play.`,
           "bad",
         );
         if (s.agenda === 3 && e.source !== "player") {
@@ -2594,7 +2661,11 @@ function drain(s: GameState) {
               eff("enemyDamage", { id: e.id, amount: damage }),
             ]),
           ]);
-        } else if (a && WEAPONS[a.code]?.ability === "cosmicFlame" && a.uses > 0)
+        } else if (
+          a &&
+          WEAPONS[a.code]?.ability === "cosmicFlame" &&
+          a.uses > 0
+        )
           choice(
             s,
             "Cosmic Flame",
@@ -2833,25 +2904,26 @@ function drain(s: GameState) {
         break;
       }
       case "twin45": {
-        const a = asset(s, e.id),
-          en = activeEnemy(s, e.target);
-        if (
-          !a ||
-          a.exhausted ||
-          a.uses <= 0 ||
-          !en ||
-          en.location !== s.player.location
-        )
-          break;
+        const a = asset(s, e.id);
+        const enemies = s.enemies.filter(
+          (en) => en.location === s.player.location,
+        );
+        if (!a || a.exhausted || a.uses <= 0 || !enemies.length) break;
         choice(
           s,
           "Isabelle’s Twin .45s",
           "After the first shot: spend 1 ammo and exhaust the pistols to fire again, testing agility (+1) for +1 damage.",
           [
-            option("fire", `Fire again · ${a.uses} ammo left`, [
-              eff("exhaust", { id: a.id }),
-              eff("twinShot", { id: a.id, target: en.id }),
-            ]),
+            ...enemies.map((en) =>
+              option(
+                enemies.length === 1 ? "fire" : `fire:${en.id}`,
+                `Fire at ${card(en.code).name} · ${a.uses} ammo left`,
+                [
+                  eff("exhaust", { id: a.id }),
+                  eff("twinShot", { id: a.id, target: en.id }),
+                ],
+              ),
+            ),
             option("skip", "Holster", []),
           ],
         );
@@ -2860,7 +2932,8 @@ function drain(s: GameState) {
       case "twinShot": {
         const a = asset(s, e.id),
           en = activeEnemy(s, e.target);
-        if (!a || !en) break;
+        if (!a || a.uses <= 0 || !en || en.location !== s.player.location)
+          break;
         a.uses--;
         const test = testStart(
           s,
@@ -2876,6 +2949,7 @@ function drain(s: GameState) {
         break;
       }
       case "flameSkull": {
+        e.code = C(59);
         const a = asset(s, e.id);
         if (!a) break;
         if (a.uses > 0) {
@@ -2889,6 +2963,24 @@ function drain(s: GameState) {
           );
           discardAsset(s, a.id);
           front(s, eff("damage", { damage: 1, source: C(59) }));
+        }
+        break;
+      }
+      case "sightCultist": {
+        e.code = C(62);
+        const a = asset(s, e.id);
+        if (!a) break;
+        if (a.uses > 0) {
+          a.uses--;
+          log(s, "The cultist drains 1 charge from Second Sight.", "bad");
+        } else {
+          log(
+            s,
+            "Second Sight has no charge to lose: 1 horror, and the spell is discarded.",
+            "bad",
+          );
+          discardAsset(s, a.id);
+          front(s, eff("damage", { horror: 1, source: C(62) }));
         }
         break;
       }
@@ -2940,9 +3032,11 @@ function drain(s: GameState) {
           "Lucky Charm",
           `Move 1 ${type} from a card at your location.`,
           sources.map((c) =>
-            option(c.id, `${c.name} · ${c.ref[type]} ${type}`, [
-              eff("charmDest", { source: type, target: c.id }),
-            ]),
+            option(
+              c.id,
+              `${c.name} · ${type === "damage" ? c.ref.damage : "horror" in c.ref ? c.ref.horror : 0} ${type}`,
+              [eff("charmDest", { source: type, target: c.id })],
+            ),
           ),
         );
         break;
@@ -2967,9 +3061,16 @@ function drain(s: GameState) {
         const type = e.source as "damage" | "horror";
         const from = findCard(s, e.id!),
           to = findCard(s, e.target!);
-        if (!from || !to || from.ref[type] <= 0) break;
-        from.ref[type]--;
-        to.ref[type]++;
+        if (!from || !to || !("horror" in to.ref)) break;
+        if (type === "damage") {
+          if (from.ref.damage <= 0) break;
+          from.ref.damage--;
+          to.ref.damage++;
+        } else {
+          if (!("horror" in from.ref) || from.ref.horror <= 0) break;
+          from.ref.horror--;
+          to.ref.horror++;
+        }
         log(s, `Lucky Charm moves 1 ${type} from ${from.name} to ${to.name}.`);
         if ("status" in to.ref)
           front(s, eff("defeatCheck", { actor: to.ref.code }));
@@ -2994,7 +3095,10 @@ function drain(s: GameState) {
       case "cosmosClue": {
         const others = s.locations.filter(
           (l) =>
-            l.active && l.revealed && l.code !== s.player.location && l.clues > 0,
+            l.active &&
+            l.revealed &&
+            l.code !== s.player.location &&
+            l.clues > 0,
         );
         if (!others.length) {
           log(s, "No other revealed location holds a clue.");
@@ -3012,6 +3116,38 @@ function drain(s: GameState) {
         );
         break;
       }
+      case "cosmosDoom":
+        choice(
+          s,
+          "Will of the Cosmos · place doom",
+          "Choose a player card you control. Doom on it counts toward the next agenda check; placing it does not advance the agenda now.",
+          [
+            option(s.player.code, card(s.player.code).name, [
+              eff("playerDoom", { target: s.player.code }),
+            ]),
+            ...s.player.assets
+              .filter((a) => !card(a.code).encounter_code)
+              .map((a) =>
+                option(a.id, card(a.code).name, [
+                  eff("playerDoom", { target: a.id }),
+                ]),
+              ),
+          ],
+        );
+        break;
+      case "playerDoom": {
+        const target =
+          e.target === s.player.code ? s.player : asset(s, e.target);
+        if (target) {
+          target.doom = (target.doom || 0) + 1;
+          log(
+            s,
+            `Will of the Cosmos places 1 doom on ${card(target.code).name}.`,
+            "bad",
+          );
+        }
+        break;
+      }
       case "threatToDeck": {
         s.player.threats = s.player.threats.filter((c) => c !== e.code);
         s.player.deck.push(instance(s, e.code!));
@@ -3025,7 +3161,11 @@ function drain(s: GameState) {
       }
       case "secondSight": {
         const a = asset(s, e.id);
-        if (a && a.uses > 0 && (s.locations.find((l) => l.code === e.target)?.clues || 0) > 0)
+        if (
+          a &&
+          a.uses > 0 &&
+          (s.locations.find((l) => l.code === e.target)?.clues || 0) > 0
+        )
           choice(
             s,
             "Second Sight",
@@ -3453,7 +3593,10 @@ function drain(s: GameState) {
       case "handLimit": {
         const limit =
           8 +
-          s.player.assets.reduce((n, a) => n + (HAND_SIZE_BONUS[a.code] || 0), 0);
+          s.player.assets.reduce(
+            (n, a) => n + (HAND_SIZE_BONUS[a.code] || 0),
+            0,
+          );
         if (s.player.hand.length > limit && discardable(s).length)
           front(
             s,
@@ -3557,6 +3700,9 @@ function drain(s: GameState) {
         break;
       case "equip":
         equip(s, e.id!);
+        break;
+      case "checkSlots":
+        makeRoom(s, e.code!, e, false);
         break;
       case "search": {
         const top = s.player.deck.slice(0, 9);
@@ -3690,31 +3836,55 @@ function drain(s: GameState) {
   )
     focus(s, s.turnInvestigator);
 }
+function makeRoom(
+  s: GameState,
+  code: string,
+  continuation: Effect,
+  incoming = true,
+) {
+  const def = card(code);
+  const slot = def.slot?.replace(/ x\d+$/, "");
+  if (!slot) return false;
+  const occupied = (code: string) =>
+    Number(/ x(\d+)$/.exec(card(code).slot || "")?.[1] || 1);
+  const conflicts = slot
+    ? s.player.assets.filter(
+        (a) =>
+          card(a.code).slot?.replace(/ x\d+$/, "") === slot &&
+          a.code !== C(115),
+      )
+    : [];
+  const cap = slot === "Hand" || slot === "Arcane" ? 2 : 1;
+  const threatSlots = s.player.threats
+    .filter((c) => card(c).slot?.replace(/ x\d+$/, "") === slot)
+    .reduce((n, c) => n + occupied(c), 0);
+  if (
+    conflicts.length &&
+    conflicts.reduce((n, a) => n + occupied(a.code), 0) +
+      threatSlots +
+      (incoming ? occupied(code) : 0) >
+      cap
+  ) {
+    choice(
+      s,
+      `Make room for ${def.name}`,
+      `${def.name} needs ${occupied(code)} ${slot.toLowerCase()} slot${occupied(code) === 1 ? "" : "s"}. Discard an asset to make room.`,
+      conflicts.map((a) =>
+        option(a.id, `Replace ${card(a.code).name}`, [
+          eff("discardAsset", { id: a.id }),
+          continuation,
+        ]),
+      ),
+    );
+    return true;
+  }
+  return false;
+}
 function equip(s: GameState, id: string) {
   const c = handCard(s, id);
   if (!c) return;
   const def = card(c.code);
-  const slot = def.slot;
-  const conflicts = slot
-    ? s.player.assets.filter(
-        (a) => card(a.code).slot === slot && a.code !== C(115),
-      )
-    : [];
-  const cap = slot === "Hand" ? 2 : 1;
-  if (conflicts.length >= cap) {
-    choice(
-      s,
-      `Make room for ${def.name}`,
-      `Your ${slot?.toLowerCase()} slots are full. Discard an asset.`,
-      conflicts.map((a) =>
-        option(a.id, `Replace ${card(a.code).name}`, [
-          eff("discardAsset", { id: a.id }),
-          eff("equip", { id }),
-        ]),
-      ),
-    );
-    return;
-  }
+  if (makeRoom(s, c.code, eff("equip", { id }))) return;
   removeHand(s, id, false);
   const uses = printedUses(c.code);
   s.player.assets.push({ ...c, exhausted: false, uses, damage: 0, horror: 0 });
@@ -3879,7 +4049,15 @@ function perform(s: GameState, e: Effect) {
       break;
     }
     case "necronomicon":
-      testStart(s, "necronomicon", "willpower", 5, "The Necronomicon", C(12), C(12));
+      testStart(
+        s,
+        "necronomicon",
+        "willpower",
+        5,
+        "The Necronomicon",
+        C(12),
+        C(12),
+      );
       break;
     case "jumpsuit": {
       discardAsset(s, has(s, C(75))!.id);
@@ -3935,7 +4113,7 @@ function perform(s: GameState, e: Effect) {
         case "12066":
           front(
             s,
-            eff("doom", { amount: 1, source: "player" }),
+            eff("cosmosDoom"),
             eff("discover", { amount: 1 }),
             eff("cosmosClue"),
           );
@@ -4090,7 +4268,10 @@ export function canAct(
     if (!l?.active || !l.revealed) return "Choose a revealed location.";
     if (l.code !== s.player.location) {
       const a = asset(s, source);
-      if (!(a && TOOLS[a.code]?.remote) || !availableConnections(s).includes(l.code))
+      if (
+        !(a && TOOLS[a.code]?.remote) ||
+        !availableConnections(s).includes(l.code)
+      )
         return "Investigate your location or use Local Map.";
     }
     if (source) {
@@ -4101,8 +4282,7 @@ export function canAct(
         return `${card(a.code).name} requires a revealed connecting location.`;
       if (tool.exhausts && a.exhausted)
         return `${card(a.code).name} is exhausted.`;
-      if (tool.spendOnUse && a.uses <= 0)
-        return "This asset has no uses left.";
+      if (tool.spendOnUse && a.uses <= 0) return "This asset has no uses left.";
     }
   }
   if (["fight", "evade", "engage", "parley", "clueDamage"].includes(kind)) {
@@ -4334,11 +4514,27 @@ function reveal(s: GameState) {
     t.difficulty;
   t.success = !t.tokens.includes("auto_fail") && t.margin >= 0;
   t.stage = "revealed";
-  if (t.tokens.includes("elder_sign") && s.player.code === C(1)) {
-    // Daniela's non-conditional symbol effect resolves at ST.4, before the
-    // modified skill and success are finalized. A resulting test must queue.
+  const tokenEffects: Effect[] = [];
+  if (t.tokens.includes("elder_sign") && s.player.code === C(1))
+    tokenEffects.push(eff("elderDamage"));
+  const a = asset(s, t.source);
+  if (
+    a &&
+    WEAPONS[a.code]?.ability === "cosmicFlame" &&
+    t.tokens.includes("skull")
+  )
+    tokenEffects.push(eff("flameSkull", { id: a.id }));
+  if (
+    a &&
+    TOOLS[a.code]?.ability === "secondSight" &&
+    t.tokens.includes("cultist")
+  )
+    tokenEffects.push(eff("sightCultist", { id: a.id }));
+  if (tokenEffects.length) {
+    // Token consequences precede final skill values and test results. A test
+    // requested by one of these effects queues behind the suspended test.
     s.test = null;
-    front(s, eff("elderDamage"), eff("resumeTest", { data: { test: t } }));
+    front(s, ...tokenEffects, eff("resumeTest", { data: { test: t } }));
   } else logTestResult(s);
 }
 function logTestResult(s: GameState) {
@@ -4394,7 +4590,8 @@ function resolve(s: GameState) {
           effects.push(eff("flashlight", { id: a.id, target: t.target }));
         if (a && tool?.ability === "localMap")
           effects.push(eff("localMapMove", { id: a.id, target: t.target }));
-        if (tool?.ability === "thievesKit") effects.push(eff("gain", { amount: 1 }));
+        if (tool?.ability === "thievesKit")
+          effects.push(eff("gain", { amount: 1 }));
         if (a && tool?.ability === "secondSight")
           effects.push(eff("secondSight", { id: a.id, target: t.target }));
         if (t.source === "breaking" && (t.margin || 0) >= 2)
@@ -4442,7 +4639,9 @@ function resolve(s: GameState) {
     for (const c of committed)
       if (SKILL_DRAW_ON_SUCCESS.has(c.code))
         results.push(
-          group(`${card(c.code).name} · draw a card`, [eff("draw")]),
+          group(`${card(c.code).name} · draw a card`, [
+            eff("draw", { actor: commitOwner(s, c.id)!.code }),
+          ]),
         );
     if (t.tokens.includes("elder_sign") && s.player.code === C(4))
       results.push(
@@ -4506,22 +4705,6 @@ function resolve(s: GameState) {
       );
     }
   }
-  if (t.kind === "fight") {
-    const a = asset(s, t.source);
-    const ability = a && WEAPONS[a.code]?.ability;
-    if (a && ability === "twin45" && t.variant !== "twin45")
-      reactions.push(
-        group("Isabelle’s Twin .45s · second shot", [
-          eff("twin45", { id: a.id, target: t.target }),
-        ]),
-      );
-    if (a && ability === "cosmicFlame" && t.tokens.includes("skull"))
-      results.push(
-        group("Cosmic Flame · the skull drains a charge", [
-          eff("flameSkull", { id: a.id }),
-        ], 0),
-      );
-  }
   if (t.tokens.includes("elder_sign") && s.player.code === C(10))
     results.push(
       group("Dexter’s elder sign · return an asset to hand", [
@@ -4551,6 +4734,11 @@ function resolve(s: GameState) {
       );
   }
   const after = [eff("endTest", { data: { ids: t.committed } })];
+  if (t.kind === "fight" && t.variant !== "twin45") {
+    const a = asset(s, t.source);
+    if (a && WEAPONS[a.code]?.ability === "twin45")
+      after.push(eff("twin45", { id: a.id }));
+  }
   if (t.tokens.includes("elder_sign") && s.player.code === C(7))
     after.push(eff("freeMove", { source: "disengage" }));
   front(s, ...(retaliation ? [retaliation] : []), ...after);
@@ -4777,14 +4965,24 @@ function reduceCore(state: GameState, action: Action): GameState {
       const c = s.player.discard.find((x) => x.id === a.target);
       if (c && window.test) {
         s.player.discard = s.player.discard.filter((x) => x.id !== c.id);
-        (s.limbo ||= []).push({ ...c, owner: s.player.code, returnToDeck: true });
+        (s.limbo ||= []).push({
+          ...c,
+          owner: s.player.code,
+          returnToDeck: true,
+        });
         window.test.committed.push(c.id);
         s.player.flags.isabelle = true;
         log(
           s,
           `Isabelle Barnes takes 1 horror to commit ${card(c.code).name} from her discard pile.`,
         );
-        front(s, eff("damage", { horror: 1, direct: true, source: C(13) }));
+        front(
+          s,
+          eff("damage", { horror: 1, direct: true, source: C(13) }),
+          ...(c.code === C(67)
+            ? [eff("damage", { horror: 1, source: C(67) })]
+            : []),
+        );
       }
     } else if (a.type === "act") {
       if (a.kind === "move") s.flags.quad = true;
@@ -4854,7 +5052,11 @@ function reduceCore(state: GameState, action: Action): GameState {
     drain(s);
     const signature = (d: Decision | null) =>
       d &&
-      JSON.stringify([d.title, d.description, d.choices.map((c) => [c.id, c.label])]);
+      JSON.stringify([
+        d.title,
+        d.description,
+        d.choices.map((c) => [c.id, c.label]),
+      ]);
     // Two identical triggers in a row are legitimate; a true loop also leaves
     // the pending queue exactly as it was.
     if (
@@ -4911,9 +5113,19 @@ function reduceCore(state: GameState, action: Action): GameState {
     s.test.committed.push(action.id);
     enterLimbo(s, action.id, owner);
     if (c.code === C(67)) {
-      owner.horror += 1;
-      log(s, `Soul Link: ${card(owner.code).name} takes 1 horror to commit it.`, "bad");
-      front(s, eff("defeatCheck", { actor: owner.code }));
+      log(
+        s,
+        `Soul Link: ${card(owner.code).name} takes 1 horror to commit it.`,
+        "bad",
+      );
+      const test = s.test;
+      s.test = null;
+      front(
+        s,
+        eff("damage", { actor: owner.code, horror: 1, source: C(67) }),
+        eff("resumeTest", { actor: s.player.code, data: { test } }),
+      );
+      drain(s);
     }
     if (late) refreshTest(s);
     return s;
@@ -5096,7 +5308,7 @@ export function gameSummary(s: GameState) {
     })),
     act: s.act,
     agenda: s.agenda,
-    doom: s.doom,
+    doom: totalDoom(s),
     player: {
       location: card(s.player.location).name,
       resources: s.player.resources,

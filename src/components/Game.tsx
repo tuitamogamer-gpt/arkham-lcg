@@ -54,9 +54,16 @@ import {
   commitOwner,
   commitCards,
   successChance,
+  totalDoom,
 } from "../game/engine";
 import type { Action, GameState } from "../game/types";
-import { BOOSTS, REMOVABLE_THREATS, WEAPONS, isTool, isWeapon } from "../game/cards";
+import {
+  BOOSTS,
+  REMOVABLE_THREATS,
+  WEAPONS,
+  isTool,
+  isWeapon,
+} from "../game/cards";
 import { SPREADING_FLAMES as SCENARIO } from "../game/scenario";
 import {
   Button,
@@ -75,6 +82,7 @@ export function Game({
   onHistory,
   canUndo = false,
   onUndo,
+  saved = true,
 }: {
   game: GameState;
   dispatch: (a: Action) => void;
@@ -84,6 +92,7 @@ export function Game({
   onHistory: () => void;
   canUndo?: boolean;
   onUndo?: () => void;
+  saved?: boolean;
 }) {
   useTableMotion(s);
   const roster = party(s),
@@ -246,7 +255,7 @@ export function Game({
           <div className="eyebrow">Brethren of Ash / Scenario I</div>
           <HoverPreview
             title="Brethren of Ash · Spreading Flames"
-            text={`Act ${s.act} · ${actText[s.act - 1]}\nAgenda ${s.agenda} · ${s.doom} doom\n\nCampaign record\n${s.campaign.notes.length ? s.campaign.notes.join("\n") : "Your discoveries will be recorded here."}`}
+            text={`Act ${s.act} · ${actText[s.act - 1]}\nAgenda ${s.agenda} · ${totalDoom(s)} doom in play\n\nCampaign record\n${s.campaign.notes.length ? s.campaign.notes.join("\n") : "Your discoveries will be recorded here."}`}
           >
             <h1 tabIndex={0}>Spreading Flames</h1>
           </HoverPreview>
@@ -269,7 +278,8 @@ export function Game({
             Event history
           </button>
           <span className="autosaved">
-            <CheckCircle size={14} /> Autosaved
+            <CheckCircle size={14} />{" "}
+            {saved ? "Autosaved" : "Save needs attention"}
           </span>
           <button
             className="icon-button"
@@ -329,6 +339,12 @@ export function Game({
                   {sanity(s, p) - p.horror} <MagnifyingGlass size={11} />
                   {p.clues} <Coins size={11} />
                   {p.resources}
+                  {!!p.doom && (
+                    <>
+                      <Skull size={11} />
+                      {p.doom}
+                    </>
+                  )}
                 </span>
               </span>
               <span className="seat-number">
@@ -440,7 +456,11 @@ export function Game({
               </span>
               <span className="action-copy">
                 <strong>Investigate</strong>
-                <small>{source ? `Use ${card(tools.find((tool) => tool.id === source)!.code).name}` : "Basic investigation"}</small>
+                <small>
+                  {source
+                    ? `Use ${card(tools.find((tool) => tool.id === source)!.code).name}`
+                    : "Basic investigation"}
+                </small>
               </span>
               <span className="action-price" title="1 action">
                 1<span aria-hidden="true">◆</span>
@@ -744,7 +764,9 @@ export function Game({
                             onClick={() => a("fight", e.id, w.id || undefined)}
                           >
                             <SkillIcon
-                              skill={(w.code && WEAPONS[w.code]?.skill) || "combat"}
+                              skill={
+                                (w.code && WEAPONS[w.code]?.skill) || "combat"
+                              }
                               size={16}
                             />
                             <span>
@@ -755,7 +777,9 @@ export function Game({
                                   : w.code && WEAPONS[w.code]?.uses === "ammo"
                                     ? `1 action + 1 ammo · ${w.uses} left · ${WEAPONS[w.code].bonus ? `+${WEAPONS[w.code].bonus} ${WEAPONS[w.code].skill}, ` : ""}${
                                         WEAPONS[w.code].damage === "always" ||
-                                        (WEAPONS[w.code].damage === "targetExhausted" && e.exhausted)
+                                        (WEAPONS[w.code].damage ===
+                                          "targetExhausted" &&
+                                          e.exhausted)
                                           ? 2
                                           : 1
                                       } damage`

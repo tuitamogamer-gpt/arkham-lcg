@@ -31,12 +31,23 @@ const integer = (n: unknown, min = 0, max = 100000): n is number =>
   typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
 const record = (x: unknown): x is Record<string, unknown> =>
   !!x && typeof x === "object" && !Array.isArray(x);
+const identifier = (x: unknown): x is string =>
+  typeof x === "string" && x.length > 0 && x.length <= 200;
+const flags = (x: unknown): boolean =>
+  record(x) &&
+  Object.values(x).every(
+    (v) =>
+      typeof v === "boolean" || (typeof v === "number" && Number.isFinite(v)),
+  );
+const token = (x: unknown): x is string =>
+  typeof x === "string" &&
+  /^(?:[+-]?\d|skull|tablet|elder_thing|auto_fail|elder_sign)$/.test(x);
 const instances = (xs: unknown): boolean =>
   Array.isArray(xs) &&
   xs.every(
     (c) =>
       record(c) &&
-      typeof c.id === "string" &&
+      identifier(c.id) &&
       typeof c.code === "string" &&
       !!card(c.code),
   );
@@ -105,7 +116,8 @@ export function validSave(x: unknown): x is GameState {
       s.version !== 3 ||
       !record(p) ||
       !STARTER_DECKS[p.code] ||
-      typeof s.id !== "string"
+      !identifier(s.id) ||
+      !(s.error === null || typeof s.error === "string")
     )
       return false;
     if (
@@ -239,7 +251,8 @@ export function validSave(x: unknown): x is GameState {
         !record(member) ||
         !STARTER_DECKS[member.code] ||
         !["active", "defeated", "resigned"].includes(member.status) ||
-        !record(member.flags) ||
+        !flags(member.flags) ||
+        (member.doom !== undefined && !integer(member.doom)) ||
         ![
           member.resources,
           member.clues,
@@ -271,6 +284,7 @@ export function validSave(x: unknown): x is GameState {
             integer(a.damage) &&
             integer(a.horror) &&
             typeof a.exhausted === "boolean" &&
+            (a.doom === undefined || integer(a.doom)) &&
             (a.sealed === undefined ||
               (typeof a.sealed === "string" && a.sealed.length <= 20)),
         )
@@ -321,6 +335,7 @@ export function validSave(x: unknown): x is GameState {
           integer(a.damage) &&
           integer(a.horror) &&
           typeof a.exhausted === "boolean" &&
+          (a.doom === undefined || integer(a.doom)) &&
           (a.sealed === undefined ||
             (typeof a.sealed === "string" && a.sealed.length <= 20)),
       )
@@ -330,7 +345,8 @@ export function validSave(x: unknown): x is GameState {
       !s.enemies.every(
         (e) =>
           integer(e.damage) &&
-          !!card(e.location) &&
+          card(e.code).type_code === "enemy" &&
+          SPREADING_FLAMES.locations.includes(e.location) &&
           typeof e.exhausted === "boolean" &&
           typeof e.engaged === "boolean" &&
           (!e.engagedWith || s.partyOrder.includes(e.engagedWith)) &&
@@ -357,7 +373,7 @@ export function validSave(x: unknown): x is GameState {
       (p.status === "active" &&
         !s.locations.some((l) => l.code === p.location && l.active)) ||
       !integer(s.fireSetAside, 0, 5) ||
-      !record(s.flags) ||
+      !flags(s.flags) ||
       !effects(s.queue)
     )
       return false;
@@ -365,11 +381,7 @@ export function validSave(x: unknown): x is GameState {
       !Array.isArray(s.bag) ||
       s.bag.length < 1 ||
       s.bag.length > 44 ||
-      !s.bag.every(
-        (t) =>
-          typeof t === "string" &&
-          /^(?:[+-]?\d|skull|tablet|elder_thing|auto_fail|elder_sign)$/.test(t),
-      )
+      !s.bag.every(token)
     )
       return false;
     if (
@@ -385,6 +397,7 @@ export function validSave(x: unknown): x is GameState {
       return false;
     if (
       !record(s.campaign) ||
+      !(s.campaign.result === null || typeof s.campaign.result === "string") ||
       (s.campaign.armitageBearer !== undefined &&
         !s.partyOrder.includes(s.campaign.armitageBearer)) ||
       !Array.isArray(s.campaign.notes) ||
@@ -436,10 +449,23 @@ export function validSave(x: unknown): x is GameState {
             s.test.addedSkill,
           )) ||
         !Array.isArray(s.test.tokens) ||
+        !s.test.tokens.every(token) ||
         !Number.isFinite(s.test.modifier))
     )
       return false;
-    return true;
+    const physicalCards = [
+      ...party.flatMap((p) => [
+        ...p.hand,
+        ...p.deck,
+        ...p.discard,
+        ...p.assets,
+      ]),
+      ...s.enemies,
+      ...(s.limbo || []),
+    ];
+    return (
+      new Set(physicalCards.map((c) => c.id)).size === physicalCards.length
+    );
   } catch {
     return false;
   }
@@ -536,23 +562,55 @@ export function decodeSave(value: unknown): GameState | null {
     return null;
   }
 }
+function validSummary(x: unknown): x is SaveSummary {
+  return (
+    record(x) &&
+    identifier(x.id) &&
+    typeof x.updatedAt === "string" &&
+    Number.isFinite(Date.parse(x.updatedAt)) &&
+    integer(x.round, 1, 999) &&
+    integer(x.act, 1, 4) &&
+    Array.isArray(x.party) &&
+    x.party.length >= 1 &&
+    x.party.length <= 3 &&
+    new Set(x.party).size === x.party.length &&
+    x.party.every((c) => typeof c === "string" && !!STARTER_DECKS[c]) &&
+    ["easy", "standard", "hard", "expert"].includes(String(x.difficulty)) &&
+    ["mulligan", "playing", "resolution"].includes(String(x.status)) &&
+    (x.result === null || typeof x.result === "string")
+  );
+}
 function readIndex(): { active: string | null; slots: SaveSummary[] } {
   try {
     const x: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) || "null");
-    if (
-      record(x) &&
-      Array.isArray(x.slots) &&
-      x.slots.every(
-        (v) =>
-          record(v) &&
-          typeof v.id === "string" &&
-          typeof v.updatedAt === "string",
-      )
-    )
+    if (record(x) && Array.isArray(x.slots)) {
+      const slots: SaveSummary[] = [];
+      for (const v of x.slots) {
+        if (!record(v) || !identifier(v.id) || slots.some((s) => s.id === v.id))
+          continue;
+        if (validSummary(v)) slots.push(v);
+        else {
+          // The summary is only an index. Recover a damaged entry from its
+          // actual investigation instead of letting it crash the saves panel.
+          const saved = loadSave(v.id);
+          if (saved)
+            slots.push({
+              ...summarize(saved),
+              updatedAt:
+                typeof v.updatedAt === "string" &&
+                Number.isFinite(Date.parse(v.updatedAt))
+                  ? v.updatedAt
+                  : new Date(0).toISOString(),
+            });
+        }
+      }
       return {
-        active: typeof x.active === "string" ? x.active : null,
-        slots: x.slots as SaveSummary[],
+        active: slots.some((s) => s.id === x.active)
+          ? (x.active as string)
+          : null,
+        slots,
       };
+    }
   } catch {
     /* No index yet. */
   }
@@ -583,45 +641,65 @@ export function activeSaveId(): string | null {
 }
 export function loadSave(id: string): GameState | null {
   try {
-    return decodeSave(JSON.parse(localStorage.getItem(slotKey(id)) || "null"));
+    const saved = decodeSave(
+      JSON.parse(localStorage.getItem(slotKey(id)) || "null"),
+    );
+    return saved?.id === id ? saved : null;
   } catch {
     return null;
   }
 }
 /** Returns the active investigation, migrating the legacy single slot first. */
 export function readSave(): GameState | null {
+  let legacy: GameState | null = null;
   try {
     // The legacy key only exists when an older build (or automation) wrote
     // it, so its content is the newest state of that investigation.
-    const legacy = localStorage.getItem(SAVE_KEY);
-    if (legacy) {
-      const s = decodeSave(JSON.parse(legacy));
-      if (s) writeSave(s);
-      localStorage.removeItem(SAVE_KEY);
-    }
-    const active = readIndex().active;
-    return active ? loadSave(active) : null;
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) legacy = decodeSave(JSON.parse(raw));
   } catch {
-    return null;
+    // A broken legacy save must not prevent reading a healthy active slot.
   }
+  if (legacy) {
+    try {
+      writeSave(legacy);
+      localStorage.removeItem(SAVE_KEY);
+    } catch {
+      // Keep the original when slots are full or storage is unavailable, and
+      // still let the player resume/export the investigation.
+    }
+    return legacy;
+  }
+  const active = readIndex().active;
+  return active ? loadSave(active) : null;
 }
 export function setActiveSave(id: string) {
   const index = readIndex();
-  if (index.slots.some((v) => v.id === id)) writeIndex({ ...index, active: id });
+  if (index.slots.some((v) => v.id === id))
+    writeIndex({ ...index, active: id });
 }
 /** Stores the game in its own slot and makes it the active investigation. */
 export function writeSave(s: GameState) {
   const index = readIndex();
   const existing = index.slots.findIndex((v) => v.id === s.id);
-  if (existing < 0 && index.slots.length >= MAX_SLOTS)
-    throw new Error("slots");
-  localStorage.setItem(slotKey(s.id), JSON.stringify(s));
+  if (existing < 0 && index.slots.length >= MAX_SLOTS) throw new Error("slots");
+  const key = slotKey(s.id);
+  const previous = localStorage.getItem(key);
+  localStorage.setItem(key, JSON.stringify(s));
   const summary = summarize(s);
   const slots =
     existing < 0
       ? [...index.slots, summary]
       : index.slots.map((v, i) => (i === existing ? summary : v));
-  writeIndex({ active: s.id, slots });
+  try {
+    writeIndex({ active: s.id, slots });
+  } catch (error) {
+    // Publishing a save requires both writes. Restore the previous payload if
+    // the index exceeds the browser quota, so a failed import changes neither.
+    if (previous === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, previous);
+    throw error;
+  }
 }
 export function deleteSave(id: string) {
   const index = readIndex();
@@ -638,8 +716,19 @@ export function readRecord(): ResultRecord[] {
       ? (x.filter(
           (v) =>
             record(v) &&
-            typeof v.id === "string" &&
-            typeof v.result === "string",
+            identifier(v.id) &&
+            typeof v.finishedAt === "string" &&
+            Number.isFinite(Date.parse(v.finishedAt)) &&
+            Array.isArray(v.party) &&
+            v.party.length > 0 &&
+            v.party.length <= 3 &&
+            v.party.every((c) => typeof c === "string" && !!STARTER_DECKS[c]) &&
+            ["easy", "standard", "hard", "expert"].includes(
+              String(v.difficulty),
+            ) &&
+            typeof v.result === "string" &&
+            integer(v.rounds, 1, 999) &&
+            integer(v.xp),
         ) as ResultRecord[])
       : [];
   } catch {
