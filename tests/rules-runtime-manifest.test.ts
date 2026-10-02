@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   extensionSourceHash,
   verifyDerivedRuntime,
@@ -11,7 +12,7 @@ const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 
 test("staging never unlocks a derived runtime, and changed binaries or extension source require rebuilding", async () => {
-  const directory = await mkdtemp("/private/tmp/chronicle-runtime-proof-");
+  const directory = await mkdtemp(join(tmpdir(), "chronicle-runtime-proof-"));
   try {
     const runtime = join(directory, "game");
     const extension = join(directory, "extension");

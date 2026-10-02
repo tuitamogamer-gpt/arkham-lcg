@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { readLocaleTree } from "../scripts/build-companion-presentation.mjs";
 
 test("pinned locale extraction resolves nested factual data without executing modules", async () => {
-  const root = await mkdtemp("/private/tmp/chronicle-locale-");
+  const root = await mkdtemp(join(tmpdir(), "chronicle-locale-"));
   const locale = join(root, "src/locales");
   try {
     await mkdir(join(locale, "en"), { recursive: true });

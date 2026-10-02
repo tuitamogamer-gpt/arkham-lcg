@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   extensionSourceHash,
   verifyDerivedRuntime,
@@ -10,7 +11,7 @@ import {
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 async function fixture() {
-  const directory = await mkdtemp("/private/tmp/chronicle-aggregate-proof-");
+  const directory = await mkdtemp(join(tmpdir(), "chronicle-aggregate-proof-"));
   const runtime = join(directory, "game");
   const barkham = join(directory, "extensions/barkham");
   const labyrinth = join(directory, "extensions/epic-labyrinth");
