@@ -91,7 +91,7 @@ assert.equal(
   drawn.actions,
   "keyboard cannot undo a hidden draw",
 );
-await page.getByRole("button", { name: "Campaigns" }).click();
+await page.getByRole("button", { name: "Campaigns", exact: true }).click();
 await page.getByRole("button", { name: "Start a new investigation" }).click();
 await page.getByRole("button", { name: "Select Dexter Drake" }).click();
 await page.getByRole("button", { name: "Select Isabelle Barnes" }).click();

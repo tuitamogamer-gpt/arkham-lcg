@@ -159,6 +159,13 @@ await clickAndAcknowledge(
   page,
 );
 await page.getByRole("textbox", { name: "Search cards" }).fill("Machete");
+await page
+  .getByRole("combobox", { name: "Filter by product" })
+  .selectOption("core_2026");
+await page.waitForFunction(() => {
+  const cards = document.querySelectorAll(".archive-grid .collection-card");
+  return cards.length === 1 && cards[0].textContent.includes("#12020");
+});
 assert.equal(await page.locator(".archive-grid .card-face").count(), 1);
 await clickAndAcknowledge(
   page.getByRole("button", { name: "Inspect Machete", exact: true }),
