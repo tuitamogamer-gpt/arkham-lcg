@@ -1,0 +1,12 @@
+[
+  [
+    "arkham-api/library/Entity/Answer.hs",
+    "loadChosenDeck game playerId dl = case joinDeckRejection game playerId dl.investigator of",
+    "loadChosenDeck game playerId dl = case barkhamDeckRejection game dl <|> joinDeckRejection game playerId dl.investigator of"
+  ],
+  [
+    "arkham-api/library/Entity/Answer.hs",
+    "loadChosenDeck :: Game -> PlayerId -> ArkhamDBDecklist -> DB Reply",
+    "barkhamDeckRejection :: Game -> ArkhamDBDecklist -> Maybe Text\nbarkhamDeckRejection game dl\n  | isBarkham && not barkhamInvestigator = Just \"This scenario requires a Barkham investigator.\"\n  | not isBarkham && (barkhamInvestigator || barkhamCards) = Just \"Barkham characters and cards can only be used in The Meddling of Meowlathotep.\"\n  | otherwise = Nothing\n where\n  isBarkham = case gameMode game of\n    That s -> s.id == \":barkham:022\"\n    These _ s -> s.id == \":barkham:022\"\n    _ -> False\n  barkhamInvestigator = unInvestigatorId dl.investigator `elem` [\":barkham:001\", \":barkham:004\", \":barkham:007\", \":barkham:010\", \":barkham:013\"]\n  barkhamCards = any (T.isPrefixOf \":barkham:\" . unCardCode) (Map.keys dl.slots <> Map.keys dl.sideSlots)\n\nloadChosenDeck :: Game -> PlayerId -> ArkhamDBDecklist -> DB Reply"
+  ]
+]

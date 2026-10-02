@@ -1,6 +1,6 @@
 # Arkham Chronicle
 
-A cinematic, local-first Arkham Horror: The Card Game prototype, built with React, TypeScript and Vite. This project targets the **March 2026 Core Set / Chapter Two**, whose campaign is **Brethren of Ash**. It does not use the 2021 Revised Core Set or Night of the Zealot.
+A cinematic, local-first Arkham Horror: The Card Game prototype, built with React, TypeScript and Vite. The collection imports published Arkham content through **30 September 2026**, including the original, revised and 2026 cores, expansion cycles, investigator decks, standalone and parallel scenarios, Return To, novella and promo content, and Barkham. Expanded campaigns use a separately installed rules engine through Chronicle's physical table. The original Core game follows **Spreading Flames** from the **March 2026 Core Set / Chapter Two** campaign **Brethren of Ash**.
 
 ## Run
 
@@ -12,6 +12,21 @@ npm run dev
 ```
 
 Open http://localhost:5187. For a production build, run `npm run build`; serve the output with `npm run preview`.
+
+For expanded play on macOS with Apple silicon, keep a second terminal running:
+
+```sh
+npm run rules:server
+```
+
+Open **Expansions & campaigns** in Chronicle. The first start downloads a pinned
+companion engine and creates its local database under ignored
+`output/rules-server/`. Chronicle presents the companion's card/scenario
+decisions, campaign records and upgrades on its existing green physical table.
+Expanded games open directly in the client and can be resumed from their saved
+investigation links. The Spreading Flames table and its existing saves remain
+independent. See
+[installation, provenance and limitations](docs/rules-server.md).
 
 ## Playable now
 
@@ -36,7 +51,8 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 - Save-slot metadata recovers from its payload when damaged. Failed imports preserve the open case; quota failures retain the previous saved copy. PWA updates wait for **Save & update** in Settings and do not interrupt another open game tab. Visited artwork remains available offline and revalidates online.
 - Physical tabletop based on the 2026 rulebook and real session photography: landscape act/agenda stacks, full location faces, miniature investigator markers, tactile counters, sideways exhausted assets, player/encounter piles and a public chaos-bag/victory viewer. See [design research and sources](docs/tabletop-design-research.md).
 - Dark Miskatonic setting, aged campaign files, investigator seats, brass typography, original card scans and a physical card table optimized for desktop. Sticky controls and status, compact headers, and keyboard **1–3** selection keep the party manageable.
-- Catalog of **196 normalized 2026 card definitions**; the searchable archive shows player cards and discoveries from your current case. Future chapters, unexplored location faces, campaign rewards and unearned story reverses stay sealed. All five investigator dossiers are available.
+- Collection of **6,109 normalized card definitions across 116 products**, with original printings, reprints, variants and hidden faces retained. Search by card, trait, text, class, type or product; browse product categories and repackaged expansion membership. Story cards stay sealed by default; an explicit collection spoiler switch opens them for reference without unlocking your saved investigation.
+- Investigator and deck selection identifies the source product, distinguishes **10 separately sold ready-to-play Investigator Decks** from the **five suggested 2026 Core starter lists**, and shows every supplied card and upgrade. Investigators from expansion boxes show their printed deckbuilding requirements; no deck recipes are invented.
 
 - Direct **Fight with weapon** buttons show the action/ammo cost beside each enemy; skill tests identify the selected weapon. Daniela’s optional counterattack is explicitly explained and attributed to her investigator card.
 - Pointer and keyboard previews for agenda, act, investigator, assets, enemies and campaign information. Act/agenda transitions show the completed card’s reverse-side story and the new objective; previews do not reveal future story faces.
@@ -46,13 +62,36 @@ Open http://localhost:5187. For a production build, run `npm run build`; serve t
 
 ## Scope and next milestones
 
-This is a **playable first-scenario implementation**, not a completed implementation of the whole core set. All five investigators are playable with fixed starters. Smoke and Mirrors, Queen of Ash, network multiplayer, custom deckbuilding and campaign upgrades are not playable. Local hot-seat control of one to three investigators is supported. The UI explicitly labels content coverage.
+The full collection is imported for browsing and deck reference. The native
+TypeScript table remains a **playable Spreading Flames implementation** with
+five fixed starters and one-to-three investigator control. The new companion
+mode enables broader scripted play using the separately installed
+[Arkham Horror engine](https://github.com/halogenandtoast/ArkhamHorror/releases/tag/v20260904.1)
+through Chronicle's original physical table and explicit decision controls.
+Official starter imports, campaign and standalone selection, deck
+building/upgrades and server saves are integrated. Live checks started
+Night of the Zealot, Brethren of Ash, The Dunwich Legacy and Children of Blood,
+reached their first investigation phase, executed a resource action and
+reloaded the persisted result.
+
+**Full-catalog scripting is not complete.** The original Barkham extension now
+implements its 57 full cards and five investigators in a verified native build.
+Its 42 focused Haskell examples and all five real saved-game setup/action checks
+pass. Epic Labyrinth and Machinations group extensions are being compiled and
+verified; several upstream campaigns/standalones retain beta content. A declared card
+definition is not a certification of all its interactions. Product availability
+reports registration separately from implementation claims. The companion
+currently runs locally on Apple silicon; the static production deployment does
+not include its Haskell/PostgreSQL server. The native game remains usable
+without the companion.
 
 The engine scripts these five fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The suite now has **230 passing tests**, including random legal play across all five investigators. Next content milestones: Scenario II (including suspect codex branches), Scenario III, and the campaign upgrade screen. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **353 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
+
+The full importer and its coverage, release cutoff, supplemental Barkham data, product mappings and repeatable checks are documented in [content import](docs/content-import.md). Run `npm run sync:cards -- --as-of 2026-09-30` to regenerate the snapshot. Three small card shards load when the collection is first opened; the installed app precaches the card data for offline browsing. The scripted 196-card Core snapshot is preserved independently of the larger reference catalog.
 
 ArkhamDB provides a public JSON API with no credential needed for public card endpoints:
 
@@ -84,6 +123,10 @@ Official references:
 - `src/game/motion.ts` and `src/components/Motion.tsx`: presentation cues from resolved public state and cancellable table animations, independent of the rules queue.
 - `src/game/data.ts`: normalized catalog, five exact starter lists, chaos bags and map connections.
 - `src/game/storage.ts`: guarded local storage, portable version 3 saves, migration of version 1 and 2 saves, per-investigation save slots with an index, and the record of closed cases.
+- `src/game/decks.ts`: printed deckbuilding filters, explicit choices, signatures, weaknesses, copy/XP restrictions, physical setup lists and ordinary upgrades. Unknown rules block validation.
+- `src/game/scriptSupport.ts`: conservative native behavior fingerprints; equivalent printings retain their source identity. Alias dispatch is not yet enabled at the native table.
+- `src/game/rulesServer.ts`, `src/components/ExpandedPlay.tsx`, `src/components/CompanionTable.tsx`: original companion adapter, exact starter/JSON imports, live availability, physical game table and typed player decisions.
+- `scripts/rules-server.mjs`: loopback launcher/proxy for a pinned, independently downloaded engine, private local guest and persistent database. No engine binaries or upstream engine source are committed.
 - `src/audio.ts`: procedural ambience and sound effects driven by the same public motion cues as the animations; never gates a rules action.
 - `src/components/Tutorial.tsx`: the first-turn tutorial, anchored to table elements and advanced by the player's own actions.
 - `scripts/optimize-art.mjs`: generates the served WebP faces (full size and thumbnails) from the originals kept in `art-source/`; run `npm run art` after caching new scans.

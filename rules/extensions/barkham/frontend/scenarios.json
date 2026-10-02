@@ -1,0 +1,10 @@
+[
+  {
+    "id": ":barkham:022",
+    "name": "The Meddling of Meowlathotep",
+    "campaign": ":barkham",
+    "standalone": true,
+    "standaloneDifficulties": ["Easy", "Standard", "Hard", "Expert"],
+    "i18n": "theMeddlingOfMeowlathotep"
+  }
+]

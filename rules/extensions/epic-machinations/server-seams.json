@@ -1,0 +1,98 @@
+[
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth",
+    "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth\nimport Api.Arkham.ChronicleMachinations qualified as ChronicleMachinations"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth",
+    "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth\nimport Api.Arkham.ChronicleMachinations qualified as ChronicleMachinations"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth",
+    "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth\nimport Api.Arkham.ChronicleMachinations qualified as ChronicleMachinations"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "ChronicleLabyrinth.lockLabyrinthGames gameId >> atomicallyWithGame gameId",
+    "ChronicleLabyrinth.lockLabyrinthGames gameId >> ChronicleMachinations.lockMachinationsGames gameId >> atomicallyWithGame gameId"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "        labyrinthSync <- ChronicleLabyrinth.labyrinthReplicaMessages gameId",
+    "        labyrinthSync <- ChronicleLabyrinth.labyrinthReplicaMessages gameId\n        machinationsSync <- ChronicleMachinations.machinationsReplicaMessages gameId"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "ClearUI : labyrinthSync <> syncMsgs <> messages",
+    "ClearUI : labyrinthSync <> machinationsSync <> syncMsgs <> messages"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "        ChronicleLabyrinth.reconcileLabyrinth gameId gameRef queueRef",
+    "        ChronicleLabyrinth.reconcileLabyrinth gameId gameRef queueRef\n        ChronicleMachinations.reconcileMachinations gameId gameRef queueRef"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "  participants <- runDB $ ChronicleLabyrinth.labyrinthParticipantIds gameId",
+    "  machinationsClock <- runDB $ ChronicleMachinations.machinationsSharedSnapshot gameId\n  for_ machinationsClock \\(eid, shared) -> broadcastSharedToEvent eid shared\n  participants <- runDB $ (<>) <$> ChronicleLabyrinth.labyrinthParticipantIds gameId <*> ChronicleMachinations.machinationsParticipantIds gameId"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "  ChronicleLabyrinth.lockLabyrinthGames gameId\n",
+    "  ChronicleLabyrinth.lockLabyrinthGames gameId\n  ChronicleMachinations.lockMachinationsGames gameId\n",
+    {
+      "occurrences": 3
+    }
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "\n              ChronicleLabyrinth.undoLabyrinthStep gameId n",
+    "\n              ChronicleLabyrinth.undoLabyrinthStep gameId n\n              ChronicleMachinations.undoMachinationsStep gameId n"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "\n          ChronicleLabyrinth.undoLabyrinthStep gameId n",
+    "\n          ChronicleLabyrinth.undoLabyrinthStep gameId n\n          ChronicleMachinations.undoMachinationsStep gameId n"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "  lift $ for_ steps \\(Entity _ step) -> ChronicleLabyrinth.undoLabyrinthStep gameId (arkhamStepStep step)",
+    "  lift $ for_ steps \\(Entity _ step) -> do\n    ChronicleLabyrinth.undoLabyrinthStep gameId (arkhamStepStep step)\n    ChronicleMachinations.undoMachinationsStep gameId (arkhamStepStep step)"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "      chronicleParticipants <- runDB $ ChronicleLabyrinth.labyrinthParticipantIds gameId",
+    "      machinationsClock <- runDB $ ChronicleMachinations.machinationsSharedSnapshot gameId\n      for_ machinationsClock \\(eid, shared) -> broadcastSharedToEvent eid shared\n      chronicleParticipants <- runDB $ (<>) <$> ChronicleLabyrinth.labyrinthParticipantIds gameId <*> ChronicleMachinations.machinationsParticipantIds gameId",
+    {
+      "occurrences": 2
+    }
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "  now <- liftIO getCurrentTime\n  -- A single random per-event seed",
+    "  when (scenarioId == \"87001\" && (length groups /= 3 || any (\\g -> g.playerCount < 1 || g.playerCount > 4) groups)) $ invalidArgs [\"Epic Machinations requires Past, Present and Future groups of one to four investigators.\"]\n  now <- liftIO getCurrentTime\n  -- A single random per-event seed"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "        difficulty\n        includeTarotReadings",
+    "        (fromMaybe difficulty grp.groupDifficulty)\n        includeTarotReadings"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "data CreateEventGroupPost = CreateEventGroupPost\n  { name :: Text\n  , playerCount :: Int\n  }",
+    "data CreateEventGroupPost = CreateEventGroupPost\n  { name :: Text\n  , playerCount :: Int\n  , groupDifficulty :: Maybe Difficulty\n  }"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "    Nothing -> forceNativeEventTimeUp eid",
+    "    Nothing -> forceMachinationsEventTimeUp eid\n\nforceMachinationsEventTimeUp :: ArkhamEpicEventId -> Handler ()\nforceMachinationsEventTimeUp eid = do\n  machinations <- runDB $ ChronicleMachinations.expireMachinations eid\n  case machinations of\n    Just updates -> for_ updates \\(gid, game) -> publishToRoom gid $ GameUpdate $ PublicGame gid (arkhamGameName game) [] (arkhamGameCurrentData game)\n    Nothing -> forceNativeEventTimeUp eid"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "difficulty `notElem` [Standard, Hard] || any",
+    "difficulty `notElem` [Standard, Hard] || any (\\g -> fromMaybe difficulty g.groupDifficulty /= difficulty) groups || any"
+  ]
+]

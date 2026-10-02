@@ -30,7 +30,7 @@ export default defineConfig({
       workbox: {
         // The app shell, fonts and card data are precached; card art is cached
         // as it is seen, so a played scenario keeps working offline.
-        globPatterns: ["**/*.{js,css,html,svg,ttf,png,webmanifest}"],
+        globPatterns: ["**/*.{js,css,html,svg,ttf,png,webmanifest,json}"],
         globIgnores: ["**/art/**"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",

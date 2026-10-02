@@ -12,6 +12,9 @@ import "./chaos-bag.css";
 import "./premium-table.css";
 import "./chaos-draw.css";
 import "./additions.css";
+import "./catalog.css";
+import "./collection.css";
+import "./expanded-play.css";
 import { registerOfflineShell } from "./pwa";
 // Installable shell; an available update waits for the player to save/refresh.
 registerOfflineShell();

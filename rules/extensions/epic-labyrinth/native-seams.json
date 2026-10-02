@@ -1,0 +1,22 @@
+[
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "import Arkham.Game.Base as X",
+    "import Arkham.Game.Base as X\nimport Arkham.Homebrew.EpicLabyrinth.Gate qualified as EpicLabyrinthGate"
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "        go msg\n",
+    "        go $ EpicLabyrinthGate.gateMessage g msg\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Helpers/Location.hs",
+    "module Arkham.Helpers.Location where",
+    "module Arkham.Helpers.Location where\n\nimport Arkham.Homebrew.EpicLabyrinth.GateConnections (filterGateConnections)"
+  ],
+  [
+    "arkham-api/library/Arkham/Helpers/Location.hs",
+    "  LocationMatchAny\n    <$> foldM applyModifier (filter keeps base <> directionalMatchers) modifiers",
+    "  connections <- LocationMatchAny\n    <$> foldM applyModifier (filter keeps base <> directionalMatchers) modifiers\n  filterGateConnections l connections"
+  ]
+]

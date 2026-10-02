@@ -1,0 +1,922 @@
+/* The companion uses Chronicle's existing physical table, brass and book type.
+   Every layout adjustment is scoped to this table; the Core game is unchanged. */
+.chronicle-companion-table {
+  --table-ink: #f1e7ce;
+  --table-muted: #bec6b6;
+  --table-rule: #c9ae7538;
+  color: var(--table-ink);
+  width: 100%;
+  box-sizing: border-box;
+}
+.chronicle-companion-table .game-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chronicle-companion-table .autosaved {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chronicle-companion-table .game-title {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.chronicle-companion-table .party-seats {
+  flex-wrap: wrap;
+}
+.chronicle-companion-table .seat {
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.chronicle-companion-table .seat-portrait {
+  display: block;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.chronicle-companion-table .seat-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 22% 30%;
+}
+.chronicle-companion-table .phase-track > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.chronicle-companion-table .phase-track > div > span {
+  opacity: 0.6;
+}
+.chronicle-companion-table .companion-surface {
+  grid-template-columns: 164px minmax(0, 1fr) 126px;
+  gap: 20px;
+  align-items: start;
+}
+.chronicle-companion-table
+  .companion-surface
+  :is(.companion-story-rail, .companion-supply) {
+  align-self: start;
+  justify-content: flex-start;
+}
+.chronicle-companion-table .companion-world {
+  min-width: 0;
+}
+.chronicle-companion-table .companion-location-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-top: 13px;
+  align-items: start;
+}
+.chronicle-companion-table .companion-location-map.with-native-layout {
+  grid-template-columns: repeat(var(--companion-columns), minmax(0, 1fr));
+}
+.chronicle-companion-table .companion-location {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #a2af8933;
+  border-radius: 7px;
+  background: #12251b36;
+}
+.chronicle-companion-table .companion-location.current {
+  border-color: #dac27eb3;
+  background: #b7a16410;
+  box-shadow: inset 0 0 0 2px #d2b36c12;
+}
+.chronicle-companion-table .companion-location-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: #c5c9b2;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+.chronicle-companion-table .current .companion-location-heading {
+  color: #efcc88;
+}
+.chronicle-companion-table .companion-card {
+  min-width: 0;
+  width: 125px;
+  margin: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.chronicle-companion-table .companion-card.landscape {
+  width: 100%;
+}
+.chronicle-companion-table .companion-card > .hover-trigger {
+  display: block;
+  width: 100%;
+}
+.chronicle-companion-table .companion-card .card-face {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 5 / 7;
+  margin: 0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px #0004;
+}
+.chronicle-companion-table .companion-card.landscape .card-face {
+  aspect-ratio: 7 / 5;
+}
+.chronicle-companion-table .companion-card .card-face.official-scan img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: absolute;
+  inset: 0;
+}
+.chronicle-companion-table .companion-card .card-face .scan-caption {
+  display: none;
+}
+.chronicle-companion-table .companion-card .card-face.compact .card-inner {
+  font-size: 9px;
+}
+.chronicle-companion-table .companion-card .card-copy h3 {
+  font-size: 19px;
+}
+.chronicle-companion-table .companion-card figcaption {
+  color: #e5dbc1;
+  text-align: center;
+  font-family: var(--font-reading);
+  font-size: 13px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.chronicle-companion-table .companion-card.exhausted > .hover-trigger {
+  transform: rotate(7deg);
+  transform-origin: 50% 65%;
+  margin-bottom: 8px;
+  opacity: 0.82;
+}
+.chronicle-companion-table .companion-reverse {
+  color: var(--table-ink);
+  background: #20362a;
+}
+.chronicle-companion-table .companion-reverse:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.chronicle-companion-table .companion-reverse .table-card-fallback {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.chronicle-companion-table .companion-facedown {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+}
+.chronicle-companion-table .companion-facedown img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 5px;
+}
+.chronicle-companion-table .companion-counters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  min-height: 4px;
+}
+.chronicle-companion-table .companion-enemy-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px 7px;
+  font-size: 10px;
+  color: #e1d4b7;
+}
+.chronicle-companion-table .companion-state-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #c3b2733f;
+  border-radius: 4px;
+  background: #14241dd9;
+  padding: 2px 5px;
+  font-size: 10px;
+  color: #e4d8b7;
+}
+.chronicle-companion-table .companion-inhabitants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+.chronicle-companion-table .companion-inhabitants button {
+  font: 12px var(--font-reading);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #e6d6ac;
+  background: #b99b601a;
+  border: 1px solid #b99b604d;
+  border-radius: 4px;
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.chronicle-companion-table .companion-connections {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  color: #bdc5b0;
+  font-size: 11px;
+  margin: 7px 0 0;
+  line-height: 1.2;
+}
+.chronicle-companion-table .companion-connections svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.chronicle-companion-table .companion-connections summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.chronicle-companion-table .companion-connections details > span {
+  display: block;
+  margin-top: 5px;
+}
+.chronicle-companion-table .companion-location > .companion-card {
+  width: min(145px, 100%);
+  margin: auto;
+}
+.chronicle-companion-table .companion-location-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  border-top: 1px solid var(--table-rule);
+  padding-top: 9px;
+}
+.chronicle-companion-table .companion-location-cards > .companion-card {
+  width: 88px;
+}
+.chronicle-companion-table
+  .companion-location-cards
+  .companion-card
+  .card-copy
+  h3 {
+  font-size: 15px;
+}
+.chronicle-companion-table
+  .companion-location-cards
+  .companion-card
+  figcaption {
+  font-size: 11px;
+}
+.chronicle-companion-table .companion-sniffed {
+  display: block;
+  width: fit-content;
+  margin: 6px auto;
+  color: #ecd496;
+}
+.chronicle-companion-table .companion-card-row {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 15px;
+  min-width: 0;
+}
+.chronicle-companion-table .companion-attachments {
+  font-size: 11px;
+  color: #cfc7ae;
+}
+.chronicle-companion-table .companion-attachments summary {
+  cursor: pointer;
+  text-align: center;
+  padding: 3px 0;
+}
+.chronicle-companion-table .companion-attachments .companion-card-row {
+  gap: 7px;
+  padding-top: 5px;
+}
+.chronicle-companion-table .companion-attachments .companion-card {
+  width: 80px;
+}
+.chronicle-companion-table .companion-story-rail {
+  gap: 12px;
+}
+.chronicle-companion-table .companion-story-rail > .companion-card {
+  width: 100%;
+}
+.chronicle-companion-table .companion-story-rail .story-progress {
+  display: flex;
+  gap: 7px;
+  font-size: 12px;
+}
+.chronicle-companion-table .companion-supply {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chronicle-companion-table .companion-encounter-deck {
+  margin-top: 4px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.chronicle-companion-table .companion-encounter-deck > img {
+  width: 85px;
+  border-radius: 5px;
+  box-shadow:
+    2px 2px #b3aa8966,
+    4px 4px #13241e,
+    6px 6px #b3aa894d;
+}
+.chronicle-companion-table .companion-supply .discard-pile {
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #d6d1b7;
+  background: transparent;
+  border: 1px dashed #9a9b7859;
+  border-radius: 5px;
+}
+.chronicle-companion-table .companion-supply .chaos-bag-button {
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+.chronicle-companion-table .companion-supply .chaos-bag-button > img {
+  height: 80px;
+  width: 80px;
+  object-fit: contain;
+}
+.chronicle-companion-table .companion-supply .chaos-bag-button small {
+  display: block;
+  text-align: center;
+}
+.chronicle-companion-table .companion-supply .victory-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.chronicle-companion-table .companion-drawn-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--table-rule);
+}
+.chronicle-companion-table .companion-investigator {
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 20px;
+}
+.chronicle-companion-table .companion-investigator .investigator-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.chronicle-companion-table .companion-investigator .mat-heading {
+  width: 100%;
+  margin: 0;
+}
+.chronicle-companion-table
+  .companion-investigator
+  .investigator-identity
+  > .companion-card {
+  width: 100%;
+}
+.chronicle-companion-table .companion-investigator .skill-stats {
+  width: 100%;
+  justify-content: center;
+}
+.chronicle-companion-table .companion-vitals {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  font-size: 13px;
+}
+.chronicle-companion-table .companion-stat-basis {
+  text-align: center;
+  font-size: 10px;
+  color: #b5bda4;
+}
+.chronicle-companion-table .companion-action-pips {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.chronicle-companion-table .companion-action-pips i {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #c8b27b;
+  transform: rotate(45deg);
+}
+.chronicle-companion-table .companion-action-pips i.filled {
+  background: #dcc485;
+}
+.chronicle-companion-table .companion-action-pips span {
+  padding-left: 6px;
+  font-size: 12px;
+}
+.chronicle-companion-table .companion-modifiers {
+  width: 100%;
+  font-size: 12px;
+  color: #c5cbb7;
+}
+.chronicle-companion-table .companion-modifiers span {
+  display: block;
+  margin: 3px 0;
+}
+.chronicle-companion-table .companion-other-zone,
+.chronicle-companion-table .companion-threats,
+.chronicle-companion-table .companion-hand {
+  margin-top: 16px;
+}
+.chronicle-companion-table .companion-threats {
+  border-top: 1px solid #b49e6d40;
+  padding-top: 12px;
+}
+.chronicle-companion-table .companion-hand .zone-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chronicle-companion-table .companion-hand .zone-heading > h3 {
+  margin-right: auto;
+}
+.chronicle-companion-table .companion-hand-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 5px 4px 12px;
+  scrollbar-color: #ad976450 #15261e;
+  scrollbar-width: thin;
+}
+.chronicle-companion-table .companion-hand-row > .companion-card {
+  flex: 0 0 125px;
+}
+.chronicle-companion-table .companion-test {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid #c1ad784f;
+  background: #213128;
+  border-radius: 7px;
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+.chronicle-companion-table .companion-test h3 {
+  margin: 0;
+  color: #f0d99d;
+}
+.chronicle-companion-table .companion-test > div {
+  display: flex;
+  gap: 6px;
+}
+.chronicle-companion-table .companion-test .companion-card {
+  width: 65px;
+}
+.chronicle-companion-table .companion-checkpoint {
+  margin-top: 16px;
+  border: 1px solid #ceb77961;
+  border-radius: 8px;
+  background: linear-gradient(115deg, #2a3d2f, #1b2d24);
+  box-shadow: inset 0 0 0 3px #e2c68108;
+  padding: 18px;
+}
+.chronicle-companion-table .companion-checkpoint h2 {
+  font: 30px/1.05 var(--font-display);
+  color: #f2dfaf;
+  margin: 0 0 12px;
+}
+.chronicle-companion-table .companion-decision-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chronicle-companion-table .companion-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.chronicle-companion-table .companion-choice {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.chronicle-companion-table .companion-choice .button {
+  text-align: left;
+  gap: 7px;
+}
+.chronicle-companion-table .companion-choice .button small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+.chronicle-companion-table .companion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 8px;
+}
+.chronicle-companion-table .companion-field {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 16px;
+}
+.chronicle-companion-table .companion-field :is(input, select, textarea) {
+  border: 1px solid #b7a97966;
+  border-radius: 4px;
+  padding: 7px 10px;
+  background: #101e19;
+  color: #eadfc4;
+  font: 16px var(--font-reading);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.chronicle-companion-table .companion-field input[type="number"] {
+  width: 90px;
+}
+.chronicle-companion-table .companion-field :is(input[type="url"], textarea) {
+  flex: 1 1 250px;
+}
+.chronicle-companion-table .companion-decision fieldset {
+  min-width: 0;
+  border: 1px solid #b8ad7840;
+  border-radius: 5px;
+  padding: 12px;
+}
+.chronicle-companion-table .companion-decision legend {
+  color: #dbc694;
+  padding: 0 6px;
+  font-family: var(--font-reading);
+}
+.chronicle-companion-table .companion-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 5px 0 12px;
+  color: #e8d09c;
+}
+.chronicle-companion-table .companion-cost {
+  font-size: 12px;
+  color: #d5c398;
+  align-self: center;
+}
+.chronicle-companion-table .companion-narrative {
+  max-width: 850px;
+  font: 19px/1.55 var(--font-reading);
+}
+.chronicle-companion-table .companion-narrative p {
+  margin: 9px 0;
+}
+.chronicle-companion-table .companion-narrative h3 {
+  font: 27px var(--font-display);
+}
+.chronicle-companion-table .companion-spirit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 12px;
+}
+.chronicle-companion-table .companion-spirit-grid .card-face {
+  width: 100%;
+}
+.chronicle-companion-table .companion-read-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+}
+.chronicle-companion-table .companion-waiting {
+  margin: 0;
+  font-size: 15px;
+  color: #c4cfb7;
+}
+.chronicle-companion-table .companion-empty {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #c3c8af;
+  font-style: italic;
+}
+.chronicle-companion-table .companion-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #ac6653;
+  padding: 10px 15px;
+  border-radius: 6px;
+  background: #4f292833;
+}
+.chronicle-companion-table .companion-error p {
+  margin: 0;
+}
+.chronicle-companion-table .companion-loading,
+.chronicle-companion-table .companion-ended {
+  padding: 24px;
+  text-align: center;
+  font-size: 20px;
+  color: #ead7a6;
+}
+.companion-modal-content .companion-card-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+.companion-modal-content .companion-card {
+  width: 150px;
+  margin: 0;
+}
+.companion-modal-content .companion-card .card-face {
+  width: 100%;
+}
+.companion-modal-content .companion-card figcaption {
+  text-align: center;
+  font-family: var(--font-reading);
+  font-size: 14px;
+}
+.companion-modal-content .companion-card .companion-counters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+.companion-bag-contents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px 0;
+}
+.companion-native-detail {
+  margin: 0 auto;
+  width: min(100%, 340px);
+  color: var(--table-ink);
+  text-align: center;
+  font-family: var(--font-reading);
+}
+.companion-native-detail img {
+  display: block;
+  width: 100%;
+  max-height: 70dvh;
+  object-fit: contain;
+  border-radius: 7px;
+}
+.companion-native-detail figcaption {
+  margin-top: 12px;
+  font-size: 20px;
+}
+.companion-native-art-missing {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  background: #183329;
+  color: #e8d6ac;
+  border: 1px solid #c7ae754d;
+}
+.companion-log {
+  font: 18px/1.55 var(--font-reading);
+  padding-left: 22px;
+}
+.companion-log li {
+  padding: 6px 0;
+}
+.chronicle-companion-table
+  :is(button, summary, input, select, textarea):focus-visible {
+  outline: 2px solid #e6ca82;
+  outline-offset: 3px;
+}
+@media (min-width: 1600px) {
+  .chronicle-companion-table .companion-location-map {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .chronicle-companion-table .companion-location > .companion-card {
+    width: 160px;
+  }
+}
+@media (max-width: 1100px) {
+  .chronicle-companion-table .companion-surface {
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .chronicle-companion-table .companion-supply {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    border-top: 1px solid var(--table-rule);
+    padding-top: 12px;
+  }
+  .chronicle-companion-table .companion-supply > .table-zone-label {
+    grid-column: 1 / -1;
+  }
+  .chronicle-companion-table .companion-encounter-deck > img {
+    width: 55px;
+  }
+  .chronicle-companion-table .companion-investigator {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .chronicle-companion-table .companion-investigator .mat-assets {
+    padding-left: 14px;
+  }
+}
+@media (max-width: 650px) {
+  .chronicle-companion-table.game-page {
+    padding: 12px 9px;
+  }
+  .chronicle-companion-table .game-title h1 {
+    font-size: 32px;
+  }
+  .chronicle-companion-table .game-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .chronicle-companion-table .autosaved {
+    margin-right: auto;
+    font-size: 11px;
+  }
+  .chronicle-companion-table .party-seats {
+    gap: 6px;
+  }
+  .chronicle-companion-table .seat {
+    flex: 1 1 140px;
+    min-height: 56px;
+    padding: 5px;
+    gap: 7px;
+  }
+  .chronicle-companion-table .seat-portrait {
+    width: 29px;
+    height: 39px;
+  }
+  .chronicle-companion-table .seat-copy > strong {
+    font-size: 20px;
+  }
+  .chronicle-companion-table .seat-copy > small {
+    font-size: 7px;
+  }
+  .chronicle-companion-table .seat-copy > span {
+    font-size: 10px;
+  }
+  .chronicle-companion-table .seat-number {
+    display: none;
+  }
+  .chronicle-companion-table .phase-track > div {
+    padding: 7px 5px;
+    font-size: 9px;
+    justify-content: center;
+  }
+  .chronicle-companion-table .table-main {
+    padding: 10px;
+  }
+  .chronicle-companion-table .companion-surface {
+    display: flex;
+    flex-direction: column;
+  }
+  .chronicle-companion-table .companion-story-rail {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .chronicle-companion-table .companion-story-rail > .table-zone-label {
+    flex-basis: 100%;
+  }
+  .chronicle-companion-table .companion-story-rail .story-pile {
+    width: calc(50% - 6px);
+  }
+  .chronicle-companion-table .companion-story-rail > .companion-card {
+    width: 100px;
+  }
+  .chronicle-companion-table .companion-story-rail .story-progress {
+    flex: 1 1 40%;
+  }
+  .chronicle-companion-table .companion-location-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .chronicle-companion-table .companion-location {
+    padding: 7px;
+  }
+  .chronicle-companion-table .companion-location-heading {
+    font-size: 7px;
+    flex-wrap: wrap;
+  }
+  .chronicle-companion-table .companion-location > .companion-card {
+    width: 100%;
+  }
+  .chronicle-companion-table .companion-location-cards > .companion-card {
+    width: 75px;
+  }
+  .chronicle-companion-table .companion-supply {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .chronicle-companion-table .companion-supply .victory-button {
+    grid-column: 1 / 3;
+  }
+  .chronicle-companion-table .companion-investigator {
+    display: block;
+  }
+  .chronicle-companion-table .companion-investigator .investigator-identity {
+    width: 220px;
+    max-width: 100%;
+    margin: 0 auto 15px;
+  }
+  .chronicle-companion-table .companion-investigator .mat-assets {
+    padding: 13px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--table-rule);
+  }
+  .chronicle-companion-table .companion-card-row {
+    gap: 10px;
+  }
+  .chronicle-companion-table .companion-card-row > .companion-card {
+    width: 110px;
+  }
+  .chronicle-companion-table .companion-hand-row > .companion-card {
+    flex-basis: 110px;
+  }
+  .chronicle-companion-table .companion-checkpoint {
+    padding: 14px 10px;
+  }
+  .chronicle-companion-table .companion-checkpoint h2 {
+    font-size: 27px;
+  }
+  .chronicle-companion-table .zone-heading {
+    flex-wrap: wrap;
+  }
+  .chronicle-companion-table .companion-test {
+    padding: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chronicle-companion-table *,
+  .chronicle-companion-table *::before,
+  .chronicle-companion-table *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 650px) {
+  .chronicle-companion-table .companion-location-map.with-native-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .chronicle-companion-table
+    .companion-location-map.with-native-layout
+    > .companion-location {
+    grid-area: auto !important;
+  }
+  .chronicle-companion-table .companion-choice {
+    width: 100%;
+  }
+  .chronicle-companion-table .companion-choice > .button:first-child {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .chronicle-companion-table .companion-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .chronicle-companion-table .companion-field :is(input[type="url"], textarea) {
+    flex: 0 1 auto;
+    width: 100%;
+  }
+  .chronicle-companion-table .companion-decision .button {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

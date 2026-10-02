@@ -48,27 +48,23 @@ import {
   resetTutorial,
   tutorialPending,
 } from "./components/Tutorial";
-import { Archive, Investigators } from "./components/Archive";
-import {
-  Button,
-  CardDetail,
-  Modal,
-  Sigil,
-  SkillStats,
-} from "./components/Common";
+import { Archive } from "./components/Archive";
+import { InvestigatorLibrary } from "./components/InvestigatorLibrary";
+import { ExpandedPlay } from "./components/ExpandedPlay";
+import { catalog } from "./game/catalog";
+import { Button, CardDetail, Modal, Sigil } from "./components/Common";
 import { ChaosBagPreview } from "./components/ChaosBagPreview";
 import { CardPreviewLayer } from "./components/Previews";
 import { InvestigationAbility } from "./components/InvestigationAbility";
 import { Home } from "./components/Home";
 import { Game } from "./components/Game";
 import { EventController, EventJournal } from "./components/Events";
-import { card, CARD_ART, PLAYABLE_INVESTIGATORS } from "./game/data";
-import { availableCards } from "./game/knowledge";
+import { card } from "./game/data";
 import {
   readMotionPreference,
   type MotionPreference,
 } from "./components/Motion";
-type Page = "home" | "investigators" | "archive" | "guide" | "game";
+type Page = "home" | "investigators" | "archive" | "guide" | "game" | "expanded";
 function readTempoPreference(): Tempo {
   try {
     const value = localStorage.getItem("arkham-chronicle:tempo");
@@ -194,7 +190,9 @@ export default function App() {
     getUpdateAvailable,
     () => false,
   );
-  const [page, setPage] = useState<Page>("home");
+  const [page, setPage] = useState<Page>(() => window.location.hash.startsWith("#investigation=") ? "expanded" : "home");
+  const [companionTableOpen, setCompanionTableOpen] = useState(false);
+  const [expandedInvestigator, setExpandedInvestigator] = useState<string>();
   const [game, setGameState] = useState<GameState | null>(readSave);
   const gameRef = useRef<GameState | null>(null);
   const undoStack = useRef<GameState[]>([]);
@@ -224,6 +222,7 @@ export default function App() {
     audio.setEffects(effects);
   }, [effects]);
   const [inspect, setInspect] = useState<string | null>(null);
+  const [inspectCatalog, setInspectCatalog] = useState(false);
   const [inspectAssetId, setInspectAssetId] = useState<string | null>(null);
   const [setup, setSetup] = useState(false);
   const [selectedInvestigators, setSelectedInvestigators] = useState<string[]>([
@@ -256,6 +255,8 @@ export default function App() {
   const [saveFailed, setSaveFailed] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const navigate = (p: Page) => {
+    if (p !== "expanded" && window.location.hash.startsWith("#investigation="))
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     setPage(p);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -323,7 +324,14 @@ export default function App() {
     window.render_game_to_text = () =>
       JSON.stringify({
         page,
-        ...(game
+        collection: {
+          cards: catalog.counts.cardCount,
+          products: catalog.counts.productCount,
+          investigatorVersions: catalog.counts.investigatorCount,
+        },
+        ...(page === "expanded"
+          ? { status: "companion rules table", available: "Content availability follows the connected rules engine" }
+          : game
           ? gameSummary(game)
           : {
               status: "campaign selection",
@@ -404,12 +412,13 @@ export default function App() {
   const onStart = () => setSetup(true);
   const navItems: [Page, string, typeof Compass][] = [
     ["home", "Campaigns", Compass],
+    ["expanded", "Expansions & campaigns", GraduationCap],
     ["investigators", "Investigator files", UsersThree],
     ["archive", "Card archive", Stack],
     ["guide", "Field guide", BookOpenText],
   ];
   return (
-    <div className={`app ${page === "game" ? "in-game" : ""}`}>
+    <div className={`app ${page === "game" || page === "expanded" && companionTableOpen ? "in-game" : ""}`}>
       <CardPreviewLayer game={game} page={page} dispatch={dispatch} />
       <aside className="sidebar">
         <button
@@ -435,7 +444,9 @@ export default function App() {
             >
               <Icon size={20} weight="light" />
               <span>{label}</span>
-              {id === "archive" && <small>{availableCards(game).length}</small>}
+              {id === "archive" && (
+                <small>{catalog.counts.cardCount.toLocaleString()}</small>
+              )}
             </button>
           ))}
           {game && (
@@ -499,8 +510,10 @@ export default function App() {
                   ? "Your investigation"
                   : page === "archive"
                     ? "Card archive"
-                    : page === "guide"
+                : page === "guide"
                       ? "Field guide"
+                      : page === "expanded"
+                        ? "Expansions & campaigns"
                       : "Investigator files"}
             </span>
           </div>
@@ -537,10 +550,31 @@ export default function App() {
             }
           />
         )}{" "}
-        {page === "archive" && <Archive game={game} inspect={setInspect} />}{" "}
-        {page === "investigators" && (
-          <Investigators inspect={setInspect} onStart={onStart} />
+        {page === "archive" && (
+          <Archive
+            game={game}
+            inspect={(code, spoilers = false) => {
+              setInspectCatalog(spoilers);
+              setInspect(code);
+            }}
+          />
         )}{" "}
+        {page === "investigators" && (
+          <InvestigatorLibrary
+            inspect={setInspect}
+            onExpandedPlay={(code) => {
+              setExpandedInvestigator(code);
+              navigate("expanded");
+            }}
+            onStart={(code) => {
+              if (code) setSelectedInvestigators([code]);
+              onStart();
+            }}
+          />
+        )}{" "}
+        {page === "expanded" && (
+          <ExpandedPlay investigatorCode={expandedInvestigator} inspect={setInspect} onTableOpen={setCompanionTableOpen} />
+        )}
         {page === "guide" && <Guide />}{" "}
         {page === "game" && game && (
           <Game
@@ -620,67 +654,23 @@ export default function App() {
                 Control every investigator yourself. Choose one for true solo,
                 or two or three for a shared hot-seat investigation.
               </p>
-              <div className="party-choices">
-                {PLAYABLE_INVESTIGATORS.map((c) => {
-                  const investigator = card(c),
-                    selected = selectedInvestigators.includes(c);
-                  return (
-                    <button
-                      key={c}
-                      data-preview-code={c}
-                      className={`investigator-choice ${investigator.faction_code} ${selected ? "selected" : ""}`}
-                      aria-pressed={selected}
-                      disabled={!selected && selectedInvestigators.length >= 3}
-                      aria-label={`Select ${investigator.name}`}
-                      onClick={() =>
-                        setSelectedInvestigators((current) =>
-                          current.includes(c)
-                            ? current.length > 1
-                              ? current.filter((x) => x !== c)
-                              : current
-                            : current.length < 3
-                              ? [...current, c]
-                              : current,
-                        )
-                      }
-                    >
-                      <img
-                        src={CARD_ART[c]}
-                        alt={investigator.name}
-                        decoding="async"
-                      />
-                      <span className="choice-check">
-                        {selected ? (
-                          <CheckCircle size={19} weight="fill" />
-                        ) : (
-                          <span />
-                        )}
-                      </span>
-                      <span className="choice-details">
-                        <small>
-                          {investigator.faction_code} ·{" "}
-                          {
-                            {
-                              "12004": "Clues & combat",
-                              "12001": "Protection & combat",
-                              "12007": "Evasion & clues",
-                              "12010": "Spells & sleight of hand",
-                              "12013": "Grit & twin pistols",
-                            }[c]
-                          }
-                        </small>
-                        <strong>{investigator.name}</strong>
-                        <span>
-                          {selected && selectedInvestigators[0] === c
-                            ? "Lead investigator · "
-                            : ""}
-                          33-card official starter
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <InvestigatorLibrary
+                compact
+                selectedInvestigators={selectedInvestigators}
+                maxSelected={3}
+                inspect={setInspect}
+                onToggleInvestigator={(code) =>
+                  setSelectedInvestigators((current) =>
+                    current.includes(code)
+                      ? current.length > 1
+                        ? current.filter((c) => c !== code)
+                        : current
+                      : current.length < 3
+                        ? [...current, code]
+                        : current,
+                  )
+                }
+              />
               {selectedInvestigators.length > 1 && (
                 <label className="lead-picker">
                   Lead investigator{" "}
@@ -1039,7 +1029,7 @@ export default function App() {
             <p>
               Spreading Flames · Joe, Daniela, Trish, Dexter and Isabelle
               <br />
-              Card data snapshot · 23 September 2026
+              Collection snapshot · 30 September 2026
             </p>
           </div>
         </Modal>
@@ -1047,6 +1037,7 @@ export default function App() {
       {inspect && (
         <CardDetail
           code={inspect}
+          allowSpoilers={page === "archive" && inspectCatalog}
           game={game}
           onClose={() => {
             setInspect(null);

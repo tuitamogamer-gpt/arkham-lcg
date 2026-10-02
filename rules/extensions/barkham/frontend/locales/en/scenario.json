@@ -1,0 +1,15 @@
+{
+  "theMeddlingOfMeowlathotep": {
+    "title": "The Meddling of Meowlathotep",
+    "resolutions": {
+      "resolution1": {
+        "title": "Resolution 1 — Foiled by Dogs!",
+        "body": "<p>The investigators defeat Meowlathotep and stop the feline plot. Barkham is safe to explore, sniff and enjoy again.</p>"
+      },
+      "resolution2": {
+        "title": "Resolution 2 — Ancient Hisstory",
+        "body": "<p>The feline conspiracy succeeds before the investigators can stop it. Meowlathotep and the cats claim Barkham.</p>"
+      }
+    }
+  }
+}

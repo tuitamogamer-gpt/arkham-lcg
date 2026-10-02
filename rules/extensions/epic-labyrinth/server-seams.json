@@ -1,0 +1,113 @@
+[
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "import Api.Arkham.Helpers",
+    "import Api.Arkham.Helpers\nimport Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "rejectOrganizerGate $ runDB $ atomicallyWithGame gameId",
+    "rejectOrganizerGate $ runDB $ ChronicleLabyrinth.lockLabyrinthGames gameId >> atomicallyWithGame gameId"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "        let\n          messages =\n",
+    "        labyrinthSync <- ChronicleLabyrinth.labyrinthReplicaMessages gameId\n        let\n          messages =\n"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "queueRef <- newQueue ((ClearUI : syncMsgs <> messages) <> currentQueue)",
+    "queueRef <- newQueue ((ClearUI : labyrinthSync <> syncMsgs <> messages) <> currentQueue)"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "        ge <- readIORef gameRef\n        let diffDown",
+    "        ChronicleLabyrinth.reconcileLabyrinth gameId gameRef queueRef\n        ge <- readIORef gameRef\n        let diffDown"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "  when actAdvanced $ setGameUndoFloor gameId arkhamGameStep",
+    "  when actAdvanced $ setGameUndoFloor gameId arkhamGameStep\n  participants <- runDB $ ChronicleLabyrinth.labyrinthParticipantIds gameId\n  for_ (filter (/= gameId) participants) \\gid -> do\n    updated <- runDB $ P.getJust gid\n    publishToRoom gid $ GameUpdate $ PublicGame gid updated.arkhamGameName [] updated.arkhamGameCurrentData"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "import Api.Arkham.Helpers",
+    "import Api.Arkham.Helpers\nimport Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "  lockGame gameId\n",
+    "  ChronicleLabyrinth.lockLabyrinthGames gameId\n  lockGame gameId\n",
+    {
+      "occurrences": 3
+    }
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "  lift do\n    -- The step-deletion trigger only permits deleting steps greater than the",
+    "  -- Validate the whole native inverse before restoring any coupled groups.\n  -- ExceptT failures otherwise leave earlier SQL writes committed.\n  let chronicleUndoPatch = foldMap (choicePatchDown . arkhamStepChoice . entityVal) steps\n  void $ case patchValueWithRecovery rawGame.currentData chronicleUndoPatch of\n    Error problem -> throwError $ jsonError $ T.pack problem\n    Success value -> case fromJSON @Game value of\n      Error problem -> throwError $ jsonError $ T.pack problem\n      Success game -> pure game\n  lift $ for_ steps \\(Entity _ step) -> ChronicleLabyrinth.undoLabyrinthStep gameId (arkhamStepStep step)\n  lift do\n    -- The step-deletion trigger only permits deleting steps greater than the"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "  now <- liftIO getCurrentTime\n  -- A single random per-event seed",
+    "  when (scenarioId == \"70001\" && (length groups /= 3 || difficulty `notElem` [Standard, Hard] || any (\\g -> g.playerCount < 1 || g.playerCount > 4) groups)) $ invalidArgs [\"Epic Labyrinth requires three groups of one to four investigators, on Standard or Hard.\"]\n  now <- liftIO getCurrentTime\n  -- A single random per-event seed"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "import Arkham.Difficulty (Difficulty)",
+    "import Arkham.Difficulty (Difficulty (..))"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "              plan <- revertShared",
+    "              ChronicleLabyrinth.undoLabyrinthStep gameId n\n              plan <- revertShared"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "          revertShared\n",
+    "          ChronicleLabyrinth.undoLabyrinthStep gameId n\n          revertShared\n"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "  participants <- runDB $ ChronicleLabyrinth.labyrinthParticipantIds gameId",
+    "  clockState <- runDB $ ChronicleLabyrinth.labyrinthSharedSnapshot gameId\n  for_ clockState \\(eid, shared) -> broadcastSharedToEvent eid shared\n  participants <- runDB $ ChronicleLabyrinth.labyrinthParticipantIds gameId"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "import Api.Arkham.Helpers",
+    "import Api.Arkham.Helpers\nimport Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "setSharedCounter TimeLimitMinutes (fromMaybe 180 timeLimitMinutes)",
+    "setSharedCounter TimeLimitMinutes (fromMaybe (if scenarioId == \"70001\" then 60 else 180) timeLimitMinutes)"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "forceEventTimeUp eid = do\n  gameIds <-",
+    "forceEventTimeUp eid = do\n  labyrinth <- runDB $ ChronicleLabyrinth.expireLabyrinth eid\n  case labyrinth of\n    Just updates -> for_ updates \\(gid, game) -> publishToRoom gid $ GameUpdate $ PublicGame gid (arkhamGameName game) [] (arkhamGameCurrentData game)\n    Nothing -> forceNativeEventTimeUp eid\n\nforceNativeEventTimeUp :: ArkhamEpicEventId -> Handler ()\nforceNativeEventTimeUp eid = do\n  gameIds <-"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "import Api.Handler.Arkham.Games.Shared (propagateShared, publishToRoom)",
+    "import Api.Handler.Arkham.Games.Shared (broadcastSharedToEvent, propagateShared, publishToRoom)"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Undo.hs",
+    "      for_ mPropagate \\(eid, shared) -> propagateShared eid (Just gameId) shared",
+    "      for_ mPropagate \\(eid, shared) -> propagateShared eid (Just gameId) shared\n      chronicleClock <- runDB $ ChronicleLabyrinth.labyrinthSharedSnapshot gameId\n      for_ chronicleClock \\(eid, shared) -> broadcastSharedToEvent eid shared\n      chronicleParticipants <- runDB $ ChronicleLabyrinth.labyrinthParticipantIds gameId\n      for_ (filter (/= gameId) chronicleParticipants) \\gid -> do\n        restored <- runDB $ get404 gid\n        publishToRoom gid $ GameUpdate $ PublicGame gid restored.arkhamGameName [] restored.arkhamGameCurrentData",
+    {
+      "occurrences": 2
+    }
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "  propagateShared,\n",
+    "  propagateShared,\n  publishToRoom,\n"
+  ],
+  [
+    "arkham-api/library/Api/Handler/Arkham/Events.hs",
+    "import Arkham.Game (\n  Game,\n",
+    "import Arkham.Game (\n  Game,\n  PublicGame (..),\n"
+  ]
+]

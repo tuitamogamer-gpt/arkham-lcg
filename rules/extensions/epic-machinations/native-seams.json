@@ -1,0 +1,12 @@
+[
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "import Arkham.Game.Base as X",
+    "import Arkham.Game.Base as X\nimport Arkham.Homebrew.EpicMachinations.Gate qualified as EpicMachinationsGate"
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "        go $ EpicLabyrinthGate.gateMessage g msg\n",
+    "        go $ EpicMachinationsGate.gateMachinationsMessage g $ EpicLabyrinthGate.gateMessage g msg\n"
+  ]
+]

@@ -1,4 +1,4 @@
-import { BAGS, CONNECTIONS, STARTER_DECKS, card, code } from "./data";
+import { BAGS, CONNECTIONS, STARTER_DECKS, card, cards as nativeCards, code } from "./data";
 import {
   ANY_WINDOW_EVENTS,
   BOOSTS,
@@ -40,6 +40,7 @@ import type {
 } from "./types";
 const SKILLS: Skill[] = ["willpower", "intellect", "combat", "agility"];
 const C = code;
+const nativeCardCodes = new Set(nativeCards.map(c => c.code));
 const eff = (kind: string, extra: Omit<Effect, "kind"> = {}): Effect => ({
   kind,
   ...extra,
@@ -4377,6 +4378,8 @@ export function canAct(
 export function canPlay(s: GameState, id: string): string | null {
   const c = handCard(s, id);
   if (!c) return "Card is not in your hand.";
+  if (!nativeCardCodes.has(c.code))
+    return "This card requires the companion rules engine. It has no script at this table.";
   const def = card(c.code);
   const inWindow = !!s.window;
   if (
@@ -4436,6 +4439,7 @@ export function commitValue(s: GameState, id: string) {
     c = committedCard(s, id);
   if (
     !c ||
+    !nativeCardCodes.has(c.code) ||
     !owner ||
     !s.test ||
     (!s.test.committed.includes(id) &&

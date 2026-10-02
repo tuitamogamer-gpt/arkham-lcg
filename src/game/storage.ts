@@ -1,5 +1,5 @@
 import type { Difficulty, GameState, VisibleEvent } from "./types";
-import { card, STARTER_DECKS } from "./data";
+import { card, cards as nativeCards, STARTER_DECKS } from "./data";
 import { SPREADING_FLAMES } from "./scenario";
 import { recordDiscoveries } from "./knowledge";
 // Legacy single-slot key from the first builds; migrated into a slot on load.
@@ -42,6 +42,9 @@ const flags = (x: unknown): boolean =>
 const token = (x: unknown): x is string =>
   typeof x === "string" &&
   /^(?:[+-]?\d|skull|tablet|elder_thing|auto_fail|elder_sign)$/.test(x);
+// A catalog definition is not a native engine script. Expanded games are saved
+// by the companion engine and cannot be imported into the Core reducer.
+const nativeCardCodes = new Set(nativeCards.map(c => c.code));
 const instances = (xs: unknown): boolean =>
   Array.isArray(xs) &&
   xs.every(
@@ -49,10 +52,10 @@ const instances = (xs: unknown): boolean =>
       record(c) &&
       identifier(c.id) &&
       typeof c.code === "string" &&
-      !!card(c.code),
+      nativeCardCodes.has(c.code),
   );
 const codes = (xs: unknown): boolean =>
-  Array.isArray(xs) && xs.every((c) => typeof c === "string" && !!card(c));
+  Array.isArray(xs) && xs.every((c) => typeof c === "string" && nativeCardCodes.has(c));
 const effects = (xs: unknown): boolean =>
   Array.isArray(xs) &&
   xs.length < 500 &&

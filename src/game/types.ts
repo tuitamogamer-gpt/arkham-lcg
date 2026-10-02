@@ -40,6 +40,21 @@ export interface Card {
   is_unique?: boolean;
   illustrator?: string;
   errata_date?: string;
+  pack_code?: string;
+  duplicate_of?: string;
+  imagesrc?: string;
+  backimagesrc?: string;
+  url?: string;
+  deck_limit?: number;
+  deck_requirements?: string;
+  deck_options?: unknown[];
+  faction2_code?: string;
+  faction3_code?: string;
+  double_sided?: boolean;
+  hidden?: boolean;
+  permanent?: boolean;
+  content_restriction?: string;
+  miniature?: boolean;
 }
 export interface Instance {
   id: string;

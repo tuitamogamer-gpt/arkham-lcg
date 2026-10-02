@@ -1,0 +1,1009 @@
+{
+  "source": "https://github.com/zzorba/arkhamdb-json-data",
+  "revision": "7ae21d7563ce9f68396c0d5e3a36f40f90fe1156",
+  "asOf": "2026-09-30",
+  "retrievedAt": "2026-09-30T09:05:43.939Z",
+  "counts": {
+    "packCount": 103,
+    "productCount": 116,
+    "cardCount": 6109,
+    "investigatorCount": 121,
+    "encounterSetCount": 388,
+    "starterDeckCount": 15,
+    "hiddenFaceCount": 341
+  },
+  "api": "https://arkhamdb.com/api/public/cards?encounter=1",
+  "apiCount": 5929,
+  "sourceFiles": [
+    {
+      "path": "pack/cob/cob.json",
+      "count": 119,
+      "sha256": "3426901acf9a1757fbbae91d0fbc3b657f65d3df6775007db2a10921e070d7fb"
+    },
+    {
+      "path": "pack/core/core_2026_encounter.json",
+      "count": 92,
+      "sha256": "b21eeab8bbadfdd2c200c1326dcc53c27c09d78329265073dcf0376493d8c2d7"
+    },
+    {
+      "path": "pack/core/core_2026.json",
+      "count": 104,
+      "sha256": "9fea63553cfa7d39d0063ea0e2c5cfeac70037b2c0958e412350af9b417bf299"
+    },
+    {
+      "path": "pack/core/core_encounter.json",
+      "count": 80,
+      "sha256": "9f73fc2dc9d2be604c07d139e3f78f57a663231e9fad3ba0d0b79d5664d1da31"
+    },
+    {
+      "path": "pack/core/core.json",
+      "count": 104,
+      "sha256": "5c7bc669790beabe51036a5ebbb21315f68b8207a9212ed9320228e6e695a79c"
+    },
+    {
+      "path": "pack/core/rcore.json",
+      "count": 116,
+      "sha256": "ea47f7ac27f901ad0df3c86e95cf39595bca84f08717f85305af16335f91ef4e"
+    },
+    {
+      "path": "pack/dwl/bota_encounter.json",
+      "count": 30,
+      "sha256": "75da4a6f8c7e777b3fbf77d994af5149c5701709798bc07e764ed5449ba13aa3"
+    },
+    {
+      "path": "pack/dwl/bota.json",
+      "count": 11,
+      "sha256": "f29a5e8b6dc95a6d87e5bd96af3c9bcecaa76dd5bb739adb2abad9915f1d1502"
+    },
+    {
+      "path": "pack/dwl/dwl_encounter.json",
+      "count": 65,
+      "sha256": "9b420cad4e688180234f79806b1c2a35d779ff726e082a597e2d3e18a945a5ad"
+    },
+    {
+      "path": "pack/dwl/dwl.json",
+      "count": 39,
+      "sha256": "3c23975295f0512fcded5cf2257d54b9865735cfb3d7f3b3130dc6fa6d18f923"
+    },
+    {
+      "path": "pack/dwl/litas_encounter.json",
+      "count": 23,
+      "sha256": "2211f2f89dbb537f26e53c75137164ff3af2f3af4b22491223ddbaf96ddd4cf2"
+    },
+    {
+      "path": "pack/dwl/litas.json",
+      "count": 12,
+      "sha256": "090e7a14b38a77fb9159ee68910755dcd719644e1e99c893b2362f9b50892f44"
+    },
+    {
+      "path": "pack/dwl/tece_encounter.json",
+      "count": 25,
+      "sha256": "9ef76d7387fa8b8fcf75128f41155d63c10ecdc5f87b6877a476075aa32a21ee"
+    },
+    {
+      "path": "pack/dwl/tece.json",
+      "count": 12,
+      "sha256": "685a91b1d90be7dc31a977a55b1a7c297e256147cfa843bb42ad8623370facba"
+    },
+    {
+      "path": "pack/dwl/tmm_encounter.json",
+      "count": 29,
+      "sha256": "feae6e3e84924d27d87e9d7811906de840b02f491eb3e6840f0d4d18bb9552c4"
+    },
+    {
+      "path": "pack/dwl/tmm.json",
+      "count": 13,
+      "sha256": "e659b37571b32a4c32f7aea0b0fe027e8567ecdace5ee57ed099045aa99d636e"
+    },
+    {
+      "path": "pack/dwl/uau_encounter.json",
+      "count": 24,
+      "sha256": "da298317b6b7f2a5707384b372815f16805f0bb1a8f36b4691e8caaddcefaa9a"
+    },
+    {
+      "path": "pack/dwl/uau.json",
+      "count": 11,
+      "sha256": "d6d21a22ceca606af3a1b78b6c1628f03b9d8e2db2ef5a466c51aacd7f5551b8"
+    },
+    {
+      "path": "pack/dwl/wda_encounter.json",
+      "count": 25,
+      "sha256": "46f63bfbc387cf38156a786c9a468cd257d4530e632c27450fb445d8bbfe6842"
+    },
+    {
+      "path": "pack/dwl/wda.json",
+      "count": 14,
+      "sha256": "0bad5e4f836e6792c91ad898880d8f29106fb1ccec28dc86c4e3a4a6200bc9ea"
+    },
+    {
+      "path": "pack/eoe/eoec.json",
+      "count": 266,
+      "sha256": "f6d90d0eee0cfc6c6f39887223c3cc049ab9ba8430ada6a6faa1846fe8367ce8"
+    },
+    {
+      "path": "pack/eoe/eoep.json",
+      "count": 137,
+      "sha256": "e7fc3a517b307d31c274a0c39f276243c65d879101a40faa86a97f292e758457"
+    },
+    {
+      "path": "pack/fhv/fhvc.json",
+      "count": 301,
+      "sha256": "bba21a8b738e91776f5acf29bb9aafce9eccf4f75a9f3b844729511d590aa258"
+    },
+    {
+      "path": "pack/fhv/fhvp.json",
+      "count": 140,
+      "sha256": "5ff842595c01f98542be1accb02c470ff0844ef32abc6758a16e90ef348b061e"
+    },
+    {
+      "path": "pack/investigator/and.json",
+      "count": 34,
+      "sha256": "4d7c13630a3336f87431ec67d5e78c390e33719e48e745199ceccc7e018d59e0"
+    },
+    {
+      "path": "pack/investigator/car.json",
+      "count": 32,
+      "sha256": "fec75fd030dd1f7fc4fa44a002399402ae96811bf9b5076bad454810ab48168d"
+    },
+    {
+      "path": "pack/investigator/har.json",
+      "count": 33,
+      "sha256": "693c1587981a1fd697445307a18aa99736836fa495368b72043ffa5cbd00abdc"
+    },
+    {
+      "path": "pack/investigator/jac.json",
+      "count": 32,
+      "sha256": "fd39e9e12762c8ab35e2d1c8aeb601134919479c536da09adbb31ec1dd777016"
+    },
+    {
+      "path": "pack/investigator/mar.json",
+      "count": 33,
+      "sha256": "0c6feeb03f1f65904852a6661ab557a35b31c5985bec22c4f53b13625ee3046a"
+    },
+    {
+      "path": "pack/investigator/mig.json",
+      "count": 32,
+      "sha256": "a69bba792159db44e3d71aca58ab11649f6fae800018094c76dad0f044d73d3b"
+    },
+    {
+      "path": "pack/investigator/nat.json",
+      "count": 32,
+      "sha256": "c2fb58417002efa59ad97b167faafcfa95b91c3547fe464868d6aa8488739342"
+    },
+    {
+      "path": "pack/investigator/ste.json",
+      "count": 31,
+      "sha256": "3907204d4d434f7ddda441c5d443ca04fd4d9d244965141fb736dad6b85ecac1"
+    },
+    {
+      "path": "pack/investigator/tom.json",
+      "count": 32,
+      "sha256": "de78184fb753f7242842a79ced010ac74628a3b9b19f99a8ca4e1fe1955dce2a"
+    },
+    {
+      "path": "pack/investigator/win.json",
+      "count": 32,
+      "sha256": "ef139f258ea40194e57ffff296621f84468edf5b7dabeec23a21c71acca341f5"
+    },
+    {
+      "path": "pack/parallel/aof.json",
+      "count": 3,
+      "sha256": "08f2ee443ee879dd403a6c06be3e04f66b41e2a6be7da3704c85418dcbf87d98"
+    },
+    {
+      "path": "pack/parallel/aon_encounter.json",
+      "count": 6,
+      "sha256": "542a080b7fa14aff9e95de6e2acd820b2ba8dc94379dc248cb71dfa345a76509"
+    },
+    {
+      "path": "pack/parallel/aon.json",
+      "count": 3,
+      "sha256": "c650c2dbb0a0b092f8ae80ee77070cc89db3bbdb27266df879bb734e6b4b9b85"
+    },
+    {
+      "path": "pack/parallel/bad_encounter.json",
+      "count": 5,
+      "sha256": "e3edf5e8af759f6aca01eca791bc9f014338dd3307d318ccd8c01483606ac147"
+    },
+    {
+      "path": "pack/parallel/bad.json",
+      "count": 3,
+      "sha256": "4f2aa38f05c1b1d4cb381c882cf897ac75d5a1630d978622e3ac87ce73c144bc"
+    },
+    {
+      "path": "pack/parallel/btb_encounter.json",
+      "count": 6,
+      "sha256": "45506bba67788eff912b6f7f88b035e828bd01a093465edf499dacb17539e8a9"
+    },
+    {
+      "path": "pack/parallel/btb.json",
+      "count": 8,
+      "sha256": "2e6fbfd64a071ac6b1e3d58c338475570cf76cd1ac8b5d3b474fb5373283e54f"
+    },
+    {
+      "path": "pack/parallel/enc_encounter.json",
+      "count": 4,
+      "sha256": "d684313977597403b4a9f2f07f11866d126a219d6701c5006d9dfadaa81944e9"
+    },
+    {
+      "path": "pack/parallel/enc.json",
+      "count": 7,
+      "sha256": "035997dbc4a1e4ddb6e28bd00cf04009b4d2fe328b68c510d70be724b7fc7363"
+    },
+    {
+      "path": "pack/parallel/hfa.json",
+      "count": 3,
+      "sha256": "603ef518aafd01cb45d06c260c61c3b08a789ba16e3d71e76d09bea18c928976"
+    },
+    {
+      "path": "pack/parallel/ltr_encounter.json",
+      "count": 6,
+      "sha256": "1f4e4fa03118dfa073063b1613342679c077531429fdd3dbeb82ec170e855bcb"
+    },
+    {
+      "path": "pack/parallel/ltr.json",
+      "count": 6,
+      "sha256": "e6901759e4417bdd5724c38e97f71da57a865021e251f831a750840749ab03b4"
+    },
+    {
+      "path": "pack/parallel/otr.json",
+      "count": 3,
+      "sha256": "b2070d642aa27c05986531d25cda4e831f05fceee513afa096892da2e71d8881"
+    },
+    {
+      "path": "pack/parallel/pap.json",
+      "count": 3,
+      "sha256": "6c304d387cf1b192c1f983c19dd974feb3457cad17dfaff5e583ef06f57c6019"
+    },
+    {
+      "path": "pack/parallel/ptr.json",
+      "count": 3,
+      "sha256": "6df4eda2144ce279ca9eba1711fbdfff27f7cbce796cad08330219bde80594ec"
+    },
+    {
+      "path": "pack/parallel/rod_encounter.json",
+      "count": 4,
+      "sha256": "42c582f6a5ace8242fabcff4b7f55bbc7124b799887a780e09b9466da709ae07"
+    },
+    {
+      "path": "pack/parallel/rod.json",
+      "count": 3,
+      "sha256": "c8aac30cec1cd89af2826fa864b76f407a08e40c99beaf2e75e9b64d7d13a72d"
+    },
+    {
+      "path": "pack/parallel/rop_encounter.json",
+      "count": 14,
+      "sha256": "919b1653d683ff7196b6ddfcb98001b3f111e3b34a6525e438bd363f10e57c9e"
+    },
+    {
+      "path": "pack/parallel/rop.json",
+      "count": 3,
+      "sha256": "6b09f9c4b456e65e569bb57c1d1801af6eb38ea8a6b8444c920859b1a586509c"
+    },
+    {
+      "path": "pack/parallel/rtr_encounter.json",
+      "count": 6,
+      "sha256": "d6f29815219b8d22b9583c5da2681b239260032c793361aef908667ef938fca5"
+    },
+    {
+      "path": "pack/parallel/rtr.json",
+      "count": 4,
+      "sha256": "41a599accd70c51eb362701ca58f97a32681a026ccefff9013b2b4a186d8e145"
+    },
+    {
+      "path": "pack/promo/bob.json",
+      "count": 3,
+      "sha256": "10dda58a7cbded5db85544a7cd89ec302cd72a9004c1c7be4a7614f59422e730"
+    },
+    {
+      "path": "pack/promo/dre.json",
+      "count": 3,
+      "sha256": "385e23f82c0c789e115fea5df0c8b6bba707921300530071ef982d19cffff1a7"
+    },
+    {
+      "path": "pack/promo/hoth.json",
+      "count": 3,
+      "sha256": "7ab68bdb4af205d63f42a29ad36fcdcf8eaec2f4f6e5168def97977e1befe5d7"
+    },
+    {
+      "path": "pack/promo/iotv.json",
+      "count": 3,
+      "sha256": "7f856b3796057e2cc765b20911bfa7e8f2d6cde53d88faf100b17ee75bd90b3c"
+    },
+    {
+      "path": "pack/promo/promo.json",
+      "count": 3,
+      "sha256": "28f64a3140d1a75f0351d352ab3ce05908f8be961fe3a587e022e5ff78440fe8"
+    },
+    {
+      "path": "pack/promo/tdg.json",
+      "count": 3,
+      "sha256": "867501f2ae45a9f0403ccc5a3cc57054de5e273ecdf675ff42de3f33875dbe5d"
+    },
+    {
+      "path": "pack/promo/tdor.json",
+      "count": 3,
+      "sha256": "bc41e77f1907c8efeb9da0e638755fe6a9b6225827cc9ec50f1f32b3e4ab7a7e"
+    },
+    {
+      "path": "pack/promo/tftbw.json",
+      "count": 3,
+      "sha256": "26a7f77a9520ae1406c89f9d0b767e5464e8ea9ed7375a4f86bd927fdec359fe"
+    },
+    {
+      "path": "pack/ptc/apot_encounter.json",
+      "count": 29,
+      "sha256": "ee446b2f72ba23a924da266df6ee930b779163f2dde42ff7ae9e11cfeb74bda4"
+    },
+    {
+      "path": "pack/ptc/apot.json",
+      "count": 11,
+      "sha256": "a48f1c44ec3cc8e5c5cb3c85cdab8c277f68b6539a9697ffd8bd36887f71aeb3"
+    },
+    {
+      "path": "pack/ptc/bsr_encounter.json",
+      "count": 32,
+      "sha256": "f12267c0e1d9a8b374c28c458b3e0c3f0e11cc6422ac21846c7d64ff6e37aadf"
+    },
+    {
+      "path": "pack/ptc/bsr.json",
+      "count": 11,
+      "sha256": "384a1c9390a6b8da51fb0e9df82dd198e7a66601d06aca052316081523afc78d"
+    },
+    {
+      "path": "pack/ptc/dca_encounter.json",
+      "count": 47,
+      "sha256": "1f8d9243a3df14bc752f535d08958ac0f0e147b5be310f38515a84d8726742c6"
+    },
+    {
+      "path": "pack/ptc/dca.json",
+      "count": 12,
+      "sha256": "1fc88f4673abe86ae268f3a9541e704cc43dddae29d69db82d02c49e3bbf7f00"
+    },
+    {
+      "path": "pack/ptc/eotp_encounter.json",
+      "count": 27,
+      "sha256": "1ee4d17f05846dfce65dbdb4a99ef23f719145c4d8008c1230de35c44da96c30"
+    },
+    {
+      "path": "pack/ptc/eotp.json",
+      "count": 14,
+      "sha256": "b3496dac2419c8d99e08f2c261835274553bca527cff7d6df5564dcc9e14320a"
+    },
+    {
+      "path": "pack/ptc/ptc_encounter.json",
+      "count": 78,
+      "sha256": "896c4b72ee2f3144d217455761af62746435c2cf0fd7f3dc3997f0bc56af910d"
+    },
+    {
+      "path": "pack/ptc/ptc.json",
+      "count": 43,
+      "sha256": "0dea6401ddeb7732a8b78f6d905b01a9df314660e431872a25b429221ae8e220"
+    },
+    {
+      "path": "pack/ptc/tpm_encounter.json",
+      "count": 24,
+      "sha256": "8df309f8eeb66fd4be0a43151fa731c841905ca2de84a25d0358c70065237adc"
+    },
+    {
+      "path": "pack/ptc/tpm.json",
+      "count": 12,
+      "sha256": "f15aed0c5921e065c384eb6ea35f5839a1a8d0c277b8baa696ff67cc6f77ea2e"
+    },
+    {
+      "path": "pack/ptc/tuo_encounter.json",
+      "count": 31,
+      "sha256": "d81365b535531a806dac2a4c0bdcd2cdfd61c3839392982f6e231ad78b689be0"
+    },
+    {
+      "path": "pack/ptc/tuo.json",
+      "count": 12,
+      "sha256": "97f48876846d7ec94994670eaa3074645f452f7810ddb8f33980b60d8c3ff104"
+    },
+    {
+      "path": "pack/return/rtdwl_encounter.json",
+      "count": 62,
+      "sha256": "cd1a2e813da180a466eb2c6c9b95d7d949d84e245b5331f57c3ae14dcc23180b"
+    },
+    {
+      "path": "pack/return/rtdwl.json",
+      "count": 11,
+      "sha256": "2e5145c342708dc3d5c3c27d37ab19a6d1a9134a933a7ca5c66c1d3bdb928d28"
+    },
+    {
+      "path": "pack/return/rtnotz_encounter.json",
+      "count": 38,
+      "sha256": "61ebb5b960a6681c4cb2b31b8b1922a07704dee4977c4d4e8748ce9d7266e0b1"
+    },
+    {
+      "path": "pack/return/rtnotz.json",
+      "count": 10,
+      "sha256": "ddbb59c0c92d49c22fb9f2899ded5b86798cf80d28bf23cc8348b1e7b6e92b82"
+    },
+    {
+      "path": "pack/return/rtptc_encounter.json",
+      "count": 71,
+      "sha256": "158d0caae60a0091b4397c708c8aa58aa064f6fbd4cd6af5a33162b535d0e203"
+    },
+    {
+      "path": "pack/return/rtptc.json",
+      "count": 13,
+      "sha256": "2a34ee9d07489de04aa1bd7bffd459fad60b9e5bac30337a8d5437d49569cbfb"
+    },
+    {
+      "path": "pack/return/rttcu_encounter.json",
+      "count": 63,
+      "sha256": "a2352c9a0c84ce501f046cec700ead1329b7abc10b401382beb3bb68a84de2b5"
+    },
+    {
+      "path": "pack/return/rttcu.json",
+      "count": 15,
+      "sha256": "579479cfccbed0548600a8f71e33df50ec42f8d99fd25291adfec452acbac7bd"
+    },
+    {
+      "path": "pack/return/rttfa_encounter.json",
+      "count": 70,
+      "sha256": "2b2976006c6e2d2322eaf72de8e39168f5fdce3d56d132dc3000cfa47b3aee2e"
+    },
+    {
+      "path": "pack/return/rttfa.json",
+      "count": 15,
+      "sha256": "f078a7aa871964debf419afa2e4105daa80363afbf84691ee5450631148563f7"
+    },
+    {
+      "path": "pack/side/blbe_encounter.json",
+      "count": 24,
+      "sha256": "fd18ff13a87441ed21a807ab7e7e2f414a494acf5073ab70e3d2a9c96c5eb038"
+    },
+    {
+      "path": "pack/side/blbe.json",
+      "count": 7,
+      "sha256": "97ce3ccf11696403353ecbaaadd7cd9ebf03a88fd4ea3193e60439fd3f98703d"
+    },
+    {
+      "path": "pack/side/blob_encounter.json",
+      "count": 53,
+      "sha256": "184274498c0f5d12b2d8467c291713ab5d68d3b8e5635fb2affd9c9800906753"
+    },
+    {
+      "path": "pack/side/coh_encounter.json",
+      "count": 40,
+      "sha256": "8e901abe910d2fbc68eb37577f52767c1788a73014025d28cc2195f6762c3905"
+    },
+    {
+      "path": "pack/side/cotr_encounter.json",
+      "count": 36,
+      "sha256": "bb1d280397848f3e0a27f53c4cd6cf53c1efebc8fe149e5723a21232cd5ebe95"
+    },
+    {
+      "path": "pack/side/film_fatale_encounter.json",
+      "count": 64,
+      "sha256": "8077465a930686b43f0e33bc9cac49e6693ec5a37bb60bd319c94f27c94156e5"
+    },
+    {
+      "path": "pack/side/fof_encounter.json",
+      "count": 89,
+      "sha256": "c713c29390218be2081130d8cb24d35bf29fe14c0d964194722ee7584bd49dac"
+    },
+    {
+      "path": "pack/side/guardians_encounter.json",
+      "count": 70,
+      "sha256": "d28ab12ec4f327e8f828751eaf389636fb78f25682c8620e0f0592a7eb6a8116"
+    },
+    {
+      "path": "pack/side/hotel_encounter.json",
+      "count": 52,
+      "sha256": "594710697a2d4b89f06dde8d011d15ee9f27321eb5ec94e1597a5b7d320ddfc7"
+    },
+    {
+      "path": "pack/side/lol_encounter.json",
+      "count": 67,
+      "sha256": "9fe5cdcd7a7cec7ffd67782158b36ab150a3fb5cd7c8fe8b11d2de038b135d09"
+    },
+    {
+      "path": "pack/side/mtt_encounter.json",
+      "count": 69,
+      "sha256": "0a902cb9f189ed12a7334937046c6c4a5b5e659435dd4b706fcb3f31deb49eec"
+    },
+    {
+      "path": "pack/side/tmg_encounter.json",
+      "count": 74,
+      "sha256": "2250651457310b1b949bb4966af5ecb822335aa7a9650f232dc99c1f25d0ebcb"
+    },
+    {
+      "path": "pack/side/wog_encounter.json",
+      "count": 58,
+      "sha256": "a6f3504603c4caed9458da7dcce29a59aea445454aab7c2b438da485482767e6"
+    },
+    {
+      "path": "pack/tcu/bbt_encounter.json",
+      "count": 22,
+      "sha256": "bfc9e82d9845c0788097acc933acf8ad50ade174be1f5a5172d1fd05353c60bd"
+    },
+    {
+      "path": "pack/tcu/bbt.json",
+      "count": 12,
+      "sha256": "c60067b2272ba5b13869af46461da451a6d236c05247c4b69f8d317b1ef2aaf7"
+    },
+    {
+      "path": "pack/tcu/fgg_encounter.json",
+      "count": 33,
+      "sha256": "885405607b309b4305dbc75a3e3221d2b22fb0d59cd64cccb1e1f985e0a51339"
+    },
+    {
+      "path": "pack/tcu/fgg.json",
+      "count": 11,
+      "sha256": "7bb3a89356f9595c9e621eb1e6439e53646b25c27d5a249ef5118517de5cfdfb"
+    },
+    {
+      "path": "pack/tcu/icc_encounter.json",
+      "count": 31,
+      "sha256": "22a9452efc8be7a545b7062de897004ff7f9e5692d07efc69d13d70deab66083"
+    },
+    {
+      "path": "pack/tcu/icc.json",
+      "count": 11,
+      "sha256": "caa6a4f4f20f58cf87dcef0c5c5316d6de47c5e5076ac008939fee22c5e95042"
+    },
+    {
+      "path": "pack/tcu/tcu_encounter.json",
+      "count": 68,
+      "sha256": "d71a942f5535475c2cac27552bd676525c783680df09e4b46aa8671ebd2fd02e"
+    },
+    {
+      "path": "pack/tcu/tcu.json",
+      "count": 42,
+      "sha256": "3fd72e722e82d774a66526b54a57530ba24f59eda503329afe5b6797a3b1b00c"
+    },
+    {
+      "path": "pack/tcu/tsn_encounter.json",
+      "count": 31,
+      "sha256": "632647681d6cc59e42811e3503f53d358009ad5c87f628954da63b4545242ce5"
+    },
+    {
+      "path": "pack/tcu/tsn.json",
+      "count": 11,
+      "sha256": "ad8b174a21283ede0024ea6584418c3f732b52dd7a51c4f7d5a3cb47e37d30ea"
+    },
+    {
+      "path": "pack/tcu/uad_encounter.json",
+      "count": 39,
+      "sha256": "273c24a458ca703d00ddd1513114d62154fcebec356631e92916dcbbd844d274"
+    },
+    {
+      "path": "pack/tcu/uad.json",
+      "count": 9,
+      "sha256": "ecbc96a79ba658f920e5d90fbf69abe6b57e35c8ac18031ddd3880152e7c9cb7"
+    },
+    {
+      "path": "pack/tcu/wos_encounter.json",
+      "count": 47,
+      "sha256": "21975ce35c954dbfce87f2929bc3ef9a9aecefd1f6be0e840b37a9ada1872166"
+    },
+    {
+      "path": "pack/tcu/wos.json",
+      "count": 10,
+      "sha256": "45364ed25337c7586ec9a453bbbb68082f3cd73ec3e40ecba4090e06bc3df222"
+    },
+    {
+      "path": "pack/tdc/tdcc.json",
+      "count": 297,
+      "sha256": "85af5a3b37ef854f9f293d18dfd520a015bd288df35377af65c3202c681a0732"
+    },
+    {
+      "path": "pack/tdc/tdcp.json",
+      "count": 130,
+      "sha256": "59e79804b44a641cca04707e43c21b5de72ded8dab386421b0e47eefee7c7b01"
+    },
+    {
+      "path": "pack/tde/dsm_encounter.json",
+      "count": 29,
+      "sha256": "d2efd027bf6527e20020811fc84f5b076ee99036ac8aa5cc957c24855c96ac25"
+    },
+    {
+      "path": "pack/tde/dsm.json",
+      "count": 11,
+      "sha256": "5ef0729fa0def412d8df3dd19fc645f0dc7adaa5147209c0fd44bc17f1d91b04"
+    },
+    {
+      "path": "pack/tde/pnr_encounter.json",
+      "count": 41,
+      "sha256": "e81cd058a2eb9fbc27c75c2f0732e5a3a5c59b8302e9cec6419890506240d8b5"
+    },
+    {
+      "path": "pack/tde/pnr.json",
+      "count": 13,
+      "sha256": "af3c1b3c9478ba98766f15abdef792bdb9393569ea97dec2a6440be98832db42"
+    },
+    {
+      "path": "pack/tde/sfk_encounter.json",
+      "count": 53,
+      "sha256": "20e8ac864f432416194f4fea745fb7d4203462e35861f4fc950a37bfe07c2afa"
+    },
+    {
+      "path": "pack/tde/sfk.json",
+      "count": 9,
+      "sha256": "27fdfe403c5b133837c5fc42950eef64f5e2ecd32039b501a9165f6b36beff29"
+    },
+    {
+      "path": "pack/tde/tde_encounter.json",
+      "count": 73,
+      "sha256": "6c0086a82a2d0cbf2f638902ac9acafc0f0fe0b446621510e9d4a427db612f04"
+    },
+    {
+      "path": "pack/tde/tde.json",
+      "count": 39,
+      "sha256": "cc78b91203f335ef193dc0dc010bb28a25714d11673401ba42032acedccb5db5"
+    },
+    {
+      "path": "pack/tde/tsh_encounter.json",
+      "count": 28,
+      "sha256": "5992ff03e7496264defb47b8a41d0ddd365bb384eb7bebac9167013bc9e5d175"
+    },
+    {
+      "path": "pack/tde/tsh.json",
+      "count": 13,
+      "sha256": "bd3f069fc866b38e70b851c1501a1e2d652b5a2dea140910ded0c81bc9f2e089"
+    },
+    {
+      "path": "pack/tde/wgd_encounter.json",
+      "count": 37,
+      "sha256": "76bbb8c00aad06756f88e40f9fa0dedaa3856af08e38497f29c88f696e5111ed"
+    },
+    {
+      "path": "pack/tde/wgd.json",
+      "count": 10,
+      "sha256": "613f99b57ea5301d93a64bbf0b770e2fe507b33394bab4511a76f03d765d769b"
+    },
+    {
+      "path": "pack/tde/woc_encounter.json",
+      "count": 22,
+      "sha256": "3607121cd4da9f9ec2c6a31324f569da40e2b1aa892150a58d6d9ef7f0c8b757"
+    },
+    {
+      "path": "pack/tde/woc.json",
+      "count": 10,
+      "sha256": "b83e86af61d3c60e2d3b3c33652fc7b2a1b5d6ad3d1776d07a761e2ad7e16c09"
+    },
+    {
+      "path": "pack/tfa/hote_encounter.json",
+      "count": 26,
+      "sha256": "f518a3e96273085236cb085d99bda98123e70e528339ebe5602aeb6949216859"
+    },
+    {
+      "path": "pack/tfa/hote.json",
+      "count": 13,
+      "sha256": "d9b7bb427cfd41a9aec416806fe1d6c83fa2fcf2859d408bb4fc67e413ee5f8c"
+    },
+    {
+      "path": "pack/tfa/sha_encounter.json",
+      "count": 36,
+      "sha256": "fe5860ee32de689e2fcd82ee416f18c49f88f4ea295268c67faebf26079e236c"
+    },
+    {
+      "path": "pack/tfa/sha.json",
+      "count": 10,
+      "sha256": "eddba7e55c657698a17df7ed80913c71dd2ff43e116c7addcbf7ec41f3143e80"
+    },
+    {
+      "path": "pack/tfa/tbb_encounter.json",
+      "count": 31,
+      "sha256": "c43a020ac2b8d50c8a1c85876c1b9295f06a71aa5a457734163a1cb418931142"
+    },
+    {
+      "path": "pack/tfa/tbb.json",
+      "count": 12,
+      "sha256": "919ff082fbecaf22ae5fcea619c748bc7ba9fd5d3713d54ac30ea7a06f02724d"
+    },
+    {
+      "path": "pack/tfa/tcoa_encounter.json",
+      "count": 28,
+      "sha256": "394df521c95a69798b0282651cb499faf9f02cf204c66a5d3c2e945085c47c79"
+    },
+    {
+      "path": "pack/tfa/tcoa.json",
+      "count": 8,
+      "sha256": "c6a2b17a5a8804d279defabeda721ce27c8fde39ab4afd87a19ef208e7a662ea"
+    },
+    {
+      "path": "pack/tfa/tdoy_encounter.json",
+      "count": 27,
+      "sha256": "f3d6ec302b5a07b46f7b4b609c9087b539157ca2e0e6f744f9aa06b9796cf059"
+    },
+    {
+      "path": "pack/tfa/tdoy.json",
+      "count": 12,
+      "sha256": "0a98bb6ed091c0f87c77357c9d5fec1611142ddef0f93fcbbeaf1ef5ce667946"
+    },
+    {
+      "path": "pack/tfa/tfa_encounter.json",
+      "count": 60,
+      "sha256": "da88bd0dc2f5224d1a6f3ea8dbfc3b59c964b165a723668bfe89a5d003c91e34"
+    },
+    {
+      "path": "pack/tfa/tfa.json",
+      "count": 42,
+      "sha256": "6c88caef45d573d00150f07de0209bf26e0c43d0149754f7516ffd816e2a054d"
+    },
+    {
+      "path": "pack/tfa/tof_encounter.json",
+      "count": 46,
+      "sha256": "42b1b9eadc47dbdbcc1fcc9b3a54b4a5ea9804867b93423813e47e321501cf22"
+    },
+    {
+      "path": "pack/tfa/tof.json",
+      "count": 10,
+      "sha256": "699c31d4ce0bcee780fc5096b62646bcd083dd914e9525ca844889244ea08c0b"
+    },
+    {
+      "path": "pack/tic/def_encounter.json",
+      "count": 32,
+      "sha256": "9b35fea03bf69359f667ab845eb7d10fd7a9cbec966efd2e49e2430d2957ab93"
+    },
+    {
+      "path": "pack/tic/def.json",
+      "count": 11,
+      "sha256": "4065b127c43245439df0d334c2278c58502ebfe7b5bf6302a3b44652c06cf026"
+    },
+    {
+      "path": "pack/tic/hhg_encounter.json",
+      "count": 33,
+      "sha256": "1cfacb6897f7fb958ea22e67533f46dea6cfe1c88115e7d9712edb03e680ac35"
+    },
+    {
+      "path": "pack/tic/hhg.json",
+      "count": 9,
+      "sha256": "973a8d0e533ba14607397ebe16ae4b8c947f23610b0b3fcca953cac2292ab289"
+    },
+    {
+      "path": "pack/tic/itd_encounter.json",
+      "count": 29,
+      "sha256": "62a48bd3e5a717e3e583a10ec250d40717ad56bf3b3d9435a9f2d0218a0d0e03"
+    },
+    {
+      "path": "pack/tic/itd.json",
+      "count": 15,
+      "sha256": "5945156b1ca1bf613e9ea72b9387df70756a6edcbbc454a92699fc4af9942edf"
+    },
+    {
+      "path": "pack/tic/itm_encounter.json",
+      "count": 30,
+      "sha256": "e853a40015d3f1d75cf467bc50f83b7edf1e909e1c98532b48294bcec3573e54"
+    },
+    {
+      "path": "pack/tic/itm.json",
+      "count": 10,
+      "sha256": "5f08ef6d6617e8aa217ff3c233e7f5745b5313640c7622f4906fde52129b028e"
+    },
+    {
+      "path": "pack/tic/lif_encounter.json",
+      "count": 31,
+      "sha256": "e2b698894281de7ee8de178b35486d78f92a5093ce2cbaa49c4329ca1d1afeaa"
+    },
+    {
+      "path": "pack/tic/lif.json",
+      "count": 11,
+      "sha256": "d00488fe63df85487f1faae90992b725838bf8e22561f1a9c13c4a1d2a00a55f"
+    },
+    {
+      "path": "pack/tic/lod_encounter.json",
+      "count": 29,
+      "sha256": "1210aca17388ae92e1977524fe0fb941a0136e3d0223ebf2e3c277175948a93c"
+    },
+    {
+      "path": "pack/tic/lod.json",
+      "count": 13,
+      "sha256": "3cfde75fbe3c1637188ee52819fa796bcbf1c1dc378298db4c3b685f259e1ab9"
+    },
+    {
+      "path": "pack/tic/tic_encounter.json",
+      "count": 68,
+      "sha256": "1f63662acd0da3c88aa2728a930475f409bcb74d8d75f9ef0142b9ee81fd1475"
+    },
+    {
+      "path": "pack/tic/tic.json",
+      "count": 40,
+      "sha256": "3b71e2fdfb306bf83ed2f525136ac4271cb99fe3c830fb3e539bbd113c93e02b"
+    },
+    {
+      "path": "pack/tsk/tskc.json",
+      "count": 311,
+      "sha256": "e883758480b4fddc99ab8786fd6d98005be045b3beba68b52e28e0af151341ae"
+    },
+    {
+      "path": "pack/tsk/tskp.json",
+      "count": 128,
+      "sha256": "04a160f166e369ea1ca762f2a3eb07f0b87c3bef280b8a859fc51cda12741eba"
+    },
+    {
+      "path": "scripts/data/barkham.json",
+      "count": 62,
+      "sha256": "95d026bd746ee9d8d96bbc9a47d8e62a663d4231c8c821e1fca6b4f1ed4c39ca"
+    }
+  ],
+  "supplements": [
+    {
+      "source": "https://github.com/GeckoTH/arkham-horror",
+      "sourceUrl": "https://raw.githubusercontent.com/GeckoTH/arkham-horror/977173cea94dd6a736cb4eeafde2b1cc701faee5/o8g/Sets/The%20Meddling%20of%20Meowlathotep/set.xml",
+      "revision": "977173cea94dd6a736cb4eeafde2b1cc701faee5",
+      "retrievedAt": "2026-09-30T08:57:21.276165+00:00",
+      "releaseDate": "2020-09-18",
+      "pack": {
+        "code": "barkham",
+        "name": "Barkham Horror: The Meddling of Meowlathotep",
+        "date_release": "2020-09-18",
+        "cycle_code": "side_stories",
+        "position": 13,
+        "chapter": 1,
+        "sourceUrl": "https://www.fantasyflightgames.com/en/news/2020/9/18/available-now-september-18/",
+        "sku": "PAHC01"
+      },
+      "encounterSets": [
+        {
+          "code": "meddling_of_meowlathotep",
+          "name": "The Meddling of Meowlathotep"
+        }
+      ],
+      "counts": {
+        "cardDefinitions": 62,
+        "fullSizeDefinitions": 57,
+        "fullSizeCopies": 78,
+        "miniatureDefinitions": 5,
+        "miniatureCopies": 5,
+        "printedCopiesIncludingMiniatures": 83,
+        "investigators": 5
+      },
+      "sourceFile": {
+        "url": "https://raw.githubusercontent.com/GeckoTH/arkham-horror/977173cea94dd6a736cb4eeafde2b1cc701faee5/o8g/Sets/The%20Meddling%20of%20Meowlathotep/set.xml",
+        "sha256": "a5d87248c4261673496344b9193de115582e4a17b14fe84f821880e92157259a",
+        "format": "OCTGN set XML"
+      },
+      "verificationSources": [
+        {
+          "url": "https://www.fantasyflightgames.com/en/news/2019/12/2/barkham-horror/",
+          "scope": "Official product identity, 78 full-size cards, restrictions and scenario format."
+        },
+        {
+          "url": "https://hallofarkham.com/barkham-horror-the-meddling-of-meowlathotep/",
+          "scope": "Published scans of investigator, signature and player cards, plus encounter previews."
+        },
+        {
+          "url": "https://hallofarkham.com/wp-content/uploads/2020/10/barkhamrules.pdf",
+          "scope": "Official printed rulebook mirror."
+        }
+      ],
+      "normalizationNotes": [
+        "All 62 source definitions retained, including five hidden miniature investigator records linked with duplicate_of; the 78-card advertised product count excludes miniatures.",
+        "Greek OCTGN glyphs converted to ArkhamDB icon tokens. Enemy combat/agility mapped to enemy_fight/enemy_evade; per-investigator values preserve flags.",
+        "Revealed location alternate sides mapped to main text, shroud, clues and victory to follow the existing Card schema; all investigator, act, agenda and scenario backs preserved.",
+        "All Barkham content is restricted to the standalone Barkham scenario. No official preconstructed deck recipes are supplied by this product.",
+        "Artwork-dependent deckbuilding rules remain in the printed back_text, with structured deck_options recording only unambiguous faction/level rules; manual eligibility checks are necessary.",
+        "External scan URLs identify available art. No card-image files are included in this supplement.",
+        "Card content remains property of Fantasy Flight Games."
+      ],
+      "verifiedCorrections": [
+        {
+          "positions": [
+            2,
+            5,
+            8,
+            11
+          ],
+          "field": "skill_wild",
+          "value": 1,
+          "reason": "Each printed signature card has one wild icon omitted in the OCTGN XML."
+        },
+        {
+          "positions": [
+            21
+          ],
+          "field": "skill_wild",
+          "value": 4,
+          "reason": "Printed Hair of the Dog has four wild icons omitted in the XML."
+        },
+        {
+          "positions": [
+            17
+          ],
+          "fields": {
+            "health": 1,
+            "sanity": 2
+          },
+          "reason": "Printed Dog Monocle soak values omitted in the XML."
+        },
+        {
+          "positions": [
+            11
+          ],
+          "field": "name",
+          "value": "Chew Toy of Nightmares",
+          "reason": "Printed title is plural, including its references in the investigator deckbuilding requirements."
+        },
+        {
+          "positions": [
+            13
+          ],
+          "field": "back_text",
+          "reason": "Printed Duke restriction says ABSOLUTELY NO CATS UNDER ANY CIRCUMSTANCES; XML incorrectly says CARDS."
+        },
+        {
+          "positions": [
+            5,
+            10,
+            16,
+            20,
+            25,
+            48,
+            50,
+            54,
+            56,
+            57
+          ],
+          "reason": "Obvious spelling/transcription errors normalized, including Discombobulator, returning, Spiked Collar, Footwear, Servant, Hunted by Byakats, Meowlathotep, off and the willpower icon. Names/icon mappings preserve intended printed mechanics."
+        },
+        {
+          "positions": [
+            9,
+            19
+          ],
+          "field": "text",
+          "reason": "Printed scans clarify Dogcatchers's possessive spelling and that Howl of Clyhf'ford targets the highest-evade enemy in play."
+        }
+      ]
+    }
+  ],
+  "sourceDefinitionCount": 6111,
+  "collapsedDuplicateCodes": [
+    "11536",
+    "11552"
+  ],
+  "additionalProducts": [
+    {
+      "code": "convention_2025",
+      "name": "2025 Convention Promo Cards",
+      "cycle_code": "promotional",
+      "position": 31,
+      "date_release": "2025",
+      "releaseDateBasis": "official-year",
+      "releaseDatePrecision": "year",
+      "cardCodes": [
+        "72044",
+        "72032",
+        "72055"
+      ],
+      "artworkVariant": true,
+      "description": "Official convention alternate-art faces for Allosaurus, Saturnite Monarch and The Contessa. Printed rules are shared with Film Fatale.",
+      "sourceUrl": "https://cdn.svc.asmodee.net/production-fantasyflightgames/uploads/2026/09/gcop2501_arkham_lcg_convention_promo_cards.pdf"
+    }
+  ],
+  "cardFiles": [
+    {
+      "name": "cards-001.json",
+      "count": 2240,
+      "bytes": 1799049,
+      "sha256": "0748d24a11701f4a464552f919c182af9b20217e84fedb86d224619779421b7e"
+    },
+    {
+      "name": "cards-002.json",
+      "count": 2121,
+      "bytes": 1799910,
+      "sha256": "a95cfdad76a06984973d82d291e89e02fe780951d9d41e1a024f3c2775100c01"
+    },
+    {
+      "name": "cards-003.json",
+      "count": 1748,
+      "bytes": 1516904,
+      "sha256": "cf29a14bdaa1b4b863f60608c4b777be00f7781439016122905cdb1476b0e4f5"
+    }
+  ],
+  "excludedPacks": [],
+  "notes": [
+    "Repository definitions take precedence over API rules text; only scan paths come from the API.",
+    "Every printing and hidden face is retained; duplicate definitions are expanded recursively.",
+    "Repackages share original card identifiers and are divided using the original player/encounter source files.",
+    "Taboo lists are retained as optional metadata; they are not applied to printed card text.",
+    "Source release dates are retained unless a publisher release announcement is cited in the product entry.",
+    "Importing card definitions does not implement their scenario scripts or special card abilities.",
+    "Content remains property of Fantasy Flight Games."
+  ]
+}

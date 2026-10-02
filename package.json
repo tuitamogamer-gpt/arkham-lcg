@@ -9,6 +9,9 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "tsx --test tests/*.test.ts",
     "sync:cards": "node scripts/sync-cards.mjs",
+    "rules:server": "node scripts/rules-server.mjs",
+    "rules:build": "node scripts/build-rules-runtime.mjs --test",
+    "rules:frontend": "node scripts/build-rules-frontend.mjs",
     "art": "node scripts/optimize-art.mjs",
     "check": "tsc -b && npm test && npm run build"
   },

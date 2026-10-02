@@ -1,0 +1,991 @@
+{
+  "sourceRevision": "03a7f1e74925744f021f6e8fe0e39945d2c3a833",
+  "campaigns": [
+    {
+      "id": "01",
+      "name": "The Night of the Zealot",
+      "returnTo": {
+        "id": "50"
+      }
+    },
+    {
+      "id": "02",
+      "name": "The Dunwich Legacy",
+      "returnTo": {
+        "id": "51"
+      }
+    },
+    {
+      "id": "03",
+      "name": "The Path to Carcosa",
+      "returnTo": {
+        "id": "52"
+      }
+    },
+    {
+      "id": "04",
+      "name": "The Forgotten Age",
+      "returnTo": {
+        "id": "53"
+      }
+    },
+    {
+      "id": "05",
+      "name": "The Circle Undone",
+      "returnTo": {
+        "id": "54"
+      }
+    },
+    {
+      "id": "06",
+      "name": "The Dream-Eaters",
+      "variants": [
+        {
+          "key": "theDreamEaters"
+        },
+        {
+          "key": "theDreamQuest"
+        },
+        {
+          "key": "theWebOfDreams"
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "The Innsmouth Conspiracy"
+    },
+    {
+      "id": "08",
+      "name": "Edge of the Earth"
+    },
+    {
+      "id": "09",
+      "name": "The Scarlet Keys"
+    },
+    {
+      "id": "10",
+      "name": "The Feast of Hemlock Vale"
+    },
+    {
+      "id": "11",
+      "name": "The Drowned City"
+    },
+    {
+      "id": "12",
+      "name": "Brethren of Ash"
+    },
+    {
+      "id": "13",
+      "name": "Children of Blood"
+    },
+    {
+      "id": "83",
+      "name": "Guardians of the Abyss"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "01104",
+      "name": "The Gathering",
+      "campaign": "01"
+    },
+    {
+      "id": "50011",
+      "name": "Return to the Gathering",
+      "campaign": "01"
+    },
+    {
+      "id": "01120",
+      "name": "The Midnight Masks",
+      "campaign": "01"
+    },
+    {
+      "id": "50025",
+      "name": "Return to The Midnight Masks",
+      "campaign": "01"
+    },
+    {
+      "id": "01142",
+      "name": "The Devourer Below",
+      "campaign": "01"
+    },
+    {
+      "id": "50032",
+      "name": "Return to The Devourer Below",
+      "campaign": "01"
+    },
+    {
+      "id": "02041",
+      "name": "Extracurricular Activity",
+      "campaign": "02"
+    },
+    {
+      "id": "51012",
+      "name": "Return to Extracurricular Activities",
+      "campaign": "02"
+    },
+    {
+      "id": "02062",
+      "name": "The House Always Wins",
+      "campaign": "02"
+    },
+    {
+      "id": "51015",
+      "name": "Return to the House Always Wins",
+      "campaign": "02"
+    },
+    {
+      "id": "02118",
+      "name": "The Miskatonic Museum",
+      "campaign": "02"
+    },
+    {
+      "id": "51020",
+      "name": "Return to the Miskatonic Museum",
+      "campaign": "02"
+    },
+    {
+      "id": "02159",
+      "name": "The Essex County Express",
+      "campaign": "02"
+    },
+    {
+      "id": "51025",
+      "name": "Return to the Essex County Express",
+      "campaign": "02"
+    },
+    {
+      "id": "02195",
+      "name": "Blood on the Altar",
+      "campaign": "02"
+    },
+    {
+      "id": "51032",
+      "name": "Return to Blood on the Altar",
+      "campaign": "02"
+    },
+    {
+      "id": "02236",
+      "name": "Undimensioned and Unseen",
+      "campaign": "02"
+    },
+    {
+      "id": "51041",
+      "name": "Return to Undimensioned and Unseen",
+      "campaign": "02"
+    },
+    {
+      "id": "02274",
+      "name": "Where Doom Awaits",
+      "campaign": "02"
+    },
+    {
+      "id": "51047",
+      "name": "Return to Where Doom Awaits",
+      "campaign": "02"
+    },
+    {
+      "id": "02311",
+      "name": "Lost in Time and Space",
+      "campaign": "02"
+    },
+    {
+      "id": "51053",
+      "name": "Return to Lost in Time and Space",
+      "campaign": "02"
+    },
+    {
+      "id": "03043",
+      "name": "Curtain Call",
+      "campaign": "03"
+    },
+    {
+      "id": "52014",
+      "name": "Return to Curtain Call",
+      "campaign": "03"
+    },
+    {
+      "id": "03061",
+      "name": "The Last King",
+      "campaign": "03"
+    },
+    {
+      "id": "52021",
+      "name": "Return to The Last King",
+      "campaign": "03"
+    },
+    {
+      "id": "03120",
+      "name": "Echoes of the Past",
+      "campaign": "03"
+    },
+    {
+      "id": "52028",
+      "name": "Return to Echoes of the Path",
+      "campaign": "03"
+    },
+    {
+      "id": "03159",
+      "name": "The Unspeakable Oath",
+      "campaign": "03"
+    },
+    {
+      "id": "52034",
+      "name": "Return to The Unspeakable Oath",
+      "campaign": "03"
+    },
+    {
+      "id": "03200",
+      "name": "A Phantom of Truth",
+      "campaign": "03"
+    },
+    {
+      "id": "52040",
+      "name": "Return to A Phantom of Truth",
+      "campaign": "03"
+    },
+    {
+      "id": "03240",
+      "name": "The Pallid Mask",
+      "campaign": "03"
+    },
+    {
+      "id": "52048",
+      "name": "Return to The Pallid Mask",
+      "campaign": "03"
+    },
+    {
+      "id": "03274",
+      "name": "Black Stars Rise",
+      "campaign": "03"
+    },
+    {
+      "id": "52054",
+      "name": "Return to Black Stars Rise",
+      "campaign": "03"
+    },
+    {
+      "id": "03316",
+      "name": "Dim Carcosa",
+      "campaign": "03"
+    },
+    {
+      "id": "52059",
+      "name": "Return to Dim Carcosa",
+      "campaign": "03"
+    },
+    {
+      "id": "04043",
+      "name": "The Untamed Wilds",
+      "campaign": "04"
+    },
+    {
+      "id": "53016",
+      "name": "Return to The Untamed Wilds",
+      "campaign": "04"
+    },
+    {
+      "id": "04054",
+      "name": "The Doom of Eztli",
+      "campaign": "04"
+    },
+    {
+      "id": "53017",
+      "name": "Return to The Doom of Eztli",
+      "campaign": "04"
+    },
+    {
+      "id": "04113",
+      "name": "Threads of Fate",
+      "campaign": "04"
+    },
+    {
+      "id": "53028",
+      "name": "Return to Threads of Fate",
+      "campaign": "04"
+    },
+    {
+      "id": "04161",
+      "name": "The Boundary Beyond",
+      "campaign": "04"
+    },
+    {
+      "id": "53038",
+      "name": "Return to The Boundary Beyond",
+      "campaign": "04"
+    },
+    {
+      "id": "04205a",
+      "name": "Heart of the Elders, Part1",
+      "campaign": "04"
+    },
+    {
+      "id": "53045",
+      "name": "Return to Heart of the Elders",
+      "campaign": "04"
+    },
+    {
+      "id": "04205b",
+      "name": "Heart of the Elders, Part2",
+      "campaign": "04"
+    },
+    {
+      "id": "53048",
+      "name": "Return to Heart of the Elders",
+      "campaign": "04"
+    },
+    {
+      "id": "04237",
+      "name": "The City of Archives",
+      "campaign": "04"
+    },
+    {
+      "id": "53053",
+      "name": "Return to The City of Archives",
+      "campaign": "04"
+    },
+    {
+      "id": "04277",
+      "name": "The Depths of Yoth",
+      "campaign": "04"
+    },
+    {
+      "id": "53059",
+      "name": "Return to The Depths of Yoth",
+      "campaign": "04"
+    },
+    {
+      "id": "04314",
+      "name": "Shattered Aeons",
+      "campaign": "04"
+    },
+    {
+      "id": "53061",
+      "name": "Return to Shattered Aeons",
+      "campaign": "04"
+    },
+    {
+      "id": "04344",
+      "name": "Turn Back Time",
+      "campaign": "04"
+    },
+    {
+      "id": "53066",
+      "name": "Return to Turn Back Time",
+      "campaign": "04"
+    },
+    {
+      "id": "05043",
+      "name": "Disappearance at the Twilight Estate",
+      "campaign": "05"
+    },
+    {
+      "id": "54016",
+      "name": "Return to Disappearance at the Twilight Estate",
+      "campaign": "05"
+    },
+    {
+      "id": "05050",
+      "name": "The Witching Hour",
+      "campaign": "05"
+    },
+    {
+      "id": "54017",
+      "name": "Return to The Witching Hour",
+      "campaign": "05"
+    },
+    {
+      "id": "05065",
+      "name": "At Death's Doorstep",
+      "campaign": "05"
+    },
+    {
+      "id": "54024",
+      "name": "Return to At Death's Doorstep",
+      "campaign": "05"
+    },
+    {
+      "id": "05120",
+      "name": "The Secret Name",
+      "campaign": "05"
+    },
+    {
+      "id": "54029",
+      "name": "Return to The Secret Name",
+      "campaign": "05"
+    },
+    {
+      "id": "05161",
+      "name": "The Wages of Sin",
+      "campaign": "05"
+    },
+    {
+      "id": "54034",
+      "name": "Return to The Wages of Sin",
+      "campaign": "05"
+    },
+    {
+      "id": "05197",
+      "name": "For the Greater Good",
+      "campaign": "05"
+    },
+    {
+      "id": "54042",
+      "name": "Return to For the Greater Good",
+      "campaign": "05"
+    },
+    {
+      "id": "05238",
+      "name": "Union and Disillusion",
+      "campaign": "05"
+    },
+    {
+      "id": "54046",
+      "name": "Return to Union and Disillusion",
+      "campaign": "05"
+    },
+    {
+      "id": "05284",
+      "name": "In the Clutches of Chaos",
+      "campaign": "05"
+    },
+    {
+      "id": "54049",
+      "name": "Return to In the Clutches of Chaos",
+      "campaign": "05"
+    },
+    {
+      "id": "05325",
+      "name": "Before the Black Throne",
+      "campaign": "05"
+    },
+    {
+      "id": "54056",
+      "name": "Return to Before the Black Throne",
+      "campaign": "05"
+    },
+    {
+      "id": "06039",
+      "name": "Beyond the Gates of Sleep",
+      "campaign": "06"
+    },
+    {
+      "id": "06063",
+      "name": "Waking Nightmare",
+      "campaign": "06"
+    },
+    {
+      "id": "06119",
+      "name": "The Search for Kadath",
+      "campaign": "06"
+    },
+    {
+      "id": "06168",
+      "name": "A Thousand Shapes of Horror",
+      "campaign": "06"
+    },
+    {
+      "id": "06206",
+      "name": "Dark Side of the Moon",
+      "campaign": "06"
+    },
+    {
+      "id": "06247",
+      "name": "Point of No Return",
+      "campaign": "06"
+    },
+    {
+      "id": "06286",
+      "name": "Where the Gods Dwell",
+      "campaign": "06"
+    },
+    {
+      "id": "06333",
+      "name": "Weaver of the Cosmos",
+      "campaign": "06"
+    },
+    {
+      "id": "07041",
+      "name": "The Pit of Despair",
+      "campaign": "07"
+    },
+    {
+      "id": "07056",
+      "name": "The Vanishing of Elina Harper",
+      "campaign": "07"
+    },
+    {
+      "id": "07123",
+      "name": "In Too Deep",
+      "campaign": "07"
+    },
+    {
+      "id": "07163",
+      "name": "Devil Reef",
+      "campaign": "07"
+    },
+    {
+      "id": "07198",
+      "name": "Horror in High Gear",
+      "campaign": "07"
+    },
+    {
+      "id": "07231",
+      "name": "A Light in the Fog",
+      "campaign": "07"
+    },
+    {
+      "id": "07274",
+      "name": "The Lair of Dagon",
+      "campaign": "07"
+    },
+    {
+      "id": "07311",
+      "name": "Into the Maelstrom",
+      "campaign": "07"
+    },
+    {
+      "id": "08501a",
+      "name": "Ice and Death, Part I",
+      "campaign": "08"
+    },
+    {
+      "id": "08501b",
+      "name": "Ice and Death, Part II",
+      "campaign": "08"
+    },
+    {
+      "id": "08501c",
+      "name": "Ice and Death, Part III",
+      "campaign": "08"
+    },
+    {
+      "id": "08549",
+      "name": "Fatal Mirage",
+      "campaign": "08"
+    },
+    {
+      "id": "08596",
+      "name": "To the Forbidden Peaks",
+      "campaign": "08"
+    },
+    {
+      "id": "08621",
+      "name": "City of the Elder Things",
+      "campaign": "08"
+    },
+    {
+      "id": "08648a",
+      "name": "The Heart of Madness, Part I",
+      "campaign": "08"
+    },
+    {
+      "id": "08648b",
+      "name": "The Heart of Madness, Part II",
+      "campaign": "08"
+    },
+    {
+      "id": "09501",
+      "name": "Riddles and Rain",
+      "campaign": "09"
+    },
+    {
+      "id": "09520",
+      "name": "Dead Heat",
+      "campaign": "09"
+    },
+    {
+      "id": "09545",
+      "name": "Sanguine Shadows",
+      "campaign": "09"
+    },
+    {
+      "id": "09566",
+      "name": "Dealings in the Dark",
+      "campaign": "09"
+    },
+    {
+      "id": "09591",
+      "name": "Dancing Mad",
+      "campaign": "09"
+    },
+    {
+      "id": "09609",
+      "name": "On Thin Ice",
+      "campaign": "09"
+    },
+    {
+      "id": "09635",
+      "name": "Dogs of War",
+      "campaign": "09"
+    },
+    {
+      "id": "09660",
+      "name": "Shades of Suffering",
+      "campaign": "09"
+    },
+    {
+      "id": "09681",
+      "name": "Without a Trace",
+      "campaign": "09"
+    },
+    {
+      "id": "09694",
+      "name": "Congress of the Keys",
+      "campaign": "09"
+    },
+    {
+      "id": "10704",
+      "name": "Prelude: Welcome to Hemlock Vale",
+      "campaign": "10"
+    },
+    {
+      "id": "10501",
+      "name": "Written in Rock",
+      "campaign": "10"
+    },
+    {
+      "id": "10523",
+      "name": "Hemlock House",
+      "campaign": "10"
+    },
+    {
+      "id": "10549",
+      "name": "The Silent Heath",
+      "campaign": "10"
+    },
+    {
+      "id": "10569",
+      "name": "The Lost Sister",
+      "campaign": "10"
+    },
+    {
+      "id": "10588",
+      "name": "The Thing in the Depths",
+      "campaign": "10"
+    },
+    {
+      "id": "10605",
+      "name": "The Twisted Hollow",
+      "campaign": "10"
+    },
+    {
+      "id": "10677a",
+      "name": "Prelude: Dawn of the Second Day",
+      "campaign": "10"
+    },
+    {
+      "id": "10626",
+      "name": "The Longest Night",
+      "campaign": "10"
+    },
+    {
+      "id": "10679a",
+      "name": "Prelude: Dawn of the Final Day",
+      "campaign": "10"
+    },
+    {
+      "id": "10679b",
+      "name": "Prelude: The Final Evening",
+      "campaign": "10"
+    },
+    {
+      "id": "10651",
+      "name": "Fate of the Vale",
+      "campaign": "10"
+    },
+    {
+      "id": "11501",
+      "name": "One Last Job",
+      "campaign": "11"
+    },
+    {
+      "id": "11517",
+      "name": "The Western Wall",
+      "campaign": "11"
+    },
+    {
+      "id": "11536",
+      "name": "The Drowned Quarter",
+      "campaign": "11"
+    },
+    {
+      "id": "11553",
+      "name": "The Apiary",
+      "campaign": "11"
+    },
+    {
+      "id": "11587",
+      "name": "The Grand Vault",
+      "campaign": "11"
+    },
+    {
+      "id": "11612",
+      "name": "Court of the Ancients",
+      "campaign": "11"
+    },
+    {
+      "id": "11639",
+      "name": "Obsidian Canyons",
+      "campaign": "11"
+    },
+    {
+      "id": "11673",
+      "name": "Sepulchre of the Sleeper",
+      "campaign": "11"
+    },
+    {
+      "id": "11682",
+      "name": "The Doom of Arkham Part I",
+      "campaign": "11"
+    },
+    {
+      "id": "11688a",
+      "name": "The Doom of Arkham Part II",
+      "campaign": "11"
+    },
+    {
+      "id": "12105",
+      "name": "Spreading Flames",
+      "campaign": "12"
+    },
+    {
+      "id": "12133",
+      "name": "Smoke and Mirrors",
+      "campaign": "12"
+    },
+    {
+      "id": "12168",
+      "name": "Queen of Ash",
+      "campaign": "12"
+    },
+    {
+      "id": "13001",
+      "name": "River of Blood",
+      "campaign": "13"
+    },
+    {
+      "id": "13031",
+      "name": "New Horizons",
+      "campaign": "13"
+    },
+    {
+      "id": "13068",
+      "name": "Blood Money",
+      "campaign": "13"
+    },
+    {
+      "id": "81001",
+      "name": "Curse of the Rougarou",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "82001",
+      "name": "Carnevale of Horrors",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "70001",
+      "name": "The Labyrinths of Lunacy",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "70001",
+      "name": "The Labyrinths of Lunacy · mini campaign",
+      "variant": "mini",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "83001",
+      "name": "The Eternal Slumber",
+      "campaign": "83",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "83016",
+      "name": "The Night's Usurper",
+      "campaign": "83",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "84001",
+      "name": "Murder at the Excelsior Hotel",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "85001",
+      "name": "The Blob That Ate Everything",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "85001",
+      "name": "The Blob That Ate Everything ELSE!",
+      "variant": "blobElse",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "86001",
+      "name": "War of the Outer Gods",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "87001",
+      "name": "Machinations Through Time",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "88001",
+      "name": "Fortune and Folly",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "71001",
+      "name": "The Midwinter Gala",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "72001",
+      "name": "Film Fatale",
+      "standaloneDifficulties": [
+        "Standard",
+        "Hard"
+      ]
+    },
+    {
+      "id": "90004",
+      "name": "Read or Die",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90011",
+      "name": "All or Nothing",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90020",
+      "name": "Bad Blood",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90032",
+      "name": "By the Book",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90041",
+      "name": "Red Tide Rising",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90054",
+      "name": "Laid to Rest",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90065",
+      "name": "Relics of the Past",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": "90094",
+      "name": "Enthralling Encore",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    },
+    {
+      "id": ":barkham:022",
+      "name": "The Meddling of Meowlathotep",
+      "campaign": ":barkham",
+      "standaloneDifficulties": [
+        "Easy",
+        "Standard",
+        "Hard",
+        "Expert"
+      ]
+    }
+  ]
+}

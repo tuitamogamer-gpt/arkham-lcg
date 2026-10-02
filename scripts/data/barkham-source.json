@@ -1,0 +1,129 @@
+{
+  "source": "https://github.com/GeckoTH/arkham-horror",
+  "sourceUrl": "https://raw.githubusercontent.com/GeckoTH/arkham-horror/977173cea94dd6a736cb4eeafde2b1cc701faee5/o8g/Sets/The%20Meddling%20of%20Meowlathotep/set.xml",
+  "revision": "977173cea94dd6a736cb4eeafde2b1cc701faee5",
+  "retrievedAt": "2026-09-30T08:57:21.276165+00:00",
+  "releaseDate": "2020-09-18",
+  "pack": {
+    "code": "barkham",
+    "name": "Barkham Horror: The Meddling of Meowlathotep",
+    "date_release": "2020-09-18",
+    "cycle_code": "side_stories",
+    "position": 13,
+    "chapter": 1,
+    "sourceUrl": "https://www.fantasyflightgames.com/en/news/2020/9/18/available-now-september-18/",
+    "sku": "PAHC01"
+  },
+  "encounterSets": [
+    {
+      "code": "meddling_of_meowlathotep",
+      "name": "The Meddling of Meowlathotep"
+    }
+  ],
+  "counts": {
+    "cardDefinitions": 62,
+    "fullSizeDefinitions": 57,
+    "fullSizeCopies": 78,
+    "miniatureDefinitions": 5,
+    "miniatureCopies": 5,
+    "printedCopiesIncludingMiniatures": 83,
+    "investigators": 5
+  },
+  "sourceFile": {
+    "url": "https://raw.githubusercontent.com/GeckoTH/arkham-horror/977173cea94dd6a736cb4eeafde2b1cc701faee5/o8g/Sets/The%20Meddling%20of%20Meowlathotep/set.xml",
+    "sha256": "a5d87248c4261673496344b9193de115582e4a17b14fe84f821880e92157259a",
+    "format": "OCTGN set XML"
+  },
+  "verificationSources": [
+    {
+      "url": "https://www.fantasyflightgames.com/en/news/2019/12/2/barkham-horror/",
+      "scope": "Official product identity, 78 full-size cards, restrictions and scenario format."
+    },
+    {
+      "url": "https://hallofarkham.com/barkham-horror-the-meddling-of-meowlathotep/",
+      "scope": "Published scans of investigator, signature and player cards, plus encounter previews."
+    },
+    {
+      "url": "https://hallofarkham.com/wp-content/uploads/2020/10/barkhamrules.pdf",
+      "scope": "Official printed rulebook mirror."
+    }
+  ],
+  "normalizationNotes": [
+    "All 62 source definitions retained, including five hidden miniature investigator records linked with duplicate_of; the 78-card advertised product count excludes miniatures.",
+    "Greek OCTGN glyphs converted to ArkhamDB icon tokens. Enemy combat/agility mapped to enemy_fight/enemy_evade; per-investigator values preserve flags.",
+    "Revealed location alternate sides mapped to main text, shroud, clues and victory to follow the existing Card schema; all investigator, act, agenda and scenario backs preserved.",
+    "All Barkham content is restricted to the standalone Barkham scenario. No official preconstructed deck recipes are supplied by this product.",
+    "Artwork-dependent deckbuilding rules remain in the printed back_text, with structured deck_options recording only unambiguous faction/level rules; manual eligibility checks are necessary.",
+    "External scan URLs identify available art. No card-image files are included in this supplement.",
+    "Card content remains property of Fantasy Flight Games."
+  ],
+  "verifiedCorrections": [
+    {
+      "positions": [
+        2,
+        5,
+        8,
+        11
+      ],
+      "field": "skill_wild",
+      "value": 1,
+      "reason": "Each printed signature card has one wild icon omitted in the OCTGN XML."
+    },
+    {
+      "positions": [
+        21
+      ],
+      "field": "skill_wild",
+      "value": 4,
+      "reason": "Printed Hair of the Dog has four wild icons omitted in the XML."
+    },
+    {
+      "positions": [
+        17
+      ],
+      "fields": {
+        "health": 1,
+        "sanity": 2
+      },
+      "reason": "Printed Dog Monocle soak values omitted in the XML."
+    },
+    {
+      "positions": [
+        11
+      ],
+      "field": "name",
+      "value": "Chew Toy of Nightmares",
+      "reason": "Printed title is plural, including its references in the investigator deckbuilding requirements."
+    },
+    {
+      "positions": [
+        13
+      ],
+      "field": "back_text",
+      "reason": "Printed Duke restriction says ABSOLUTELY NO CATS UNDER ANY CIRCUMSTANCES; XML incorrectly says CARDS."
+    },
+    {
+      "positions": [
+        5,
+        10,
+        16,
+        20,
+        25,
+        48,
+        50,
+        54,
+        56,
+        57
+      ],
+      "reason": "Obvious spelling/transcription errors normalized, including Discombobulator, returning, Spiked Collar, Footwear, Servant, Hunted by Byakats, Meowlathotep, off and the willpower icon. Names/icon mappings preserve intended printed mechanics."
+    },
+    {
+      "positions": [
+        9,
+        19
+      ],
+      "field": "text",
+      "reason": "Printed scans clarify Dogcatchers's possessive spelling and that Howl of Clyhf'ford targets the highest-evade enemy in play."
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+# Building the extended local rules runtime
+
+`scripts/build-rules-runtime.mjs` is original orchestration for a private local build. It keeps the upstream source checkout, compiler, package downloads and build caches outside this repository. Only Chronicle's original extension modules and the small registration patch descriptions belong in Git.
+
+The build uses upstream revision `03a7f1e74925744f021f6e8fe0e39945d2c3a833`, GHC 9.14.1, Stack 3.11.1, PostgreSQL 14.15 development files and PCRE 8.45. Compiler and build-tool archives are checked against SHA-256 checksums published by [GHC](https://downloads.haskell.org/~ghc/9.14.1/SHA256SUMS), [Stack's release](https://github.com/commercialhaskell/stack/releases/tag/v3.11.1) and [PostgreSQL](https://ftp.postgresql.org/pub/source/v14.15/postgresql-14.15.tar.bz2.sha256). The PCRE source checksum matches [Homebrew's package definition](https://github.com/Homebrew/homebrew-core/blob/master/Formula/p/pcre.rb); its download mirror is linked from [PCRE's site](https://www.pcre.org/).
+
+The default source checkout is `/private/tmp/arkham-upstream-research`. If it is absent, the script fetches the exact pinned commit into a new external checkout. Set `ARKHAM_RULES_SOURCE` to use another checkout at that revision. An existing checkout with a different revision stops the build. The default toolchain and cache root is `/private/tmp/arkham-build-toolchain`, overridable through `ARKHAM_RULES_TOOLCHAIN`. The compiler is extracted in place, without profiling libraries or documentation. Only libpq, its headers and `pg_config` are compiled from PostgreSQL source; the existing isolated rules service keeps its own database runtime.
+
+The base `v20260904.1` distribution must already be installed. On a fresh machine, start `npm run rules:server` once to install it, then run the build in another terminal. The build verifies that the base shared library, database executables, setup SQL and release frontend hash are present before compiling.
+
+```sh
+node scripts/build-rules-runtime.mjs --dependencies
+node scripts/build-rules-runtime.mjs --stage
+node scripts/build-rules-runtime.mjs --test-dependencies
+node scripts/build-rules-runtime.mjs --test
+```
+
+The dependency command can run while the extension is being authored. `--test-dependencies` stages the focused suite and installs its third-party dependencies without linking the engine. Staging copies the extension's `backend/Arkham/Homebrew/Barkham` directory and original Hspec tests into the external checkout and applies exact, repeatable source patches. Unchanged files retain their modification times so incremental builds reuse existing objects. The patches add open content registration for investigator and event behaviors and definitions, and player enemy weaknesses. They also keep encounter enemies separate from player weaknesses. The extension's `server-seams.json` adds the server guard that prevents Barkham content joining an ordinary scenario, or ordinary investigators joining Barkham. A source revision or registration anchor mismatch stops the build instead of guessing. Full builds stage the frontend and rebuild it when its extension hash differs from the existing `dist/source_hash`. The `--test` option compiles an original focused `barkham-spec` test component in the same Cabal configuration as the engine, then executes the linked native suite with `+RTS -N1 -A16m -RTS` before packaging. Its explicit module list contains only the two Barkham suites and four existing harness modules; it reuses the engine library and does not compile the other upstream test suites.
+
+Once Stack has configured the engine and focused component, an incremental build can use the same private Cabal configuration directly:
+
+```sh
+node scripts/build-rules-runtime.mjs --incremental-native --test
+```
+
+The compiler defaults to a 4 GiB heap, one RTS capability and a 16 MiB nursery, which supports the complete native/API graph. `ARKHAM_RULES_GHC_HEAP` can adjust that bounded heap from `1G` through `8G`; a 2 GiB cap was insufficient for the full engine in this build.
+
+This builds the engine and focused suite without copying or registering the large development library. If only test sources changed, `--test-built` reads the generated focused Cabal component's actual dependency, source-directory, language and compiler settings, then invokes the private GHC directly against the configured inplace engine. It requires the existing engine executable to be newer than all native engine inputs and avoids regenerating the unchanged library archive.
+
+With an existing object cache and too little space for duplicated development libraries, append `--direct-objects` to `--incremental-native`. The script captures the configured Cabal library's actual GHC command before execution, restores the same explicit fast-build compiler options, and compiles the native objects without creating an archive or shared library. Cabal generates the exact current inplace registration description without installation; a private package registry exposes the resulting interfaces. The actual objects are passed directly to both executable links through GHC response files. The generated Cabal component supplies each entrypoint's dependencies, language settings and source paths. Runtime options remain real command arguments because GHC expands response files after RTS parsing. This route still compiles the full selected native/API component and executes the same focused tests before packaging. With `--compact-build`, Darwin executable links omit debug and local symbols directly with `-S -x`, avoiding a large intermediate; global symbols remain. The private main executable is then stripped before linking the tests; `rules-native-link.json` records both link and stripped hashes. The tests bind the resulting actual native engine hash. Once they pass, `rules-native-test-result.json` records the tested source, engine and test executable hashes before the regenerable test executable is removed for signing headroom. All native and test objects/interfaces remain available for relinking, and a signed runtime manifest is still written only after complete packaging.
+
+`--configure-only --incremental-native --test` verifies the cached dependency plan and refreshes Hpack/Cabal module registration without starting the compiler or creating a runtime. It is useful before recovering build space and does not establish compiled support.
+
+With `--direct-objects`, `--native-objects-only` stops after compiling and registering the complete native library/API component. Executable linking, tests and packaging remain pending. A later `--link-objects` run can continue from those real compiled objects only when the full staged native library hash and configured module list still match. If only focused tests changed and the private engine executable remains, `--test-built --direct-objects` reuses that same guarded object/interface registry for test linking.
+
+With little free disk space, append `--compact-build` to a test build or packaging command. Only after the focused suite passes and both linked executables are confirmed to have no dependency on the generated Haskell library, this removes the project's regenerable static archive and shared build library. After preparing and hashing the stripped replacement, it also removes the superseded unstripped compiler executable to leave room for signing. Every object and interface file is retained, and `rules-prepared-input.json` records the native and prepared hashes. A later `--incremental-native --test` rebuild recreates those generated products from the objects; packaging recovery requires the compiler executable to still exist.
+
+If compilation and linking succeeded but Stack's subsequent development-library installation exhausted disk space, the captured input record permits packaging the actual build-tree executables without repeating compilation:
+
+```sh
+node scripts/build-rules-runtime.mjs --package-built --test
+```
+
+This recovery command requires `output/rules-server/rules-build-input.json` to match the pinned revision and current extension hash. It rejects stale engine inputs or test sources, executes the focused native suite, and packages only a passing result. Keep the private source checkout, object files and linked executables until packaging completes.
+
+Profiling and Haddock are disabled. Package builds and the main compiler use two parallel jobs; each compiler process has the configured bounded heap, one RTS capability and a 16 MiB nursery to control memory and swap pressure. The first build compiles several hundred dependency packages and thousands of engine modules, so it takes substantially longer than the Chronicle Vite build. Incremental builds reuse the isolated Stack cache.
+
+Allow roughly 10 GiB of free space for a fresh build, including package indexes, compilation objects, libraries and test executables. Final linking temporarily holds another copy of the large engine archive. Stripping writes directly to the candidate executable; native macOS frontend copies request APFS cloning. Removing caches without preserving the compiled object files can cause the next build to repeat the engine compilation.
+
+Successful compilation creates `output/rules-server/derived-runtime/game/bin/arkham-api` and a `chronicle-runtime.json` manifest beside it. The manifest records the upstream revision, release archive checksum, frontend source hash, extension source hash, registration patch hash and compiled executable hash. It is written only after the executable exists and its installation signature is complete. Packaging stops if the original extension changed during compilation. The manifest lists expected card codes; the running API supplies the actual coverage list. It reports compilation; scenario and ability behavior still require separate playthrough verification.
+
+A successful `--test` run additionally writes `output/rules-server/barkham-behavior-tests.json` with the actual Hspec example count, zero failures and the tested runtime, extension, native test executable and test-driver hashes. A new test build removes the previous proof first. These focused checks establish the exercised behaviors; they do not certify every possible playthrough or the separate Epic extension.
+
+The derived runtime reuses the already installed distribution's PostgreSQL runtime, shared C libraries and setup data. It copies the built frontend into the project's ignored output directory and strips static executable symbols to reduce the installed size. A bounded Mach-O header edit replaces the temporary libpq path with `@loader_path/../lib/libpq.5.dylib` inside its existing string slot, preserving all command and segment offsets. Temporary unused search paths are rewritten similarly. Other temporary shared-library links stop packaging. The executable is then signed and verified with `codesign --verify --strict`. The unstripped compiler executable is retained unless compacting was requested. `ARKHAM_RULES_BUILD_FRONTEND_DIR` can select a different parent directory for the rebuilt `dist`; the default is the external source's frontend directory. The local service verifies the derived manifest before using the executable. On its first derived startup it backs up the private database and applies the eight checksum-verified migrations added since the base release. A static deployment does not itself host this Haskell/PostgreSQL service.
+
+Packaging builds a fresh ignored `.candidate-<pid>` directory without changing the running runtime's executable or frontend. It privately preserves the existing session-key directory with permission 700. On macOS, `renameatx_np(RENAME_SWAP)` atomically exchanges the complete candidate and installed directories. Existing processes retain their old executable and working directory. The previous runtime remains at the candidate path until its daemon has been restarted; remove it only after checking that no process still uses it.
+
+The separate Epic Labyrinth extension is an explicit build selection. After the native, API and transfer authors freeze the complete batch, add `--with-epic-labyrinth` to the build or stage command:
+
+```sh
+node scripts/build-rules-runtime.mjs --with-epic-labyrinth --stage
+node scripts/build-rules-runtime.mjs --with-epic-labyrinth --incremental-native --direct-objects --test --compact-build
+```
+
+This stages its full original backend and test trees, including `NativeAssets.hs-boot`, applies its ordered native, server and public-view seam contracts, and adds the coordinator, cards, stories, transfer and public-statistics suites to the same focused component through `rules/tests/ChronicleSpec.hs`. A reused private checkout containing Epic cannot be built with a Barkham-only manifest. Core seam files are composed from the exact pinned Git originals; a private stage-state record distinguishes previous generated patches from unexpected manual edits. This makes overlapping seam patches repeatable while preserving modification times for unchanged files.
+
+Aggregate manifests add `extensionSourceHashes`, keyed by extension ID. For one extension, `extensionSourceSha256` remains that directory's existing hash. For multiple extensions, it is SHA-256 of `JSON.stringify` applied to sorted `[extensionId, directoryHash]` pairs. Aggregate native behavior results are written to `rules-behavior-tests.json`; the earlier Barkham-only proof remains available. A declaration or staged source tree alone does not establish compiled Epic support.
+
+The complete original aggregate also accepts `--with-epic-machinations`, which includes its Labyrinth transport dependency. It stages both Epic extensions in order and selects `rules/tests/ChronicleFullSpec.hs`, including all five Machinations coordinator, scenario, entity, transport and token-transaction suites:
+
+```sh
+ARKHAM_RULES_GHC_HEAP=4G node scripts/build-rules-runtime.mjs --with-epic-machinations --incremental-native --direct-objects --test --compact-build
+```
+
+A checkout already containing Machinations rejects a build that omits that flag. Packaging generates the private data-only `chronicle-presentation.json` from the pinned text/settings resources and records its `presentationSha256` together with the native binary and frontend hashes.
+
+For an installation handoff while an existing companion is active, add `--prepare-only`. The complete build, native tests and strict signing still run, but the installed directory is left in place. After stopping that companion, publish the printed candidate path with the same extension selection:
+
+```sh
+node scripts/build-rules-runtime.mjs --with-epic-machinations --publish-candidate /absolute/output/rules-server/derived-runtime/.candidate-12345
+```
+
+Publishing rechecks the actual original source, binary, frontend and presentation hashes, matching passing behavior proof and signature before the atomic directory exchange.

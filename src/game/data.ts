@@ -5,6 +5,11 @@ import { SPREADING_FLAMES } from "./scenario";
 export const cards = raw as Card[];
 export const cardMap = Object.fromEntries(cards.map((c) => [c.code, c]));
 export const card = (code: string) => cardMap[code];
+// Keep the scripted scenario's pool fixed. The collection is loaded on demand
+// and registered only for read-only inspection, never for game setup or saves.
+export function registerCatalogCards(imported: Card[]) {
+  for (const c of imported) if (!cardMap[c.code]) cardMap[c.code] = c;
+}
 export const code = (n: number) => String(12000 + n);
 export const investigators = cards.filter(
   (c) => c.type_code === "investigator",
@@ -161,6 +166,23 @@ export const thumbArt = (src?: string) =>
   src && src.startsWith("/art/cards/")
     ? src.replace("/art/cards/", "/art/cards/thumb/")
     : src;
+export const cardArt = (c: Card, reverse = false) => {
+  const local = CARD_ART[reverse ? `${c.code}b` : c.code];
+  if (local) return local;
+  const src = reverse ? c.backimagesrc : c.imagesrc;
+  return src?.startsWith("/") ? `https://arkhamdb.com${src}` : src;
+};
+/** Keep the existing local scans first. The published rules asset host offers
+ * a second source for exact printing identifiers when ArkhamDB is unavailable.
+ * An unavailable printing falls back to the readable card face.
+ */
+export const cardArtSources = (c: Card, reverse = false): string[] => {
+  const primary = cardArt(c, reverse);
+  const published = /^\d{5}[a-z]*$/.test(c.code)
+    ? `https://assets.arkhamhorror.app/img/arkham/cards/${c.code}${reverse ? "b" : ""}.avif`
+    : undefined;
+  return [...new Set([primary, published].filter((v): v is string => !!v))];
+};
 export const CARD_BACKS = {
   player: "/art/backs/player.webp",
   encounter: "/art/backs/encounter.webp",

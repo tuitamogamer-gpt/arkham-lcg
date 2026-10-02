@@ -1,0 +1,33 @@
+[
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "-- Blinding the whole encoder is one line and covers every published list at once.",
+    "-- Chronicle public fields are calculated by the same native projections used\n-- by rules. Keep their printed counterparts for card display and inspection.\nchronicleWithStats :: ToJSON a => a -> [(Key.Key, Value)] -> Value\nchronicleWithStats original entries = case toJSON original of\n  Object fields -> Object $ foldl' (\\current (key, value) -> KeyMap.insert key value current) fields entries\n  other -> other\n\nchroniclePublicInvestigator :: (HasGame m, ToJSON a) => InvestigatorId -> a -> m Value\nchroniclePublicInvestigator iid original = do\n  health <- field InvestigatorHealth iid\n  sanity <- field InvestigatorSanity iid\n  willpower <- getSkillValue #willpower iid\n  intellect <- getSkillValue #intellect iid\n  combat <- getSkillValue #combat iid\n  agility <- getSkillValue #agility iid\n  pure $ chronicleWithStats original\n    [ (\"currentHealth\", toJSON health), (\"currentSanity\", toJSON sanity)\n    , (\"currentWillpower\", toJSON willpower), (\"currentIntellect\", toJSON intellect)\n    , (\"currentCombat\", toJSON combat), (\"currentAgility\", toJSON agility)\n    ]\n\nchroniclePublicEnemy :: (HasGame m, ToJSON a) => EnemyId -> a -> m Value\nchroniclePublicEnemy eid original = do\n  health <- field EnemyHealth eid\n  evade <- field EnemyEvade eid\n  game <- getGame\n  -- Fight can depend on the active investigator. No such query is legal while\n  -- a game has no investigators seated; retain its optional native value.\n  fight <- if null (gameInvestigators game) then pure Nothing else field EnemyFight eid\n  pure $ chronicleWithStats original\n    [(\"currentHealth\", toJSON health), (\"currentFight\", toJSON fight), (\"currentEvade\", toJSON evade)]\n\nchroniclePublicLocation :: (HasGame m, ToJSON a) => LocationId -> a -> m Value\nchroniclePublicLocation lid original = do\n  shroud <- field LocationShroud lid\n  pure $ chronicleWithStats original [(\"currentShroud\", toJSON shroud)]\n\n-- Blinding the whole encoder is one line and covers every published list at once."
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "    let allLocations' = Map.map toJSON locations <> enemyLocationViews",
+    "    locations' <- Map.traverseWithKey chroniclePublicLocation locations\n    let allLocations' = locations' <> enemyLocationViews",
+    {
+      "occurrences": 2
+    }
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "    enemies <- traverse withEnemyMetadata (gameEnemies g)",
+    "    investigatorsWithStats <- Map.traverseWithKey chroniclePublicInvestigator investigators\n    enemies <- Map.traverseWithKey chroniclePublicEnemy =<< traverse withEnemyMetadata (gameEnemies g)",
+    {
+      "occurrences": 2
+    }
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "(\"investigators\" .= investigators)",
+    "(\"investigators\" .= investigatorsWithStats)"
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "\"investigators\" .= toJSON investigators",
+    "\"investigators\" .= toJSON investigatorsWithStats"
+  ]
+]

@@ -27,6 +27,8 @@ import {
 } from "@phosphor-icons/react";
 import {
   card,
+  cardArt,
+  cardArtSources,
   CARD_ART,
   CARD_BACKS,
   LOCATION_ART,
@@ -36,6 +38,7 @@ import {
 import scans from "../../public/data/art-manifest.json";
 import type { Card, GameState, Skill } from "../game/types";
 import { canInspectCard, canReadReverse } from "../game/knowledge";
+import { kindLabel, productForCard, productsForCard } from "../game/catalog";
 const dialogStack: HTMLElement[] = [];
 let originalOverflow = "";
 export function Sigil({ small = false }: { small?: boolean }) {
@@ -256,8 +259,42 @@ export function CardFace({
   selected?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [c.code]);
-  if (CARD_ART[c.code] && !failed)
+  const [loaded, setLoaded] = useState(false);
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const artRef = useRef<HTMLImageElement>(null);
+  const [visibleArt, setVisibleArt] = useState(false);
+  const sources = cardArtSources(c);
+  const sourceKey = sources.join("|");
+  useEffect(() => {
+    setFailed(false);
+    setLoaded(false);
+    setSourceIndex(0);
+  }, [c.code, sourceKey]);
+  const art = sources[sourceIndex];
+  const nextSource = () => {
+    setLoaded(false);
+    if (sourceIndex + 1 < sources.length) setSourceIndex(sourceIndex + 1);
+    else setFailed(true);
+  };
+  useEffect(() => {
+    const image = artRef.current;
+    if (!image || !art || failed) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setVisibleArt(true);
+        observer.disconnect();
+      }
+    }, {rootMargin: "200px"});
+    observer.observe(image);
+    return () => observer.disconnect();
+  }, [art, failed]);
+  useEffect(() => {
+    if (!visibleArt || !art || art.startsWith("/") || loaded || failed) return;
+    const timer = setTimeout(nextSource, 8000);
+    return () => clearTimeout(timer);
+  }, [visibleArt, art, loaded, failed, sourceIndex, sourceKey]);
+  const product = productForCard(c);
+  if (art && !failed)
     return (
       <button
         className={`card-face official-scan ${["act", "agenda", "investigator"].includes(c.type_code) ? "landscape-scan" : ""} ${compact ? "compact" : ""} ${c.faction_code} ${selected ? "selected" : ""}`}
@@ -266,12 +303,24 @@ export function CardFace({
         onClick={onClick}
       >
         <img
-          src={compact ? thumbArt(CARD_ART[c.code]) : CARD_ART[c.code]}
+          ref={artRef}
+          src={compact ? thumbArt(art) : art}
           alt={`${c.name} card`}
           loading="lazy"
           decoding="async"
-          onError={() => setFailed(true)}
+          style={loaded ? undefined : { opacity: 0 }}
+          onLoad={() => setLoaded(true)}
+          onError={nextSource}
         />
+        {!loaded && (
+          <span className="collection-scan-placeholder">
+            <strong>{c.name}</strong>
+            <span>
+              {c.type_code} · {c.faction_code}
+            </span>
+            <span>{plain(c.text).slice(0, compact ? 100 : 240)}</span>
+          </span>
+        )}
         <span className="scan-caption">{c.name}</span>
       </button>
     );
@@ -311,7 +360,7 @@ export function CardFace({
             ? `${c.xp} XP`
             : c.subtype_code
               ? "WEAKNESS"
-              : "CORE SET · 2026"}
+              : product?.name || "Player card"}
           <span>✧</span>
         </div>
       </div>
@@ -323,15 +372,25 @@ export function CardDetail({
   game,
   onClose,
   actions,
+  allowSpoilers = false,
 }: {
   code: string;
   game: GameState | null;
   onClose: () => void;
   actions?: ReactNode;
+  allowSpoilers?: boolean;
 }) {
   const c = card(code);
   const [flipped, setFlipped] = useState(false);
-  useEffect(() => setFlipped(false), [code]);
+  const [backFailed, setBackFailed] = useState(false);
+  useEffect(() => {
+    setFlipped(false);
+    setBackFailed(false);
+  }, [code]);
+  const mayInspect = canInspectCard(game, code) || (allowSpoilers && !!c);
+  const mayReadReverse = canReadReverse(game, code) || (allowSpoilers && !!c);
+  const product = c && productForCard(c);
+  const editions = c ? productsForCard(c) : [];
   const genericBack =
     !["investigator", "act", "agenda", "location", "scenario"].includes(
       c?.type_code,
@@ -344,9 +403,11 @@ export function CardDetail({
     ? CARD_BACKS[backKind]
     : (scans as Record<string, string>)[
         LOCATION_ART[code]?.unrevealed || `${code}b`
-      ];
-  const mayFlip = !!backSrc && (genericBack || canReadReverse(game, code));
-  if (!canInspectCard(game, code))
+      ] ||
+      (c && cardArt(c, true));
+  const mayFlip =
+    (!!backSrc || !!c?.back_text) && (genericBack || mayReadReverse);
+  if (!mayInspect)
     return (
       <Modal title="Undiscovered card" onClose={onClose}>
         <div className="modal-intro">
@@ -359,7 +420,7 @@ export function CardDetail({
     <Modal title={c.name} onClose={onClose} wide>
       <div className="card-detail">
         <div className="detail-art">
-          {flipped && mayFlip ? (
+          {flipped && mayFlip && backSrc && !backFailed ? (
             <img
               className="detail-card-back"
               tabIndex={0}
@@ -368,7 +429,15 @@ export function CardDetail({
               data-preview-code={genericBack ? undefined : code}
               data-preview-face="back"
               data-preview-back={genericBack ? backKind : undefined}
+              onError={() => setBackFailed(true)}
             />
+          ) : flipped && mayFlip ? (
+            <div className="collection-reverse-text">
+              <h3>{c.back_name || c.name}</h3>
+              <RulesText
+                text={c.back_text || "Reverse artwork is unavailable."}
+              />
+            </div>
           ) : (
             <CardFace c={c} />
           )}
@@ -387,6 +456,27 @@ export function CardDetail({
           </div>
           <h2>{c.name}</h2>
           {c.subname && <p className="subname">{c.subname}</p>}
+          {product && (
+            <div className="collection-card-source">
+              <span className="eyebrow">FROM YOUR COLLECTION</span>
+              <strong>{product.name}</strong>
+              <span>
+                {kindLabel(product.kind)}
+                {product.releaseDate
+                  ? ` · ${product.releaseDateBasis?.startsWith("official") ? "Released" : "Catalog date"} ${product.releaseDate}`
+                  : ""}
+              </span>
+              {editions.length > 1 && (
+                <span>
+                  Also included in:{" "}
+                  {editions
+                    .filter((p) => p.code !== product.code)
+                    .map((p) => p.name)
+                    .join(" · ")}
+                </span>
+              )}
+            </div>
+          )}
           <p className="traits">{c.traits}</p>
           <div className="detail-pills">
             {c.cost != null && <span>Cost {c.cost}</span>}
@@ -419,7 +509,7 @@ export function CardDetail({
           </p>
           {actions}
           {c.flavor && <blockquote>{plain(c.flavor)}</blockquote>}
-          {c.back_text && canReadReverse(game, code) && (
+          {c.back_text && mayReadReverse && (
             <details>
               <summary>Reverse side</summary>
               {c.back_name && <h3>{c.back_name}</h3>}
@@ -429,7 +519,7 @@ export function CardDetail({
               </p>
             </details>
           )}
-          {c.back_text && !canReadReverse(game, code) && (
+          {c.back_text && !mayReadReverse && (
             <p className="sealed-note">
               The reverse side opens when the story advances.
             </p>
@@ -448,15 +538,18 @@ export function CardDetail({
               </>
             )}
             Card data from{" "}
-            {c.encounter_code && !canReadReverse(game, code) ? (
+            {c.encounter_code && !mayReadReverse ? (
               "ArkhamDB"
             ) : (
               <a
-                href={`https://arkhamdb.com/card/${c.code}`}
+                href={c.url || `https://arkhamdb.com/card/${c.code}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                ArkhamDB <ArrowUpRight size={12} />
+                {c.url && !c.url.includes("arkhamdb.com")
+                  ? "Card source"
+                  : "ArkhamDB"}{" "}
+                <ArrowUpRight size={12} />
               </a>
             )}{" "}
             · Fantasy Flight Games
