@@ -261,3 +261,13 @@ Original prompt: I want to create fully playable and scripted Arkham Horror LCG.
 - Frozen Labyrinth native/return/API source handed to sole compiler. Native paired owner returns queue receiving-game discard/hand/deck/shuffle messages atomically, with provenance across groups sharing investigator codes. Coupled Undo prevalidates the native inverse, checks other-group cursors and broadcasts all restored groups/timer after commit.
 - Original Machinations API transaction adapter and real native token helpers authored; native story/era/transport work and compile tests remain in progress. Added independent per-era printed difficulty selections. These modes remain gated by verified executable manifests.
 - Build disk reached ENOSPC; removed only verified superseded task test binary/metadata backup/download archive, preserving all objects/dependencies, signed Bark runtime and private DB. Rules service cleanly stopped during compiler disk recovery; future launcher caps API RTS nursery/threads. No user files or save data removed.
+
+
+## Seven-hour import session closure — 3 October 2026
+
+- Deadline: 06:50 Europe/Sarajevo; closing heartbeat arrived 07:04. Automation `arkham-puni-scripted-importi-sedam-sati` is verified PAUSED. No new implementation/build started after the deadline.
+- Chronicle TypeScript suite passed 353/353 after the initial disk-full attempt; TypeScript/production/PWA build passed. Evidence: `output/import-session-2026-10-02/{native,build}.log`.
+- Aggregate Machinations build failed in the assembler with ENOSPC (`output/rules-server/build-runtime-machinations23.log`). No completed aggregate Haskell tests, signed installed aggregate or live three-group certification were produced by this session.
+- Previously recorded Barkham + Labyrinth behavior proof is 102/0, from before this session. Installed runtime remains the independently reverified Barkham-only build. Epic stays gated.
+- At closure the private `/private/tmp/arkham-upstream-research` source and `/private/tmp/arkham-build-toolchain` are absent, while the data volume has about 22 GiB free. No active native build or rules service was found. Restoration is required before future compilation; do not claim the cache is retained or assume an incremental command can resume.
+- Existing WIP and persistent runtime/database are preserved; no commit/push/deploy. Full engine support remains incomplete. Full evidence and exact continuation requirements: `docs/import-session-2026-10-02.md`.

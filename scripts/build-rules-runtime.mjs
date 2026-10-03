@@ -367,7 +367,7 @@ if (withEpicMachinations) {
   patches.push([
     "arkham-api/package.yaml",
     "      - Arkham.Homebrew.EpicLabyrinth.TransferSpec\n      - Helpers.Message",
-    "      - Arkham.Homebrew.EpicLabyrinth.TransferSpec\n      - Arkham.Homebrew.EpicMachinations.CoordinatorSpec\n      - Arkham.Homebrew.EpicMachinations.ScenarioSpec\n      - Arkham.Homebrew.EpicMachinations.EntitiesSpec\n      - Arkham.Homebrew.EpicMachinations.TransportSpec\n      - Arkham.Homebrew.EpicMachinations.TransactionsSpec\n      - Helpers.Message",
+    "      - Arkham.Homebrew.EpicLabyrinth.TransferSpec\n      - Arkham.Homebrew.EpicMachinations.CoordinatorSpec\n      - Arkham.Homebrew.EpicMachinations.ScenarioSpec\n      - Arkham.Homebrew.EpicMachinations.EntitiesSpec\n      - Arkham.Homebrew.EpicMachinations.TransportSpec\n      - Arkham.Homebrew.EpicMachinations.TransactionsSpec\n      - Arkham.Homebrew.EpicMachinations.NobleLegacySpec\n      - Helpers.Message",
   ]);
 }
 for (const id of selectedExtensions.slice(1)) {
@@ -1498,7 +1498,7 @@ async function packageRuntime(binary, buildSourceHash) {
         : []),
       ...(withEpicMachinations ? [
         "87001", "87003", "87004", "87005b", "87008", "87009", "87011",
-        "87018", "87025", "87033", "87034", "87035", "87037", "87037b",
+        "87015", "87018", "87024", "87025", "87033", "87034", "87035", "87037", "87037b",
         "87038", "87039", "87042", "87043",
       ] : []),
     ],

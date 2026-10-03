@@ -1,6 +1,7 @@
 module Arkham.Homebrew.EpicMachinations.TransactionsSpec (spec) where
 
 import Arkham.Classes.HasGame (getGame)
+import Arkham.Card (genPlayerCard, lookupCardDef)
 import Arkham.Asset.Cards qualified as Assets
 import Arkham.Asset.Types (AssetAttrs (..))
 import Arkham.Enemy.CardDefs.MachinationsThroughTime qualified as Enemies
@@ -86,6 +87,7 @@ spec = describe "Machinations actual native token transactions" do
     Map.lookup Damage (enemy ordinary.id).enemyTokens `shouldBe` Just 3
 
 initialize self = do
+  void $ genPlayerCard $ fromJustNote "native investigator definition" $ lookupCardDef $ toCardCode self
   let state = either (error . show) id $ initialMachinations $ Map.fromList [(era, Set.singleton self.id) | era <- allEras]
       replica = either (error . show) id $ machinationsReplicaFor PastEra state
       change = overAttrs $ setMetaKey "epicMultiplayer" True . setMetaKey "epicMachinationsReplica" replica
@@ -94,7 +96,8 @@ initialize self = do
     These campaign scenario -> These campaign $ change scenario
     _ -> error "test requires native scenario"
   run Setup
-  chooseFirstOption "flip Noble Legacy"
+  chooseOnlyOption "start this era at Tindalos"
+  chooseOnlyOption "flip Noble Legacy"
 
 expectRight = either (\problem -> expectationFailure (unpack problem) >> error "native transaction rejected") pure
 zeroInvestigatorClues game = game {gameEntities = (gameEntities game)

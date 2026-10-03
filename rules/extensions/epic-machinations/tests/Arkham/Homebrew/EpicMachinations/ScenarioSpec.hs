@@ -1,10 +1,12 @@
 module Arkham.Homebrew.EpicMachinations.ScenarioSpec (spec) where
 
 import Arkham.Asset.Cards qualified as Assets
+import Arkham.Asset.Types qualified as Asset
 import Arkham.Agenda.Sequence qualified as Agenda
 import Arkham.Agenda.Types (Field (AgendaSequence))
 import Arkham.Card
 import Arkham.Classes.HasGame (getGame)
+import Arkham.Enemy.CardDefs.MachinationsThroughTimeEpicMultiplayer qualified as Enemies
 import Arkham.Game.Base (Game)
 import Arkham.Homebrew.EpicLabyrinth.Types (DeliveryId (..))
 import Arkham.Homebrew.EpicMachinations.CardDefs.Locations qualified as Locations
@@ -31,9 +33,26 @@ spec = describe "Epic Machinations native scenario" do
         . scenarioTest "87001" $ \self -> do
           initializeEpic era self
           run Setup
-          chooseFirstOption "flip this era's Noble Legacy"
+          chooseOnlyOption "start this era at Tindalos"
+          chooseOnlyOption "flip this era's Noble Legacy"
+          prepared <- getGame
+          pool <- scenarioField ScenarioSetAsideCards
+          for_ pool $ \card -> Map.lookup (toCardId card) prepared.gameCards `shouldBe` Just card
+          let edwin = fromJustNote "the Epic Rival is set aside before choosing the common machination" $
+                find ((== toCardCode Enemies.edwinBennetEnviousRival) . toCardCode) pool
           receive "test:machination" $ InstallSharedStory machination
           receive "test:plot" $ InstallSharedStory "87038"
+          when (era == PastEra && machination == "87035") do
+            colleagues <- select $ assetIs Assets.edwinBennetEsteemedColleague
+            length colleagues `shouldBe` 1
+            for_ colleagues $ \aid -> do
+              field Asset.AssetCardId aid `shouldReturn` toCardId edwin
+              field Asset.AssetClues aid `shouldReturn` 9
+            canonical <- Map.lookup (toCardId edwin) . (.gameCards) <$> getGame
+            toCardCode <$> canonical `shouldBe` Just "87037b"
+            canonical `shouldSatisfy` \case
+              Just (PlayerCard _) -> True
+              _ -> False
           selectCount Anywhere `shouldReturn` if era == FutureEra then 5 else 6
           selectCount (locationIs Locations.tindalosEpic) `shouldReturn` 1
           selectCount (LocationWithTitle "Miskatonic University") `shouldReturn` 1
@@ -64,7 +83,8 @@ spec = describe "Epic Machinations native scenario" do
     . scenarioTest "87001" $ \self -> do
       initializeEpic PresentEra self
       run Setup
-      chooseFirstOption "flip this era's Noble Legacy"
+      chooseOnlyOption "start this era at Tindalos"
+      chooseOnlyOption "flip this era's Noble Legacy"
       run $ ScenarioSpecific "epicMachinations.timeExpired" Null
       pending <- getScenarioMetaKeyDefault "epicMachinationsOutbox" [] :: TestAppT [MachinationsRequest]
       map machinationsRequestOperation pending `shouldSatisfy` elem FailTimeline
@@ -83,7 +103,8 @@ spec = describe "Epic Machinations native scenario" do
     . scenarioTest "87001" $ \self -> do
       initializeEpic PresentEra self
       run Setup
-      chooseFirstOption "flip this era's Noble Legacy"
+      chooseOnlyOption "start this era at Tindalos"
+      chooseOnlyOption "flip this era's Noble Legacy"
       withProp @"clues" 3 self
       lid <- selectJust $ locationIs Locations.tindalosEpic
       receive "test:spend" $ SpendInvestigatorClue self.id
@@ -104,7 +125,8 @@ spec = describe "Epic Machinations native scenario" do
     . scenarioTest "87001" $ \self -> do
       initializeEpic FutureEra self
       run Setup
-      chooseFirstOption "flip this era's Noble Legacy"
+      chooseOnlyOption "start this era at Tindalos"
+      chooseOnlyOption "flip this era's Noble Legacy"
       receive "test:machination" $ InstallSharedStory "87034"
       meta <- scenarioField ScenarioMeta
       Aeson.eitherDecode (Aeson.encode meta) `shouldBe` Right meta
@@ -116,6 +138,10 @@ spec = describe "Epic Machinations native scenario" do
 
 initializeEpic :: Era -> Investigator -> TestAppT ()
 initializeEpic era self = do
+  -- A deck-loaded native game already has canonical cards. The generic
+  -- scenario fixture starts empty, which makes Game.putGame drop CardGen
+  -- cache writes during Setup; seed the actual investigator definition.
+  void $ genPlayerCard $ fromJustNote "native investigator definition" $ lookupCardDef $ toCardCode self
   let rosters = Map.fromList [(group, Set.singleton self.id) | group <- allEras]
       state = either (error . show) id $ initialMachinations rosters
       replica = either (error . show) id $ machinationsReplicaFor era state

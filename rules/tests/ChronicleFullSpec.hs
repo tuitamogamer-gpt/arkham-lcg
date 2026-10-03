@@ -9,6 +9,7 @@ import Arkham.Homebrew.EpicLabyrinth.StoriesSpec qualified as LabyrinthStories
 import Arkham.Homebrew.EpicLabyrinth.TransferSpec qualified as LabyrinthTransfer
 import Arkham.Homebrew.EpicMachinations.CoordinatorSpec qualified as MachinationsCoordinator
 import Arkham.Homebrew.EpicMachinations.EntitiesSpec qualified as MachinationsEntities
+import Arkham.Homebrew.EpicMachinations.NobleLegacySpec qualified as MachinationsNobleLegacy
 import Arkham.Homebrew.EpicMachinations.ScenarioSpec qualified as MachinationsScenario
 import Arkham.Homebrew.EpicMachinations.TransactionsSpec qualified as MachinationsTransactions
 import Arkham.Homebrew.EpicMachinations.TransportSpec qualified as MachinationsTransport
@@ -29,3 +30,4 @@ main = hspec do
   MachinationsEntities.spec
   MachinationsTransport.spec
   MachinationsTransactions.spec
+  MachinationsNobleLegacy.spec

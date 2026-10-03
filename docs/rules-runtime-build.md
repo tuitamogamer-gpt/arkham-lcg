@@ -66,7 +66,7 @@ This stages its full original backend and test trees, including `NativeAssets.hs
 
 Aggregate manifests add `extensionSourceHashes`, keyed by extension ID. For one extension, `extensionSourceSha256` remains that directory's existing hash. For multiple extensions, it is SHA-256 of `JSON.stringify` applied to sorted `[extensionId, directoryHash]` pairs. Aggregate native behavior results are written to `rules-behavior-tests.json`; the earlier Barkham-only proof remains available. A declaration or staged source tree alone does not establish compiled Epic support.
 
-The complete original aggregate also accepts `--with-epic-machinations`, which includes its Labyrinth transport dependency. It stages both Epic extensions in order and selects `rules/tests/ChronicleFullSpec.hs`, including all five Machinations coordinator, scenario, entity, transport and token-transaction suites:
+The complete original aggregate also accepts `--with-epic-machinations`, which includes its Labyrinth transport dependency. It stages both Epic extensions in order and selects `rules/tests/ChronicleFullSpec.hs`, including all six Machinations coordinator, scenario, entity, transport, token-transaction and printed Noble Legacy suites:
 
 ```sh
 ARKHAM_RULES_GHC_HEAP=4G node scripts/build-rules-runtime.mjs --with-epic-machinations --incremental-native --direct-objects --test --compact-build

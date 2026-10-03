@@ -5,12 +5,11 @@ import Arkham.Asset.Cards.NightOfTheZealot qualified as PlayerAssets
 import Arkham.Asset.Types (Field (AssetDamage, AssetClues, AssetCardId, AssetPlacement, AssetTokens))
 import Arkham.Card
 import Arkham.Classes.HasGame (getGame)
-import Arkham.Classes.HasQueue (fromQueue)
 import Arkham.Cost (Payment (NoPayment))
 import Arkham.Enemy.CardDefs.MachinationsThroughTime qualified as Ordinary
 import Arkham.Enemy.CardDefs.MachinationsThroughTimeEpicMultiplayer qualified as Enemies
 import Arkham.Enemy.CardDefs.NightOfTheZealot.Rats qualified as Rats
-import Arkham.Enemy.Types (Field (EnemyTokens, EnemyHealth, EnemyDamage, EnemyCard, EnemyLocation))
+import Arkham.Enemy.Types (Field (EnemyTokens, EnemyHealth, EnemyDamage))
 import Arkham.Helpers.Scenario (getScenarioMetaKeyDefault)
 import Arkham.Homebrew.EpicLabyrinth.Types (DeliveryId (..))
 import Arkham.Homebrew.EpicMachinations.Assets.EdwinBennetEsteemedColleague qualified as Colleague
@@ -24,7 +23,7 @@ import Arkham.Homebrew.EpicMachinations.Stories.UneasyAlliance qualified as Alli
 import Arkham.Homebrew.EpicMachinations.Types
 import Arkham.Message.Story
 import Arkham.Message.Lifted qualified as Lifted
-import Arkham.Matcher (enemyIs, assetIs, AssetMatcher (AssetWithId, AssetExhausted))
+import Arkham.Matcher (enemyIs, assetIs, AssetMatcher (AssetWithId, AssetExhausted), EnemyMatcher (EnemyWithId))
 import Arkham.SkillTest.Type (SkillTestType (..))
 import Arkham.Placement
 import Arkham.Projection
@@ -92,7 +91,7 @@ spec = describe "Epic Machinations original entities and story actions" do
     field EnemyDamage edwin.id `shouldReturn` 0
 
   it "flips the actual Rival card into the Colleague while preserving its physical identity and attachments"
-    . scenarioTest "87001" $ TI.debug $ \self -> do
+    . scenarioTest "87001" $ \self -> do
       initializeEpic PresentEra self
       location <- testLocation
       self `moveTo` location
@@ -105,18 +104,10 @@ spec = describe "Epic Machinations original entities and story actions" do
       runMessages
       before <- getGame
       let physical = toCardId $ fromJustNote "Rival" $ Map.lookup edwin.id $ entitiesEnemies $ gameEntities before
-      registered <- field EnemyCard edwin.id
-      actualLocation <- field EnemyLocation edwin.id
-      let otherFace = lookupCard (toCardCode $ flipCard registered) (toCardId registered)
-      liftIO $ print $ object ["edwinBefore" .= registered, "resolvedOtherFace" .= otherFace,
-        "resolvedType" .= show (toCardType otherFace), "location" .= actualLocation]
       run $ Flip self.id GameSource $ EnemyTarget edwin.id
-      after <- getGame
-      queued <- fromQueue id
-      liftIO $ print $ object ["edwinAfterAssets" .= entitiesAssets (gameEntities after),
-        "edwinAfterEnemies" .= entitiesEnemies (gameEntities after),
-        "question" .= gameQuestion after, "remainingQueue" .= queued]
-      Map.member edwin.id (entitiesEnemies $ gameEntities after) `shouldBe` False
+      -- Native RemoveEnemy retains an OutOfPlay tombstone for historical
+      -- references; its former enemy face must no longer be in play.
+      selectCount (EnemyWithId edwin.id) `shouldReturn` 0
       colleagues <- select $ assetIs Assets.edwinBennetEsteemedColleague
       length colleagues `shouldBe` 1
       for_ colleagues $ \aid -> do

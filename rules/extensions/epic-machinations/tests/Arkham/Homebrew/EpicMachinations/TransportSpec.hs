@@ -2,12 +2,12 @@ module Arkham.Homebrew.EpicMachinations.TransportSpec (spec) where
 
 import Arkham.Ability
 import Arkham.Asset.Cards.NightOfTheZealot qualified as PlayerAssets
-import Arkham.Asset.Cards.Standalone qualified as Assets
 import Arkham.Asset.Types (AssetAttrs (..))
 import Arkham.Card
 import Arkham.Card.Id (unsafeMakeCardId)
 import Arkham.Classes.HasGame (getGame)
 import Arkham.Cost (Payment (NoPayment))
+import Arkham.Enemy.CardDefs.MachinationsThroughTimeEpicMultiplayer qualified as Enemies
 import Arkham.Enemy.Types (Enemy (..), EnemyAttrs (..))
 import Arkham.Entities (Entities (..))
 import Arkham.Game.Base (Game (..))
@@ -89,13 +89,25 @@ spec = describe "Epic Machinations atomic movement of the actual Edwin" do
       location <- testLocation
       self `moveTo` location
       base <- getGame
-      aid <- self `putAssetIntoPlay` Assets.edwinBennetEsteemedColleague
+      edwin <- testEnemyWithDef Enemies.edwinBennetEnviousRival id
+      edwin `spawnAt` location
+      run $ Flip self.id GameSource $ EnemyTarget edwin.id
       current <- getGame
-      let original = fromJustNote "colleague" $ Map.lookup aid $ entitiesAssets $ gameEntities current
+      let (aid, original) = fromJustNote "flipped colleague" $ find
+            ((== "87037b") . unCardCode . toCardCode . snd) $ Map.toList $ entitiesAssets $ gameEntities current
+          historical = fromJustNote "historical Rival" $ Map.lookup edwin.id $ entitiesEnemies $ gameEntities current
           asset = overAttrs (\attrs -> attrs {assetPlacement = AtLocation location.id,
             assetExhausted = True, assetTokens = Map.fromList [(Token.Clue, 5), (Token.Damage, 1), (Token.Horror, 1)]}) original
           sender = connected PresentEra current {gameEntities = (gameEntities current)
             {entitiesAssets = Map.insert aid asset $ entitiesAssets $ gameEntities current}}
+          oldTarget = UseCardAbility self.id (EnemySource edwin.id) 2 [] NoPayment
+          pending = sender {gameQuestion = Map.singleton (gameActivePlayerId sender) $
+            ChooseOne [TargetLabel (EnemyTarget edwin.id) [oldTarget]]}
+      historical.placement.isInPlay `shouldBe` False
+      toCardId historical `shouldBe` toCardId asset
+      edwinInteractionPending sender [oldTarget] `shouldBe` True
+      edwinInteractionPending pending [] `shouldBe` True
+      moveEdwin self.id location.id pending (connected PastEra base) `shouldSatisfy` isLeft
       (sent, received) <- assertRight $ moveEdwin self.id location.id sender $ connected PastEra base
       Map.member aid (entitiesAssets $ gameEntities sent) `shouldBe` False
       let moved = fromJustNote "same colleague" $ Map.lookup aid $ entitiesAssets $ gameEntities received
@@ -104,6 +116,19 @@ spec = describe "Epic Machinations atomic movement of the actual Edwin" do
       assetController (toAttrs moved) `shouldBe` assetController (toAttrs asset)
       assetExhausted (toAttrs moved) `shouldBe` False
       moved.placement `shouldBe` AtLocation location.id
+      -- An already saved former era can still contain the native removed
+      -- Rival record. Only that exact historical face may be cleared on return.
+      let formerEra = installEnemy historical sent
+            {gameCards = Map.insert (toCardId historical) (toCard historical) $ gameCards sent}
+      (departed, returned) <- assertRight $ moveEdwin self.id location.id received formerEra
+      Map.member aid (entitiesAssets $ gameEntities departed) `shouldBe` False
+      Map.member edwin.id (entitiesEnemies $ gameEntities returned) `shouldBe` False
+      let sameCard = fromJustNote "returned colleague" $ Map.lookup aid $ entitiesAssets $ gameEntities returned
+      toCardId sameCard `shouldBe` toCardId asset
+      assetTokens (toAttrs sameCard) `shouldBe` assetTokens (toAttrs asset)
+      assetController (toAttrs sameCard) `shouldBe` assetController (toAttrs asset)
+      assetExhausted (toAttrs sameCard) `shouldBe` False
+      sameCard.placement `shouldBe` AtLocation location.id
 
   it "readies and moves Edwin within the same era without detaching or replacing it" . gameTest $ \self -> do
     location <- testLocation

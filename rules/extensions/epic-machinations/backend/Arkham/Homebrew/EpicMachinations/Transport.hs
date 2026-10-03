@@ -15,6 +15,7 @@ import Arkham.Message
 import Arkham.Placement
 import Arkham.Prelude
 import Arkham.Target (Targetable, toTarget)
+import Arkham.Zone (OutOfPlayZone (RemovedZone))
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Map.Strict qualified as Map
 
@@ -37,14 +38,38 @@ moveEdwin iid lid sender receiver = do
     require (not $ edwinInteractionPending sender []) "Edwin is part of an unresolved interaction in its current era"
     require (null $ edwins receiver) "Recipient already has a physical Edwin"
     snapshot <- snapshotEdwin sender entity
-    (sent, received) <- moveNativeGraph [snapshot] Nothing (Just $ AtLocation lid) sender receiver
-    pure (sent, placeReady iid lid entity received)
+    let cid = snapshotCardId snapshot
+        destination = removeHistoricalEdwin cid receiver
+    (sent, received) <- moveNativeGraph [snapshot] Nothing (Just $ AtLocation lid) sender destination
+    pure (removeHistoricalEdwin cid sent, placeReady iid lid entity received)
 
 edwins :: Game -> [Edwin]
 edwins game = [EdwinEnemy enemy | enemy <- toList $ entitiesEnemies $ gameEntities game,
-    toCardCode enemy `elem` ["87037", "87037a"], enemy.placement.isInPlay]
+    isRival enemy, enemy.placement.isInPlay]
   <> [EdwinAsset asset | asset <- toList $ entitiesAssets $ gameEntities game,
-    toCardCode asset == "87037b", asset.placement.isInPlay]
+    isColleague asset, asset.placement.isInPlay]
+
+isRival :: Enemy -> Bool
+isRival enemy = unCardCode (toCardCode enemy) `elem` ["87037", "87037a"]
+
+isColleague :: Asset -> Bool
+isColleague asset = unCardCode (toCardCode asset) == "87037b"
+
+-- Native Flipped leaves an out-of-play record of the former enemy face. That
+-- record shares the live Colleague's physical CardId and must not block this
+-- same card from returning to its former era. No live entity is removed here;
+-- all ordinary card/entity collisions remain checked by moveNativeGraph.
+removeHistoricalEdwin :: CardId -> Game -> Game
+removeHistoricalEdwin cid game =
+  let removed = [toId enemy | enemy <- toList $ entitiesEnemies $ gameEntities game,
+        isRival enemy, toCardId enemy == cid, enemy.placement == OutOfPlay RemovedZone]
+      historicalCard = maybe False (\card -> unCardCode (toCardCode card) `elem` ["87037", "87037a", "87037b"])
+        $ Map.lookup cid $ gameCards game
+  in if null removed then game else game
+    { gameEntities = (gameEntities game) {entitiesEnemies = foldr Map.delete
+        (entitiesEnemies $ gameEntities game) removed}
+    , gameCards = if historicalCard then Map.delete cid (gameCards game) else gameCards game
+    }
 
 snapshotEdwin :: Game -> Edwin -> Either Text EntitySnapshot
 snapshotEdwin game = \case
@@ -67,9 +92,16 @@ snapshotEdwin game = \case
 -- questions/tests elsewhere in the donor game remain untouched.
 edwinInteractionPending :: Game -> [Message] -> Bool
 edwinInteractionPending game queued =
-  let identifiers = concatMap (\case
-        EdwinEnemy enemy -> [toJSON $ toId enemy, toJSON $ toCardId enemy]
-        EdwinAsset asset -> [toJSON $ toId asset, toJSON $ toCardId asset]) $ edwins game
+  let liveCards = map (\case EdwinEnemy enemy -> toCardId enemy; EdwinAsset asset -> toCardId asset) $ edwins game
+      -- A skill test may still target the former enemy ID after redemption.
+      -- Include only native representations of these exact live physical cards.
+      identifiers = concat
+        [[toJSON $ toId enemy, toJSON $ toCardId enemy]
+          | enemy <- toList $ entitiesEnemies $ gameEntities game,
+            isRival enemy, toCardId enemy `elem` liveCards]
+        <> concat [[toJSON $ toId asset, toJSON $ toCardId asset]
+          | asset <- toList $ entitiesAssets $ gameEntities game,
+            isColleague asset, toCardId asset `elem` liveCards]
       references value
         | value `elem` identifiers = True
       references (Object values) = any references $ KeyMap.elems values

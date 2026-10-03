@@ -33,6 +33,7 @@ import Arkham.Resolution
 import Arkham.Scenario.Import.Lifted
 import Arkham.Scenario.Types (ScenarioAttrs (..))
 import Arkham.Scenario.Scenarios.MachinationsThroughTime qualified as Native
+import Arkham.ScenarioLogKey (ScenarioLogKey (CorriganIndustriesHasBeenFounded))
 import Arkham.Story.CardDefs.MachinationsThroughTime qualified as Stories
 import Arkham.Trait (Trait (Past, Present, Future, Scientist))
 import Arkham.Window qualified as Window
@@ -172,6 +173,8 @@ setupEraCards era attrs = do
       setAside [Locations.corriganIndustries, Assets.dimensionalBeamMachine]
       removeEvery [Assets.nikolaTesla, Assets.ezraGraves]
   story <- placeStoryCapture legacy
+  replica <- getMachinationsReplica
+  push $ ScenarioSpecific "epicMachinations.replica" $ toJSON replica
   lead <- getLead
   leadChooseOneM $ targeting story $ flipOver lead story
   setAside [Enemies.tyrthrha, Enemies.oldSadieSheldon, Enemies.sheldonGang, Enemies.sheldonGang, Enemies.sheldonGang]
@@ -208,7 +211,13 @@ eraLocations = \case
 
 applyDelivery :: ScenarioAttrs -> MachinationsDelivery -> QueueT Message GameT EpicMachinations
 applyDelivery attrs = \case
-  ReceiveAnnouncement key -> EpicMachinations <$> liftRunMessage (Remember key) attrs
+  ReceiveAnnouncement key -> do
+    updated <- liftRunMessage (Remember key) attrs
+    era <- getEra
+    when (key == CorriganIndustriesHasBeenFounded && era == FutureEra) do
+      whenM (selectNone $ locationIs Locations.corriganIndustries) $
+        placeSetAsideLocation_ Locations.corriganIndustries
+    pure $ EpicMachinations updated
   InstallSharedStory code -> do
     installStory code
     era <- getEra
@@ -290,7 +299,11 @@ installStory code = do
       when (era == PastEra) do
         at thomas Locations.childhoodHome
         at mary Locations.oMalleysWatchShop
-        edwinCard <- flipCard <$> getSetAsideCard EpicEnemies.edwinBennetEnviousRival
+        original <- getSetAsideCard EpicEnemies.edwinBennetEnviousRival
+        let edwinCard = lookupCard (toCardCode $ flipCard original) $ toCardId original
+        -- The other face is a player asset. Resolve its native card wrapper
+        -- and canonical entry while keeping the same physical CardId.
+        replaceCard (toCardId original) edwinCard
         gazette <- selectJust $ locationIs Locations.arkhamGazette
         edwin <- createAssetAt edwinCard $ AtLocation gazette
         clues <- perPlayer 3
