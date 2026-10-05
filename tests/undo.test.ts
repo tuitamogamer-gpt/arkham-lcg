@@ -44,6 +44,27 @@ test("switching seats before the first action cannot retain another seat's undo"
   assert.equal(after.player.code, "12010");
   assert.ok(isUndoBarrier(s, after, action));
 });
+test("searching the encounter deck with Paint the Town Red cannot be undone", () => {
+  const s = ready(["12007"]);
+  s.player.hand.push({ id: "paint", code: "12051" });
+  s.player.resources = 5;
+  s.encounterDeck = ["12121", "12129", "12122"];
+  const play: Action = { type: "play", id: "paint" };
+  let after = step(s, play);
+  assert.equal(after.error, null);
+  let blocked = isUndoBarrier(s, after, play);
+  for (let guard = 0; guard < 30 && !after.decision; guard++) {
+    const action: Action = after.event
+      ? { type: "continue", eventId: after.event.id }
+      : { type: "passWindow" };
+    const current = after;
+    after = step(current, action);
+    blocked ||= isUndoBarrier(current, after, action);
+  }
+  assert.equal(after.decision?.title, "Paint the Town Red");
+  assert.ok(after.decision!.choices.some((c) => c.id === "12121"));
+  assert.ok(blocked, "the searched cards are now known");
+});
 test("new location faces and search choices cannot be undone to peek", () => {
   const s = ready();
   const after: GameState = structuredClone(s);

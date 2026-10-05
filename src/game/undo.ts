@@ -34,6 +34,12 @@ export function isUndoBarrier(
       return true;
   }
   if (after.decision?.choices.some((c) => hiddenIds.has(c.id))) return true;
+  // A search of the encounter deck (Paint the Town Red) offers its cards by
+  // code before anything else changes; seeing them is new information too.
+  if (
+    after.decision?.choices.some((c) => before.encounterDeck.includes(c.id))
+  )
+    return true;
   if (
     after.locations.some(
       (l) =>

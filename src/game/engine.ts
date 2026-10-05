@@ -401,6 +401,7 @@ function elimination(s: GameState, status: "defeated" | "resigned") {
   p.clues = 0;
   p.resources = 0;
   p.doom = 0;
+  p.assets.forEach((a) => releaseSealed(s, a));
   p.assets = [];
   p.threats.forEach((c) => {
     if (!card(c).subtype_code) s.encounterDiscard.push(c);
@@ -584,6 +585,16 @@ function assetPlayable(s: GameState, c: Instance, discount = 0) {
     ) &&
     !(def.text?.includes("Limit 1 per investigator") && has(s, c.code))
   );
+}
+/** A card leaving play returns its sealed chaos token to the bag. */
+function releaseSealed(s: GameState, a: { code: string; sealed?: string }) {
+  if (!a.sealed) return;
+  s.bag.push(a.sealed);
+  log(
+    s,
+    `${card(a.code).name} leaves play; the sealed ${a.sealed.replaceAll("_", " ")} token returns to the chaos bag.`,
+  );
+  delete a.sealed;
 }
 function sealedPremonition(s: GameState) {
   for (const p of party(s)) {
@@ -923,6 +934,7 @@ function discardAsset(
   owner!.assets = owner!.assets.filter((x) => x.id !== id);
   owner!.discard.push({ id: a.id, code: a.code });
   log(s, `${card(a.code).name} ${defeated ? "is defeated" : "is discarded"}.`);
+  releaseSealed(s, a);
   if (
     defeated &&
     a.code === C(16) &&
@@ -2611,19 +2623,24 @@ function drain(s: GameState) {
           removeHand(s, list[Math.floor(random(s) * list.length)].id);
         break;
       }
-      case "discardAssetChoice":
-        if (s.player.assets.length)
+      case "discardAssetChoice": {
+        // Premonition waits in play as an event, not an asset.
+        const assets = s.player.assets.filter(
+          (a) => card(a.code).type_code === "asset",
+        );
+        if (assets.length)
           choice(
             s,
             "Hellhound",
             "Choose an asset to discard.",
-            s.player.assets.map((a) =>
+            assets.map((a) =>
               option(a.id, card(a.code).name, [
                 eff("discardAsset", { id: a.id }),
               ]),
             ),
           );
         break;
+      }
       case "discardAsset":
         discardAsset(s, e.id!);
         break;
@@ -4248,6 +4265,14 @@ export function canAct(
       return "Lucky Charm must be ready and have a charge.";
     if (!charmSources(s, target).length)
       return `Nothing at this location has ${target} to move.`;
+    // The charge is paid before the choices; refuse when no card you control
+    // could receive the token, so the ability never resolves to nothing.
+    if (
+      !charmSources(s, target).some(
+        (c) => charmDestinations(s, target!, c.id).length,
+      )
+    )
+      return `None of your cards can take that ${target}.`;
   }
   if (kind === "necronomicon" && !s.player.threats.includes(C(12)))
     return "The Necronomicon is not in your threat area.";

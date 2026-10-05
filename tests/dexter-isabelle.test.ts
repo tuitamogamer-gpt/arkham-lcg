@@ -13,7 +13,7 @@ import {
 } from "../src/game/engine";
 import { card, code as C, STARTER_DECKS } from "../src/game/data";
 import { decodeSave } from "../src/game/storage";
-import type { GameState, Investigator } from "../src/game/types";
+import type { Effect, GameState, Investigator } from "../src/game/types";
 
 const DEXTER = C(10),
   ISABELLE = C(13);
@@ -83,6 +83,15 @@ function give(s: GameState, n: number, p: Investigator = s.player) {
   const id = `hand-${s.nextId++}`;
   p.hand.push({ id, code: C(n) });
   return id;
+}
+/** Resolves scripted effects through a one-choice fixture decision. */
+function trigger(s: GameState, effects: Effect[]) {
+  s.decision = {
+    title: "Fixture",
+    description: "",
+    choices: [{ id: "go", label: "Go", effects }],
+  };
+  return reduceGame(s, { type: "choose", id: "go" });
 }
 const icons = (code: string, skill: string) =>
   (card(code)[`skill_${skill}` as "skill_willpower"] || 0) +
@@ -385,6 +394,54 @@ test("Premonition seals a token that is revealed instead of the next draw", () =
   assert.equal(s.bag.length, size);
   assert.ok(!s.player.assets.some((a) => a.code === C(64)));
   assert.ok(s.player.discard.some((c) => c.code === C(64)));
+});
+
+test("Premonition returns its sealed token when it is discarded or its owner is eliminated", () => {
+  let s = ready([DEXTER]);
+  const size = s.bag.length;
+  s = settle(reduceGame(s, { type: "play", id: give(s, 64) }));
+  const premonition = s.player.assets.find((a) => a.code === C(64))!;
+  assert.ok(premonition.sealed);
+  assert.equal(s.bag.length, size - 1);
+  // Hellhound's "discard an asset" offers only assets, never the waiting event.
+  const jim = equip(s, 60);
+  s = trigger(s, [{ kind: "discardAssetChoice" }]);
+  assert.equal(s.decision?.title, "Hellhound");
+  assert.deepEqual(
+    s.decision!.choices.map((c) => c.id),
+    [jim],
+  );
+  s = settle(s);
+  // Any other discard of the card releases the token.
+  s = settle(trigger(s, [{ kind: "discardAsset", id: premonition.id }]));
+  assert.ok(!s.player.assets.some((a) => a.code === C(64)));
+  assert.equal(s.bag.length, size);
+  assert.ok(s.bag.includes(premonition.sealed!));
+
+  let t = ready([DEXTER, ISABELLE]);
+  const bag = t.bag.length;
+  t = settle(reduceGame(t, { type: "play", id: give(t, 64) }));
+  const token = t.player.assets.find((a) => a.code === C(64))!.sealed!;
+  assert.equal(t.bag.length, bag - 1);
+  t = settle(trigger(t, [{ kind: "damage", damage: 9, actor: DEXTER, direct: true }]));
+  const dexter = party(t).find((p) => p.code === DEXTER)!;
+  assert.equal(dexter.status, "defeated");
+  assert.equal(dexter.assets.length, 0);
+  assert.equal(t.bag.length, bag, "the bag is whole again");
+  assert.ok(t.bag.includes(token));
+});
+
+test("Lucky Charm refuses a charge when none of its controller's cards can take the token", () => {
+  const s = ready([ISABELLE]);
+  equip(s, 61, 4);
+  s.player.damage = 1;
+  assert.match(canAct(s, "charm", "damage") || "", /None of your cards/);
+  const after = reduceGame(s, { type: "act", kind: "charm", target: "damage" });
+  assert.equal(after.player.assets.find((a) => a.code === C(61))?.uses, 4);
+  assert.equal(after.player.damage, 1);
+  // With an ally able to absorb it, the move is offered as before.
+  equip(s, 60);
+  assert.equal(canAct(s, "charm", "damage"), null);
 });
 
 test("Ward of Protection cancels a treachery's revelation for 1 resource and 1 horror", () => {
