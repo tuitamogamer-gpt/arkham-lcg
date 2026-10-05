@@ -67,6 +67,42 @@ test("ArkhamDB meta strings and side decks retain choices and physical cards", (
   );
 });
 
+test("real arkhamdb.com exports with empty meta and side deck import with their choices", () => {
+  // arkhamdb.com writes meta: "" and sideSlots: [] when a deck has neither.
+  const plain = parseServerDeck({
+    name: "Roland",
+    investigator_code: "01001",
+    slots: { "01088": 2 },
+    sideSlots: [],
+    meta: "",
+    taboo_id: null,
+  });
+  assert.equal(plain.sideSlots, undefined);
+  assert.equal(plain.meta, undefined);
+  assert.deepEqual(serverDeckOptions(plain), { selections: {} });
+  assert.equal(
+    parseServerDeck({ investigator_code: "01001", slots: { "01088": 2 }, meta: null, sideSlots: null }).meta,
+    undefined,
+  );
+  const chosen = parseServerDeck({
+    investigator_code: "06002",
+    slots: { "01088": 2 },
+    meta: JSON.stringify({
+      faction_selected: "mystic",
+      deck_size_selected: "40",
+      option_selected: "blessed",
+    }),
+  });
+  assert.deepEqual(serverDeckOptions(chosen).selections, {
+    faction_selected: "mystic",
+    deck_size_selected: "40",
+    option_selected: "blessed",
+    "Secondary Class": "mystic",
+    "Deck Size": "40",
+    "Trait Choice": "blessed",
+  });
+});
+
 test("JSON import rejects malformed quantities and keeps explicit deckbuilding choices", () => {
   const valid = {
     name: "My deck",

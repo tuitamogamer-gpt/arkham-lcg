@@ -96,9 +96,10 @@ assert.doesNotMatch(await page.getByRole("dialog").innerText(), forbidden);
 await shot("02-sealed-chapter");
 await page.getByRole("button", { name: "Close dialog" }).click();
 await page.getByRole("button", { name: /^Card archive/ }).click();
+// Whole card titles only: the public player card "Augur of Elokoss" may show.
 assert.doesNotMatch(
   await page.locator(".archive-grid").innerText(),
-  /Servant of Flame|Dr. Henry Armitage|Elokoss|Past Curfew/,
+  /^(Servant of Flame|Dr\. Henry Armitage|Elokoss|Past Curfew)$/m,
 );
 // Player spells may mention a name; the hidden encounter identity itself is sealed.
 await page.getByRole("textbox", { name: "Search cards" }).fill("12179");
@@ -113,6 +114,11 @@ assert.ok(
 );
 await shot("04-current-front");
 await page.getByRole("button", { name: "Close dialog" }).click();
+// Table motion only animates visible elements; keep the resource token in
+// view so the check does not depend on the viewport height or font metrics.
+await page
+  .locator('[data-motion-target="resource-12004"]')
+  .scrollIntoViewIfNeeded();
 await page.getByRole("button", { name: "Resource", exact: true }).click();
 const paused = await save();
 assert.ok(paused.event);

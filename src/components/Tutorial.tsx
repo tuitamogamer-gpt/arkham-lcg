@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, GraduationCap, X } from "@phosphor-icons/react";
 import type { GameState } from "../game/types";
 
@@ -85,7 +85,14 @@ export function Tutorial({
   const [box, setBox] = useState<DOMRect | null>(null);
   const step = STEPS[index];
   const last = index === STEPS.length - 1;
+  // Back must be able to show a step the player already completed; the
+  // automatic advance resumes with the player's next action.
+  const wentBack = useRef(false);
   useEffect(() => {
+    if (wentBack.current) {
+      wentBack.current = false;
+      return;
+    }
     if (step.done?.(s) && !last) setIndex((i) => i + 1);
   }, [s, step, last]);
   useLayoutEffect(() => {
@@ -155,7 +162,13 @@ export function Tutorial({
           <p className="tutorial-hint">{step.hint}</p>
         )}
         <footer>
-          <button disabled={index === 0} onClick={() => setIndex((i) => i - 1)}>
+          <button
+            disabled={index === 0}
+            onClick={() => {
+              wentBack.current = true;
+              setIndex((i) => i - 1);
+            }}
+          >
             <ArrowLeft size={14} /> Back
           </button>
           {last ? (

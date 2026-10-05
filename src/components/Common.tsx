@@ -40,6 +40,23 @@ import type { Card, GameState, Skill } from "../game/types";
 import { canInspectCard, canReadReverse } from "../game/knowledge";
 import { kindLabel, productForCard, productsForCard } from "../game/catalog";
 const dialogStack: HTMLElement[] = [];
+/** The dialog that currently owns keyboard input, if any. */
+export const topDialog = () => dialogStack.at(-1);
+/** Keyboard-reachable controls inside a dialog, skipping hidden or disabled ones. */
+function tabbable(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return [
+    ...root.querySelectorAll<HTMLElement>(
+      'button, a[href], select, input, textarea, summary, [tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter(
+    (el) =>
+      !(el as HTMLButtonElement).disabled &&
+      !el.hidden &&
+      !el.closest("[hidden], [inert]") &&
+      el.getClientRects().length > 0,
+  );
+}
 let originalOverflow = "";
 export function Sigil({ small = false }: { small?: boolean }) {
   return (
@@ -99,6 +116,7 @@ export function Modal({
   const ref = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const pressedBackdrop = useRef(false);
   useEffect(() => {
     const before = document.activeElement as HTMLElement;
     if (!dialogStack.length) originalOverflow = document.body.style.overflow;
@@ -117,19 +135,21 @@ export function Modal({
         closeRef.current();
       }
       if (e.key === "Tab") {
-        const elements = el?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), a, select, input, [tabindex="0"]',
-        );
-        if (!elements?.length) {
+        const elements = tabbable(el);
+        if (!elements.length) {
           e.preventDefault();
           return;
         }
         const first = elements[0],
           last = elements[elements.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
+        const active = document.activeElement;
+        // Focus on the dialog itself, or anywhere outside its controls, is a
+        // boundary too; otherwise the next Tab would leave the dialog.
+        const outside = !active || active === el || !el?.contains(active);
+        if (e.shiftKey && (outside || active === first)) {
           e.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
+        } else if (!e.shiftKey && (outside || active === last)) {
           e.preventDefault();
           first.focus();
         }
@@ -151,8 +171,14 @@ export function Modal({
   return createPortal(
     <div
       className="modal-backdrop"
+      onPointerDown={(e) => {
+        pressedBackdrop.current = e.target === e.currentTarget;
+      }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose?.();
+        // A click counts only when it both started and ended on the backdrop,
+        // so a text selection dragged out of the dialog does not close it.
+        if (e.target === e.currentTarget && pressedBackdrop.current) onClose?.();
+        pressedBackdrop.current = false;
       }}
     >
       <div

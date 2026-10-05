@@ -1,4 +1,6 @@
 import {
+  Suspense,
+  lazy,
   useCallback,
   useEffect,
   useRef,
@@ -48,9 +50,17 @@ import {
   resetTutorial,
   tutorialPending,
 } from "./components/Tutorial";
-import { Archive } from "./components/Archive";
 import { InvestigatorLibrary } from "./components/InvestigatorLibrary";
-import { ExpandedPlay } from "./components/ExpandedPlay";
+// The collection browser and the companion mode are only needed on their own
+// pages, so they load as separate chunks and keep the game shell small.
+const Archive = lazy(() =>
+  import("./components/Archive").then((m) => ({ default: m.Archive })),
+);
+const ExpandedPlay = lazy(() =>
+  import("./components/ExpandedPlay").then((m) => ({
+    default: m.ExpandedPlay,
+  })),
+);
 import { catalog } from "./game/catalog";
 import { Button, CardDetail, Modal, Sigil } from "./components/Common";
 import { ChaosBagPreview } from "./components/ChaosBagPreview";
@@ -91,6 +101,13 @@ declare global {
     render_game_to_text: () => string;
     advanceTime: (ms: number) => Promise<void>;
   }
+}
+function PageLoading() {
+  return (
+    <div className="page-content" role="status" aria-live="polite">
+      <p className="page-subtitle">Opening…</p>
+    </div>
+  );
 }
 function Guide() {
   return (
@@ -221,6 +238,12 @@ export default function App() {
   useEffect(() => {
     audio.setEffects(effects);
   }, [effects]);
+  useEffect(() => {
+    // A saved "on" preference starts the ambience itself; the context resumes
+    // on the first gesture, so the controls and the sound agree after a reload.
+    if (ambience && !audio.setAmbience(true)) setAmbience(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [inspect, setInspect] = useState<string | null>(null);
   const [inspectCatalog, setInspectCatalog] = useState(false);
   const [inspectAssetId, setInspectAssetId] = useState<string | null>(null);
@@ -345,9 +368,14 @@ export default function App() {
     const key = (e: KeyboardEvent) => {
       if (
         e.key.toLowerCase() === "f" &&
-        !(e.target instanceof HTMLInputElement) &&
-        !(e.target instanceof HTMLTextAreaElement) &&
-        !(e.target instanceof HTMLSelectElement)
+        // Ctrl/⌘+F is the browser's find; Alt+F and held keys are not requests.
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.repeat &&
+        !(e.target as HTMLElement | null)?.closest(
+          "input, textarea, select, [contenteditable=true]",
+        )
       ) {
         if (document.fullscreenElement) void document.exitFullscreen();
         else
@@ -551,13 +579,15 @@ export default function App() {
           />
         )}{" "}
         {page === "archive" && (
-          <Archive
-            game={game}
-            inspect={(code, spoilers = false) => {
-              setInspectCatalog(spoilers);
-              setInspect(code);
-            }}
-          />
+          <Suspense fallback={<PageLoading />}>
+            <Archive
+              game={game}
+              inspect={(code, spoilers = false) => {
+                setInspectCatalog(spoilers);
+                setInspect(code);
+              }}
+            />
+          </Suspense>
         )}{" "}
         {page === "investigators" && (
           <InvestigatorLibrary
@@ -573,7 +603,13 @@ export default function App() {
           />
         )}{" "}
         {page === "expanded" && (
-          <ExpandedPlay investigatorCode={expandedInvestigator} inspect={setInspect} onTableOpen={setCompanionTableOpen} />
+          <Suspense fallback={<PageLoading />}>
+            <ExpandedPlay
+              investigatorCode={expandedInvestigator}
+              inspect={setInspect}
+              onTableOpen={setCompanionTableOpen}
+            />
+          </Suspense>
         )}
         {page === "guide" && <Guide />}{" "}
         {page === "game" && game && (

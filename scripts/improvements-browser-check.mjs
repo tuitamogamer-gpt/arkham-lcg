@@ -99,7 +99,7 @@ if (s.actions > 0 && !s.test && !s.decision) {
   assert.equal(s.player.resources, before + 1);
 }
 // A second investigation gets its own slot; the first stays.
-await page.getByRole("button", { name: "Campaigns" }).click();
+await page.getByRole("button", { name: "Campaigns", exact: true }).click();
 await page.getByRole("button", { name: "Start a new investigation" }).click();
 await page.getByRole("button", { name: "Select Daniela Reyes" }).click();
 await page.getByRole("button", { name: "Enter Miskatonic University" }).click();

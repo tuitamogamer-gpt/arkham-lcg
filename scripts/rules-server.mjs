@@ -407,6 +407,9 @@ async function handle(req, res) {
     if (req.method === 'POST' && playGame?.[2] === 'answer') {
       const reply = await body(req);
       if (!reply || typeof reply.tag !== 'string' || !/^[A-Za-z]+Answer$/.test(reply.tag) && reply.tag !== 'Answer') { json(res, 400, { error: 'Choose a native rules answer.' }); return; }
+      // An imported deck list crosses the same boundary as /chronicle/decks:
+      // the engine reads meta as a JSON string and namespaced extension codes.
+      if (reply.tag === 'DeckListAnswer' && reply.deckList && typeof reply.deckList === 'object' && !Array.isArray(reply.deckList)) reply.deckList = engineDeckList(reply.deckList);
       if (reply.tag === 'DeckAnswer' && reply.overlay == null) {
         const [snapshot, savedDecks] = await Promise.all([
           engineJson(`arkham/games/${playGame[1]}`, undefined, 'GET', authentication),
@@ -434,6 +437,7 @@ async function handle(req, res) {
     if (req.method === 'POST' && playGame?.[2] === 'upgrade-deck') {
       const upgrade = await body(req);
       if (typeof upgrade.investigatorId !== 'string' || upgrade.deckList !== undefined && (!upgrade.deckList || typeof upgrade.deckList !== 'object' || Array.isArray(upgrade.deckList)) || upgrade.deckUrl !== undefined && (typeof upgrade.deckUrl !== 'string' || !/^https:\/\/arkhamdb\.com\/deck(?:list)?\/view\/\d+(?:\/[^?]*)?$/.test(upgrade.deckUrl))) { json(res, 400, { error: 'Choose a valid investigator and upgrade deck.' }); return; }
+      if (upgrade.deckList) upgrade.deckList = engineDeckList(upgrade.deckList);
       await engineJson(`arkham/games/${playGame[1]}/decks`, upgrade, 'PUT', authentication);
       json(res, 200, await engineJson(`arkham/games/${playGame[1]}`, undefined, 'GET', authentication)); return;
     }

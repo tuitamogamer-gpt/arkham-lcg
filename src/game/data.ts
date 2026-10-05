@@ -3,7 +3,12 @@ import raw from "../../public/data/core-2026.json";
 import type { Card, Difficulty } from "./types";
 import { SPREADING_FLAMES } from "./scenario";
 export const cards = raw as Card[];
-export const cardMap = Object.fromEntries(cards.map((c) => [c.code, c]));
+// Null-prototype maps: a code such as "__proto__" or "constructor" from an
+// imported file must look up nothing, never an Object.prototype member.
+export const cardMap: Record<string, Card> = Object.assign(
+  Object.create(null),
+  Object.fromEntries(cards.map((c) => [c.code, c])),
+);
 export const card = (code: string) => cardMap[code];
 // Keep the scripted scenario's pool fixed. The collection is loaded on demand
 // and registered only for read-only inspection, never for game setup or saves.
@@ -35,13 +40,16 @@ export const ISABELLE_DECK = [
   14, 72, 73, 74, 75, 76, 77, 58, 59, 60, 61, 62, 63, 86, 86, 88, 88, 78, 79,
   64, 65, 66, 89, 89, 80, 81, 67, 94, 94, 90, 90, 15, 102,
 ].map(code);
-export const STARTER_DECKS: Record<string, string[]> = {
-  "12004": JOE_DECK,
-  "12001": DANIELA_DECK,
-  "12007": TRISH_DECK,
-  "12010": DEXTER_DECK,
-  "12013": ISABELLE_DECK,
-};
+export const STARTER_DECKS: Record<string, string[]> = Object.assign(
+  Object.create(null),
+  {
+    "12004": JOE_DECK,
+    "12001": DANIELA_DECK,
+    "12007": TRISH_DECK,
+    "12010": DEXTER_DECK,
+    "12013": ISABELLE_DECK,
+  },
+);
 export const PLAYABLE_INVESTIGATORS = [
   "12004",
   "12001",

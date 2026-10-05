@@ -41,6 +41,14 @@ export function Archive({
     (c) =>
       includeStories || (!c.hidden && isPlayerCard(c)) || known.has(c.code),
   );
+  // Sealing story cards again removes encounter types and the Mythos class
+  // from the menus; a filter that is no longer offered must not keep applying.
+  const typeOffered = type === "all" || available.some((c) => c.type_code === type);
+  const factionOffered = faction !== "mythos" || includeStories;
+  useEffect(() => {
+    if (!typeOffered) setType("all");
+    if (!factionOffered) setFaction("all");
+  }, [typeOffered, factionOffered]);
   const product = catalog.products.find((p) => p.code === productCode);
   const productCards = product ? new Set(product.cardCodes) : undefined;
   const search = query.trim().toLowerCase();
@@ -275,6 +283,7 @@ export function Archive({
                   setType("all");
                   setFaction("all");
                   setProductCode("all");
+                  setIncludeStories(false);
                 }}
               >
                 Clear filters

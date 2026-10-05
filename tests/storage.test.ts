@@ -32,6 +32,22 @@ test("save validation rejects malformed data without throwing", () => {
   assert.equal(validSave(s), false);
 });
 
+test("object prototype member names are not valid investigator or card codes", () => {
+  for (const code of ["__proto__", "constructor", "toString", "hasOwnProperty"]) {
+    assert.equal(card(code), undefined, `card(${code})`);
+    const s = reduceGame(createGame("easy", 11), { type: "mulligan", ids: [] });
+    assert.ok(validSave(JSON.parse(JSON.stringify(s))));
+    const x = JSON.parse(JSON.stringify(s));
+    x.player.code = code;
+    x.partyOrder = [code];
+    x.leadInvestigator = code;
+    x.turnInvestigator = code;
+    assert.equal(validSave(x), false, `investigator ${code}`);
+    const y = JSON.parse(JSON.stringify(s));
+    y.eventHistory[0].card = code;
+    assert.equal(validSave(y), false, `event card ${code}`);
+  }
+});
 test("save validation rejects duplicate physical cards and malformed rendered values", () => {
   const original = createGame("standard", 35, ["12004", "12001"]);
   const duplicate = structuredClone(original);

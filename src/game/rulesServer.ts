@@ -107,7 +107,9 @@ export function parseServerDeck(value: unknown): ServerDeck {
     throw new Error(
       "Each deck slot needs a card code and a positive whole-number quantity.",
     );
-  let meta = deck.meta;
+  // arkhamdb.com exports "" for a deck without choices and [] for an empty
+  // side deck; both mean "none" rather than malformed data.
+  let meta = deck.meta === null || deck.meta === "" ? undefined : deck.meta;
   if (typeof meta === "string") {
     try {
       meta = JSON.parse(meta);
@@ -129,7 +131,11 @@ export function parseServerDeck(value: unknown): ServerDeck {
     (!Number.isSafeInteger(deck.taboo_id) || (deck.taboo_id as number) < 0)
   )
     throw new Error("Invalid taboo list identifier.");
-  const sideSlots = deck.sideSlots;
+  const sideSlots =
+    deck.sideSlots === null ||
+    (Array.isArray(deck.sideSlots) && deck.sideSlots.length === 0)
+      ? undefined
+      : deck.sideSlots;
   if (
     sideSlots !== undefined &&
     (!sideSlots ||
@@ -171,9 +177,14 @@ export function serverDeckOptions(deck: ServerDeck): DeckOptions {
       .filter(([key]) => key.startsWith("cus_"))
       .map(([key, value]) => [key.slice(4), value]),
   );
-  if (deck.meta?.faction) selections["Secondary Class"] = deck.meta.faction;
-  if (deck.meta?.deck_size) selections["Deck Size"] = deck.meta.deck_size;
-  if (deck.meta?.option) selections["Trait Choice"] = deck.meta.option;
+  // ArkhamDB stores these choices as faction_selected, deck_size_selected and
+  // option_selected; the shorter names remain accepted from earlier imports.
+  const secondary = deck.meta?.faction_selected || deck.meta?.faction;
+  const deckSize = deck.meta?.deck_size_selected || deck.meta?.deck_size;
+  const trait = deck.meta?.option_selected || deck.meta?.option;
+  if (secondary) selections["Secondary Class"] = secondary;
+  if (deckSize) selections["Deck Size"] = deckSize;
+  if (trait) selections["Trait Choice"] = trait;
   let barkhamJudgments: BarkhamJudgments | undefined;
   if (deck.meta?.chronicle_barkham_judgments) {
     try {

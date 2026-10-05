@@ -26,8 +26,9 @@ import { eventMotion } from "../game/motion";
 import { card, CARD_BACKS, plain } from "../game/data";
 import type { Tempo } from "../game/presentation";
 import type { Action, GameState, VisibleEvent } from "../game/types";
-import { CardFace, Modal, RulesText } from "./Common";
+import { CardFace, Modal, RulesText, topDialog } from "./Common";
 import { TableCard } from "./Tabletop";
+const EVENT_DIALOG_TITLE = "Game paused";
 
 const phaseName = (p: string) =>
   p === "roundEnd" ? "End of round" : p[0].toUpperCase() + p.slice(1);
@@ -84,6 +85,11 @@ export function EventController({
           "button, a, select, input, textarea, summary, [role=button]",
         )
       )
+        return;
+      // Another dialog (deck, supply, introduction) opened over a minimized
+      // event owns Enter; the event continues only from its own window.
+      const dialog = topDialog();
+      if (dialog && dialog.getAttribute("aria-label") !== EVENT_DIALOG_TITLE)
         return;
       ev.preventDefault();
       dispatch({ type: "continue", eventId });
@@ -178,7 +184,7 @@ export function EventController({
   return (
     <Modal
       key={e.id}
-      title="Game paused"
+      title={EVENT_DIALOG_TITLE}
       wide
       onClose={() => setMinimized(true)}
     >

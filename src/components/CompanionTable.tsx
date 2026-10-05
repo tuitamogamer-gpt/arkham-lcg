@@ -641,9 +641,17 @@ export function CompanionTable({
   const actorId = actor ? idOf(actor) : "";
   const scenario = obj(game.scenario ?? obj(game.mode).That);
   const phase = str(game.phase);
-  const model = snapshot?.playerId
-    ? companionQuestion(game, snapshot.playerId, context)
-    : undefined;
+  // A malformed question from the engine is reported in the table's own error
+  // panel; throwing here would unmount the whole table.
+  let model: ReturnType<typeof companionQuestion> | undefined;
+  let questionError = "";
+  try {
+    model = snapshot?.playerId
+      ? companionQuestion(game, snapshot.playerId, context)
+      : undefined;
+  } catch (cause) {
+    questionError = cause instanceof Error ? cause.message : String(cause);
+  }
   const handVisible =
     !!actor &&
     !!snapshot?.playerId &&
@@ -898,9 +906,9 @@ export function CompanionTable({
             </Button>
           </div>
         </header>
-        {(error || catalogError) && (
+        {(error || catalogError || questionError) && (
           <div className="companion-error" role="alert">
-            <p>{error || catalogError}</p>
+            <p>{error || catalogError || questionError}</p>
             <Button
               secondary
               onClick={() => {
