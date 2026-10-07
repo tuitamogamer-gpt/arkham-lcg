@@ -31,6 +31,7 @@ import {
   buildUpgradeStepAnswer,
   buildSideStoryAnswer,
   buildTravelAnswer,
+  companionTravel,
   buildSpiritDeckAnswer,
   standaloneSettingsForAnswer,
   standaloneSettingsState,
@@ -80,6 +81,38 @@ const model = (question: unknown) =>
 const labels = [
   { tag: "Label", label: "Use" },
   { tag: "Done", label: "Decline" },
+];
+// Data fixture from the pinned 08549 Fatal Mirage standalone settings:
+// frontend/src/arkham/data/edgeOfTheEarth.json, including the gated crash group.
+const fatalMirageSettings = (performIntro: boolean, killed: string | null) => [
+  { key: "PerformIntro", type: "ToggleOption", content: performIntro },
+  {
+    type: "Group",
+    key: "Choose who was killed in the plane crash",
+    ifRecorded: [{ type: "option", key: "PerformIntro" }],
+    content: [
+      { type: "SetPartnerKilled", key: "KilledInPlaneCrash", content: killed },
+    ],
+  },
+  ...[
+    ["Dr. Amy Kensler", "08720", 1, 3],
+    ["Prof. William Dyer", "08714", 0, 4],
+    ["Danforth", "08715", 1, 3],
+    ["Roald Ellsworth", "08721", 3, 1],
+    ["Takada Hiroko", "08722", 2, 2],
+    ["Avery Claypool", "08718", 2, 2],
+    ["Dr. Mala Sinha", "08717", 3, 1],
+    ['James "Cookie" Fredericks', "08719", 4, 0],
+    ["Eliyah Ashevak", "08716", 2, 2],
+  ].map(([key, value, maxDamage, maxHorror]) => ({
+    type: "SetPartnerDetails",
+    key,
+    value,
+    maxDamage,
+    maxHorror,
+    content: { damage: 0, horror: 0, status: "Safe" },
+    ifRecorded: [{ type: "survivedPlaneCrash", key: value }],
+  })),
 ];
 
 test("native fetch identity never substitutes the active seat for the requesting seat", () => {
@@ -985,6 +1018,117 @@ test("standalone branching filters nested inactive records while preserving prin
     },
   );
 });
+test("Fatal Mirage ignores a stale crash selection after its introduction is turned off", () => {
+  const schema = fatalMirageSettings(true, "08720"),
+    original = structuredClone(schema);
+  const state = standaloneSettingsState(schema);
+  assert.equal(
+    settingsCondition(
+      { type: "survivedPlaneCrash", key: "08720" },
+      state,
+      schema,
+    ),
+    false,
+  );
+  const active = standaloneSettingsForAnswer(schema) as {
+    type: string;
+    value?: string;
+    content: unknown;
+  }[];
+  assert.equal(active.filter((s) => s.type === "SetPartnerDetails").length, 8);
+  assert.equal(
+    active.some((s) => s.value === "08720"),
+    false,
+  );
+  assert.equal(
+    active.some((s) => s.value === "08714"),
+    true,
+  );
+  assert.deepEqual(schema, original);
+
+  schema[0].content = false;
+  const withoutIntro = standaloneSettingsState(schema);
+  assert.equal(
+    settingsCondition(
+      { type: "survivedPlaneCrash", key: "08720" },
+      withoutIntro,
+      schema,
+    ),
+    true,
+  );
+  const answer = standaloneSettingsForAnswer(schema) as {
+    type: string;
+    value?: string;
+    content: unknown;
+  }[];
+  assert.equal(
+    answer.some((s) => s.type === "Group"),
+    false,
+  );
+  assert.equal(
+    answer.some((s) => s.value === "08720"),
+    true,
+  );
+  assert.equal(answer.filter((s) => s.type === "SetPartnerDetails").length, 9);
+  assert.equal(JSON.stringify(answer).includes("KilledInPlaneCrash"), false);
+  // Turning the introduction on again restores the still-explicit crash choice.
+  schema[0].content = true;
+  assert.equal(
+    (standaloneSettingsForAnswer(schema) as { value?: string }[]).some(
+      (s) => s.value === "08720",
+    ),
+    false,
+  );
+});
+test("inactive standalone groups cannot keep dependent options or records alive", () => {
+  const schema = [
+    { type: "ToggleOption", key: "PerformIntro", content: false },
+    {
+      type: "Group",
+      key: "Hidden",
+      ifRecorded: [{ type: "option", key: "PerformIntro" }],
+      content: [
+        { type: "ToggleOption", key: "IncludePartners", content: true },
+        { type: "ToggleKey", key: "StaleKey", content: true },
+        { type: "ChooseNum", key: "StaleCount", min: 0, max: 4, content: 3 },
+        {
+          type: "ToggleRecords",
+          key: "StalePeople",
+          recordable: "RecordableCardCode",
+          content: [{ key: "08720", content: true }],
+        },
+      ],
+    },
+    {
+      type: "ToggleKey",
+      key: "DependentKey",
+      content: true,
+      ifRecorded: [{ type: "option", key: "IncludePartners" }],
+    },
+  ];
+  const state = standaloneSettingsState(schema);
+  assert.deepEqual(state, { keys: [], counts: {}, sets: {}, options: [] });
+  assert.deepEqual(standaloneSettingsForAnswer(schema), [schema[0]]);
+});
+test("an active crash setting needs a valid partner while an inactive crash group needs no selection", () => {
+  for (const killed of [null, "", "01001"])
+    assert.throws(
+      () => standaloneSettingsForAnswer(fatalMirageSettings(true, killed)),
+      /Choose the partner killed/,
+    );
+  assert.equal(
+    standaloneSettingsForAnswer(fatalMirageSettings(false, null)).length,
+    10,
+  );
+  const result = standaloneSettingsForAnswer(
+    fatalMirageSettings(true, "08720"),
+  ) as { type: string; content: unknown }[];
+  const group = result.find((s) => s.type === "Group");
+  assert.deepEqual(group?.content, [
+    { type: "SetPartnerKilled", key: "KilledInPlaneCrash", content: "08720" },
+  ]);
+});
+
 test("settings conditions distinguish recorded, crossed out, count and logical branches", () => {
   const state = {
     keys: [{ key: "Saved", scope: "Past" }],
@@ -1162,6 +1306,159 @@ test("Scarlet Keys travel sends the exact three operation keys and checks ticket
     () => buildTravelAnswer(q, "Unknown", "travel"),
     /destination on this map/,
   );
+});
+test("Scarlet Keys forced Tunguska stop can begin the finale with the native payload and no extra flag", () => {
+  const raw = {
+    tag: "QuestionWithSource",
+    source: { tag: "CampaignSource" },
+    question: {
+      tag: "PickCampaignSpecific",
+      // The native >= 35-time branch emits this tuple list and no isFinale.
+      contents: [
+        "embark",
+        {
+          current: "Tunguska",
+          available: ["Tunguska"],
+          locations: [
+            ["London", { travel: 3 }],
+            ["Tunguska", { travel: 0 }],
+          ],
+          hasTicket: true,
+        },
+      ],
+    },
+  };
+  const q = model(raw),
+    travel = companionTravel(q);
+  assert.equal(travel?.isFinale, true);
+  assert.deepEqual(
+    travel?.locations.find((v) => v.current),
+    {
+      destination: "Tunguska",
+      current: true,
+      available: true,
+      hidden: false,
+      travelTime: 0,
+      canTravel: true,
+      canTravelVia: false,
+      canUseTicket: false,
+    },
+  );
+  assert.deepEqual(buildTravelAnswer(q, "Tunguska", "travel"), {
+    tag: "CampaignSpecificAnswer",
+    contents: ["travel", "Tunguska"],
+  });
+  assert.throws(
+    () => buildTravelAnswer(q, "Tunguska", "travelVia"),
+    /final destination/,
+  );
+  assert.throws(
+    () => buildTravelAnswer(q, "Tunguska", "travelWithTicket"),
+    /ticket/,
+  );
+  assert.deepEqual(buildTravelAnswer(q, "London", "travelVia").contents, [
+    "travelVia",
+    "London",
+  ]);
+  assert.equal(q.playerId, "seat-a");
+  assert.equal(q.questionVersion, 17);
+  assert.deepEqual(q.raw, raw);
+});
+test("Scarlet Keys ordinary singleton stops cannot re-enter the current location", () => {
+  for (const [current, available] of [
+    ["London", ["London"]],
+    ["Tunguska", ["Tunguska", "London"]],
+  ] as const) {
+    const q = model({
+      tag: "PickCampaignSpecific",
+      contents: [
+        "embark",
+        {
+          current,
+          available,
+          hasTicket: true,
+          isFinale: true,
+          locations: [[current, { travel: 0 }]],
+        },
+      ],
+    });
+    assert.equal(companionTravel(q)?.isFinale, false);
+    for (const mode of ["travel", "travelVia", "travelWithTicket"] as const)
+      assert.throws(() => buildTravelAnswer(q, current, mode), /already/);
+  }
+});
+test("Scarlet Keys route projection preserves null paths, hidden stops and green travel costs", () => {
+  const q = model({
+    tag: "PickCampaignSpecific",
+    contents: [
+      "embark",
+      {
+        current: "London",
+        available: ["Venice", "Rome", "Cairo"],
+        hasTicket: true,
+        locations: {
+          Venice: { travel: 0 },
+          Rome: { travel: 2 },
+          Cairo: { travel: null },
+          BermudaTriangle: { travel: 2 },
+          Moscow: { travel: 3 },
+        },
+      },
+    ],
+  });
+  const travel = companionTravel(q)!;
+  assert.equal(travel.isFinale, false);
+  const locations = Object.fromEntries(
+    travel.locations.map((v) => [v.destination, v]),
+  );
+  assert.equal(locations.Venice.travelTime, 1);
+  assert.equal(locations.Venice.canTravel, true);
+  assert.equal(locations.Venice.canUseTicket, false);
+  assert.equal(locations.Rome.canUseTicket, true);
+  assert.equal(locations.Cairo.travelTime, null);
+  assert.equal(locations.Cairo.canTravel, false);
+  assert.equal(locations.Cairo.canTravelVia, false);
+  assert.equal(locations.BermudaTriangle.hidden, true);
+  assert.equal(locations.Moscow.canTravel, false);
+  assert.equal(locations.Moscow.canTravelVia, true);
+  assert.deepEqual(buildTravelAnswer(q, "Venice", "travel").contents, [
+    "travel",
+    "Venice",
+  ]);
+  assert.deepEqual(buildTravelAnswer(q, "Rome", "travelWithTicket").contents, [
+    "travelWithTicket",
+    "Rome",
+  ]);
+  assert.throws(
+    () => buildTravelAnswer(q, "Venice", "travelWithTicket"),
+    /ticket/,
+  );
+  assert.throws(() => buildTravelAnswer(q, "Moscow", "travel"), /unlocked/);
+  for (const destination of ["Cairo", "BermudaTriangle"])
+    for (const mode of ["travel", "travelVia", "travelWithTicket"] as const)
+      assert.throws(
+        () => buildTravelAnswer(q, destination, mode),
+        /available route/,
+      );
+});
+test("Scarlet Keys unlocked hidden stop is available once the engine reveals it", () => {
+  const q = model({
+    tag: "PickCampaignSpecific",
+    contents: [
+      "embark",
+      {
+        current: "Bermuda",
+        available: ["BermudaTriangle"],
+        hasTicket: false,
+        locations: [["BermudaTriangle", { travel: 1 }]],
+      },
+    ],
+  });
+  assert.equal(companionTravel(q)?.locations[0].hidden, false);
+  assert.deepEqual(buildTravelAnswer(q, "BermudaTriangle", "travel").contents, [
+    "travel",
+    "BermudaTriangle",
+  ]);
 });
 test("Vent note request rejects oversized text and never emits an arbitrary native message", () => {
   const q = model({
@@ -1420,6 +1717,83 @@ test("decision components render typed controls for every native question family
     if (q.kind === "deck") assert.match(output, /aria-label="Saved deck"/);
     if (q.kind === "upgrade") assert.match(output, /aria-label="Investigator"/);
   }
+  assert.equal(submissions, 0);
+});
+
+test("Scarlet Keys controls expose the forced final stop and preserve unavailable routes without submitting", async () => {
+  const { createElement } = await import("react"),
+    { renderToStaticMarkup } = await import("react-dom/server");
+  const { CompanionDecision } =
+    await import("../src/components/CompanionDecision");
+  let submissions = 0;
+  const render = (payload: unknown) =>
+    renderToStaticMarkup(
+      createElement(CompanionDecision, {
+        game,
+        model: model({
+          tag: "PickCampaignSpecific",
+          contents: ["embark", payload],
+        }),
+        context,
+        cards: new Map(),
+        busy: false,
+        inspect: () => {},
+        submit: async () => {
+          submissions++;
+        },
+        upgrade: async () => {},
+        session: { gameId: "g" },
+      }),
+    );
+  const finale = render({
+    current: "Tunguska",
+    available: ["Tunguska"],
+    hasTicket: true,
+    locations: [["Tunguska", { travel: 0 }]],
+  });
+  assert.match(finale, /Continue to the final destination/);
+  assert.match(finale, /<legend>Tunguska<\/legend>/);
+  assert.match(finale, /<button(?![^>]*disabled)[^>]*>Travel here<\/button>/);
+  assert.doesNotMatch(
+    finale,
+    /Travel without stopping|Use expedited ticket|<legend>London/,
+  );
+  const ordinary = render({
+    current: "London",
+    available: ["London", "Cairo", "Venice"],
+    hasTicket: true,
+    locations: {
+      London: { travel: 0 },
+      Cairo: { travel: null },
+      Venice: { travel: 0 },
+      BermudaTriangle: { travel: 2 },
+      Moscow: { travel: 2 },
+    },
+  });
+  const fieldset = (destination: string) => {
+    const found = [...ordinary.matchAll(/<fieldset>[\s\S]*?<\/fieldset>/g)]
+      .map((v) => v[0])
+      .find((v) => v.includes(`<legend>${destination}</legend>`));
+    assert.ok(found, destination);
+    return found;
+  };
+  assert.match(fieldset("Cairo"), /No available route/);
+  assert.equal(
+    (fieldset("Cairo").match(/<button[^>]*disabled/g) ?? []).length,
+    2,
+  );
+  assert.doesNotMatch(fieldset("London"), /<button/);
+  assert.match(fieldset("Venice"), /1 travel time/);
+  assert.doesNotMatch(fieldset("Venice"), /expedited ticket/);
+  assert.match(
+    fieldset("Moscow"),
+    /<button[^>]*disabled[^>]*>Travel here<\/button>/,
+  );
+  assert.match(
+    fieldset("Moscow"),
+    /<button(?![^>]*disabled)[^>]*>Travel without stopping<\/button>/,
+  );
+  assert.doesNotMatch(ordinary, /BermudaTriangle/);
   assert.equal(submissions, 0);
 });
 

@@ -9,12 +9,12 @@ import assert from "node:assert/strict";
 import { randomUUID, createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdir, readFile, writeFile, access } from "node:fs/promises";
+import { mkdir, readFile, writeFile, access, open } from "node:fs/promises";
 import { resolve } from "node:path";
 
 if (process.argv.includes("--help")) {
   console.log(
-    "After full native installation: EPIC_QA_CONFIRMED=1 node --import tsx scripts/epic-runtime-check.mjs\nOptional: ARKHAM_RULES_URL, QA_OUT, ARKHAM_RULES_PSQL, ARKHAM_RULES_PG_PORT. Creates new QA events only.",
+    "After full native installation: EPIC_QA_CONFIRMED=1 node --import tsx scripts/epic-runtime-check.mjs\n--prepare-table creates two fresh ready events and snapshot/seat baselines for browser QA; it does not run full acceptance checks.\nOptional: ARKHAM_RULES_URL, QA_OUT, ARKHAM_RULES_PSQL, ARKHAM_RULES_PG_PORT. Provide ARKHAM_RULES_QA_ENGINE_LOG (or ARKHAM_RULES_DATA_DIR) when native errors redact their reason. Creates new QA events only.",
   );
   process.exit(0);
 }
@@ -29,13 +29,31 @@ assert.ok(
   ["127.0.0.1", "localhost"].includes(new URL(base).hostname),
   "QA is confined to the local rules service.",
 );
-const output = resolve(process.env.QA_OUT || "output/epic-runtime");
+const prepareTable = process.argv.includes("--prepare-table");
+const output = resolve(
+  process.env.QA_OUT ||
+    (prepareTable ? "output/epic-table-seed" : "output/epic-runtime"),
+);
+const engineLog =
+  process.env.ARKHAM_RULES_QA_ENGINE_LOG ||
+  (process.env.ARKHAM_RULES_DATA_DIR &&
+    resolve(process.env.ARKHAM_RULES_DATA_DIR, "engine.log"));
+const foreignUndoMessage =
+  "Cannot undo another group's shared effect; undo from the originating group";
+const digest = (value) =>
+  createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const ownedGames = new Set(),
   ownedEvents = new Set(),
   secrets = new Map();
 const proof = {
   startedAt: new Date().toISOString(),
-  passed: false,
+  ...(prepareTable
+    ? {
+        mode: "table-seed",
+        prepared: false,
+        acceptance: "full acceptance checks not run",
+      }
+    : { passed: false }),
   events: [],
   checks: [],
   setupAnswers: [],
@@ -238,6 +256,219 @@ async function coordinator(event) {
     ),
   );
 }
+function ownedParticipants(event) {
+  assert.ok(ownedEvents.has(event.id) && uuid.test(event.id));
+  assert.equal(event.seats.length, 3);
+  for (const seat of event.seats)
+    assert.ok(ownedGames.has(seat.gameId) && uuid.test(seat.gameId));
+  return event.seats.map((seat) => `'${seat.gameId}'::uuid`).join(",");
+}
+async function mutationFingerprint(event) {
+  const ids = ownedParticipants(event),
+    history = journalTable(event).replace(/_events$/, "_journal");
+  // Hash complete database rows without copying private hands/queues into the
+  // report. Step/log rows and journal bodies detect a partially committed undo
+  // even when the rendered cards happen to remain unchanged.
+  const database = JSON.parse(
+    await sql(`SELECT jsonb_build_object(
+    'games', (SELECT jsonb_agg(jsonb_build_object('id',g.id,'step',g.step,'md5',md5(to_jsonb(g)::text)) ORDER BY g.id) FROM arkham_games g WHERE g.id IN (${ids})),
+    'steps', (SELECT jsonb_agg(jsonb_build_object('gameId',s.arkham_game_id,'step',s.step,'md5',md5(to_jsonb(s)::text)) ORDER BY s.arkham_game_id,s.step) FROM arkham_steps s WHERE s.arkham_game_id IN (${ids})),
+    'logs', (SELECT jsonb_agg(jsonb_build_object('id',l.id,'md5',md5(to_jsonb(l)::text)) ORDER BY l.id) FROM arkham_log_entries l WHERE l.arkham_game_id IN (${ids})),
+    'players', (SELECT jsonb_agg(jsonb_build_object('id',p.id,'md5',md5(to_jsonb(p)::text)) ORDER BY p.id) FROM arkham_players p WHERE p.arkham_game_id IN (${ids})),
+    'event', (SELECT md5(to_jsonb(e)::text) FROM arkham_epic_events e WHERE e.id='${event.id}'::uuid),
+    'coordinator', (SELECT md5(to_jsonb(c)::text) FROM ${journalTable(event)} c WHERE c.event_id='${event.id}'::uuid),
+    'journal', (SELECT jsonb_agg(jsonb_build_object('originGameId',j.origin_game_id,'originStep',j.origin_step,'md5',md5(to_jsonb(j)::text)) ORDER BY j.origin_game_id,j.origin_step) FROM ${history} j WHERE j.event_id='${event.id}'::uuid)
+  )::text`),
+  );
+  const groups = await Promise.all(
+    event.seats.map(async (seat) => ({
+      gameId: seat.gameId,
+      sha256: digest(await publicFingerprint(seat)),
+    })),
+  );
+  return { database, groups };
+}
+async function logSize() {
+  if (!engineLog) return undefined;
+  const file = await open(engineLog, "r");
+  try {
+    return (await file.stat()).size;
+  } finally {
+    await file.close();
+  }
+}
+async function loggedForeignUndo(offset) {
+  if (!engineLog || offset === undefined) return false;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const file = await open(engineLog, "r");
+    try {
+      const length = (await file.stat()).size - offset;
+      assert.ok(
+        length >= 0 && length <= 1024 * 1024,
+        "QA engine log must retain this request's bounded new suffix.",
+      );
+      const buffer = Buffer.alloc(length);
+      await file.read(buffer, 0, length, offset);
+      if (buffer.toString("utf8").includes(foreignUndoMessage)) return true;
+    } finally {
+      await file.close();
+    }
+    await new Promise((done) => setTimeout(done, 50));
+  }
+  return false;
+}
+async function foreignUndoChecks(event, participant, origin) {
+  ownedParticipants(event);
+  for (const seat of [participant, origin])
+    assert.ok(event.seats.some((member) => member.gameId === seat.gameId));
+  assert.notEqual(participant.gameId, origin.gameId);
+  const history = journalTable(event).replace(/_events$/, "_journal");
+  const precondition = JSON.parse(
+    await sql(`SELECT jsonb_build_object(
+    'cursor',g.step,'scenarioSteps',(g.current_data->>'gameScenarioSteps')::integer,
+    'undoFloor',COALESCE(f.floor_step,0),'choice',s.choice::jsonb,
+    'previousStepExists',EXISTS(SELECT 1 FROM arkham_steps p WHERE p.arkham_game_id=g.id AND p.step=g.step-1),
+    'ownOriginJournalAtCursor',EXISTS(SELECT 1 FROM ${history} j WHERE j.event_id='${event.id}'::uuid AND j.origin_game_id=g.id AND j.origin_step=g.step),
+    'foreignJournals',(SELECT jsonb_agg(jsonb_build_object('originGameId',j.origin_game_id,'originStep',j.origin_step,'expectedSteps',j.body->'journalExpectedSteps')) FROM ${history} j WHERE j.event_id='${event.id}'::uuid AND j.origin_game_id='${origin.gameId}'::uuid AND j.origin_step=(SELECT step FROM arkham_games WHERE id=j.origin_game_id) AND (j.body->'journalExpectedSteps') @> jsonb_build_array(jsonb_build_array(g.id::text,g.step))),
+    'scenarioUndoSteps',(SELECT jsonb_agg(p.step ORDER BY p.step DESC) FROM arkham_steps p WHERE p.arkham_game_id=g.id AND p.step>GREATEST(COALESCE(f.floor_step,0),g.step-((g.current_data->>'gameScenarioSteps')::integer-1)) AND p.step<>0)
+  )::text FROM arkham_games g JOIN arkham_steps s ON s.arkham_game_id=g.id AND s.step=g.step LEFT JOIN arkham_game_undo_floors f ON f.arkham_game_id=g.id WHERE g.id='${participant.gameId}'::uuid`),
+  );
+  assert.ok(
+    precondition.cursor > 0 && precondition.cursor > precondition.undoFloor,
+  );
+  assert.equal(
+    precondition.previousStepExists,
+    true,
+    "The foreign cursor has a valid preceding native step.",
+  );
+  assert.deepEqual(
+    precondition.choice.choicePatchDown,
+    [],
+    "The exact current cursor is a synthetic empty inverse.",
+  );
+  assert.equal(
+    precondition.ownOriginJournalAtCursor,
+    false,
+    "This table did not originate the current shared step.",
+  );
+  assert.equal(
+    precondition.foreignJournals?.length,
+    1,
+    "The current originating transaction owns the participant's exact cursor.",
+  );
+  assert.ok(
+    precondition.foreignJournals[0].expectedSteps.some(
+      ([id, step]) => id === participant.gameId && step === precondition.cursor,
+    ),
+  );
+  assert.ok(
+    precondition.scenarioSteps > 1 &&
+      precondition.scenarioUndoSteps?.length > 1,
+  );
+  assert.ok(
+    precondition.scenarioUndoSteps.includes(precondition.cursor),
+    "The valid scenario-undo range crosses the foreign synthetic cursor.",
+  );
+  proof.undoBoundaryProbes ??= [];
+  proof.undoBoundaryProbes.push({
+    eventId: event.id,
+    participantGameId: participant.gameId,
+    originGameId: origin.gameId,
+    cursor: precondition.cursor,
+    scenarioSteps: precondition.scenarioSteps,
+    undoFloor: precondition.undoFloor,
+    syntheticEmptyInverse: true,
+    previousStepExists: true,
+    ownOriginJournalAtCursor: false,
+    foreignJournal: precondition.foreignJournals[0],
+    scenarioUndoSteps: precondition.scenarioUndoSteps,
+  });
+  await checkpoint();
+  const before = await mutationFingerprint(event);
+  for (const [kind, path, method, token] of [
+    ["single", seatPath(participant, "/undo"), "POST", undefined],
+    [
+      "scenario",
+      `/api/v1/arkham/games/${participant.gameId}/undo/scenario`,
+      "PUT",
+      await seatToken(participant),
+    ],
+  ]) {
+    const offset = await logSize(),
+      refused = await http(path, {}, method, token);
+    assert.ok(
+      [400, 500].includes(refused.status),
+      `${kind} undo must reject a valid foreign cursor, not fail authentication/routing.`,
+    );
+    const after = await mutationFingerprint(event);
+    assert.deepEqual(
+      after,
+      before,
+      `Rejected foreign ${kind} undo preserves all three groups, native cursors/steps/logs, coordinator and journal.`,
+    );
+    const explicitReason = JSON.stringify(refused.data).includes(
+      foreignUndoMessage,
+    );
+    assert.ok(
+      explicitReason || (await loggedForeignUndo(offset)),
+      "Require the foreign-boundary reason in the response or fresh QA engine log; configure ARKHAM_RULES_QA_ENGINE_LOG for redacted native errors.",
+    );
+    proof.checks.push({
+      eventId: event.id,
+      foreignParticipantUndo: kind,
+      participantGameId: participant.gameId,
+      originGameId: origin.gameId,
+      cursor: precondition.cursor,
+      scenarioUndoSteps: precondition.scenarioUndoSteps,
+      foreignJournal: precondition.foreignJournals[0],
+      httpStatus: refused.status,
+      rejectionReason: foreignUndoMessage,
+      reasonEvidence: explicitReason
+        ? "native response"
+        : "fresh QA engine log suffix",
+      groupFingerprints: before.groups,
+      beforeSha256: digest(before),
+      afterSha256: digest(after),
+      databaseAndAllGroupsUnchanged: true,
+    });
+    await checkpoint();
+  }
+}
+async function wrongSeatChecks(event) {
+  ownedParticipants(event);
+  const [target, foreign] = event.seats,
+    before = await mutationFingerprint(event);
+  const wrong = { ...foreign, gameId: target.gameId };
+  for (const [method, suffix, body] of [
+    ["GET", "", undefined],
+    ["POST", "/undo", {}],
+  ]) {
+    const refused = await http(seatPath(wrong, suffix), body, method);
+    assert.equal(
+      refused.status,
+      403,
+      "A valid local seat cannot read or undo another group's game.",
+    );
+    const after = await mutationFingerprint(event);
+    assert.deepEqual(
+      after,
+      before,
+      "Wrong-seat rejection leaves all participant games and authoritative state unchanged.",
+    );
+    proof.checks.push({
+      eventId: event.id,
+      wrongSeatGameRejected: method,
+      gameId: target.gameId,
+      foreignSeatGameId: foreign.gameId,
+      httpStatus: refused.status,
+      groupFingerprints: before.groups,
+      beforeSha256: digest(before),
+      afterSha256: digest(after),
+      databaseAndAllGroupsUnchanged: true,
+    });
+    await checkpoint();
+  }
+}
 async function expireTimer(event) {
   assert.ok(ownedEvents.has(event.id) && uuid.test(event.id));
   proof.debugSeeds.push({
@@ -374,7 +605,7 @@ function deck(name) {
   };
 }
 async function createEvent(scenarioId) {
-  const name = `Chronicle Epic native QA ${scenarioId} ${new Date().toISOString()}`;
+  const name = `Chronicle Epic ${prepareTable ? "table" : "native"} QA ${scenarioId} ${new Date().toISOString()}`;
   const event = await request("/chronicle/epic/events", {
     name,
     scenarioId,
@@ -478,7 +709,97 @@ async function createEvent(scenarioId) {
     duplicateInvestigatorAllowed: true,
     timerStarted: true,
   });
+  if (!prepareTable) await wrongSeatChecks(event);
   return event;
+}
+async function prepareTableEvent(scenarioId) {
+  const event = await createEvent(scenarioId);
+  // The first group can still be holding its legitimate setup-wait question
+  // when the third group becomes ready. Refresh only documented native setup
+  // checkpoints; leave every table at a real, unspent player action window.
+  for (let round = 0; round < 20; round++) {
+    let ready = 0;
+    for (const seat of event.seats) {
+      const current = await snapshot(seat),
+        question = model(current);
+      if (
+        question?.isPlayerWindow &&
+        current.game.phase === "InvestigationPhase"
+      ) {
+        ready++;
+        continue;
+      }
+      const waiting = question?.choices.find(
+        (choice) => /Waiting/i.test(choice.label) && !choice.disabled,
+      );
+      if (waiting) {
+        proof.setupAnswers.push({
+          gameId: seat.gameId,
+          category: "table-ready",
+          tag: question.tag,
+          answerIndex: waiting.answerIndex,
+          label: waiting.label,
+        });
+        await answer(
+          seat,
+          protocol.buildChoiceAnswer(question, waiting.answerIndex),
+        );
+      } else await settle(seat);
+    }
+    if (ready === 3) break;
+  }
+  const saved = proof.events.find((entry) => entry.id === event.id);
+  saved.seats = [];
+  for (const seat of event.seats) {
+    const current = await snapshot(seat),
+      question = model(current),
+      investigator = own(current);
+    assert.equal(
+      current.game.phase,
+      "InvestigationPhase",
+      "Browser seed must reach native investigation.",
+    );
+    assert.equal(
+      question?.isPlayerWindow,
+      true,
+      "Browser seed must retain an explicit native player window.",
+    );
+    assert.ok(
+      question.choices.some(
+        (choice) => choice.label === "Take 1 resource" && !choice.disabled,
+      ),
+      "Browser seed exposes the real resource action.",
+    );
+    const snapshotPath = resolve(
+      output,
+      `table-${scenarioId}-group-${seat.ordinal}.json`,
+    );
+    await writeFile(snapshotPath, JSON.stringify(current, null, 2), {
+      mode: 0o600,
+    });
+    saved.seats.push({
+      id: seat.id,
+      gameId: seat.gameId,
+      ordinal: seat.ordinal,
+      seatIndex: seat.seatIndex,
+      name: seat.name,
+      deckId: seat.deckId,
+      snapshotPath,
+      snapshotSha256: digest(current.game),
+      tableHash: `#${new URLSearchParams({ investigation: seat.gameId, seat: seat.id })}`,
+      baseline: {
+        playerId: current.playerId,
+        investigatorId: investigator.id,
+        role: (scenarioId === "70001" ? groups : eras)[seat.ordinal],
+        phase: current.game.phase,
+        scenarioSteps: current.game.scenarioSteps,
+        decisionTag: question.tag,
+        resources: tokenCount(investigator, "Resource"),
+        remainingActions: investigator.remainingActions,
+      },
+    });
+  }
+  await checkpoint();
 }
 async function advanceReceipt(seat) {
   const current = await snapshot(seat),
@@ -582,6 +903,7 @@ async function labyrinthChecks(event) {
     ),
   );
   assert.ok(journalCount > 0);
+  await foreignUndoChecks(event, b, a);
   await undo(a);
   sent = await snapshot(a);
   received = await snapshot(b);
@@ -799,6 +1121,7 @@ async function machinationsChecks(event) {
     1,
     "Native clue pool was refreshed before pickup.",
   );
+  await foreignUndoChecks(event, past, present);
   await undo(present);
   assert.equal(tokenCount(tindalos(await snapshot(past)), "Clue"), 2);
   assert.equal(tokenCount(own(await snapshot(present)), "Clue"), 0);
@@ -996,9 +1319,14 @@ try {
     }
   proof.existingGamesReadOnly = prior.map((p) => p.gameId);
   await checkpoint();
-  await labyrinthChecks(await createEvent("70001"));
-  await checkpoint();
-  await machinationsChecks(await createEvent("87001"));
+  if (prepareTable) {
+    await prepareTableEvent("70001");
+    await prepareTableEvent("87001");
+  } else {
+    await labyrinthChecks(await createEvent("70001"));
+    await checkpoint();
+    await machinationsChecks(await createEvent("87001"));
+  }
   for (const p of prior) {
     const saved = await request(`/chronicle/play/games/${p.gameId}`);
     assert.equal(
@@ -1007,11 +1335,14 @@ try {
       `Pre-existing game ${p.gameId} remains unchanged.`,
     );
   }
-  proof.passed = true;
+  if (prepareTable) proof.prepared = true;
+  else proof.passed = true;
   proof.finishedAt = new Date().toISOString();
   await checkpoint();
   console.log(
-    `Epic native API proof passed: ${proof.events.length} new events, ${proof.checks.length} check groups. Report: ${resolve(output, "report.json")}`,
+    prepareTable
+      ? `Epic native table seed prepared: ${proof.events.length} new events with three ready seats each. Full acceptance checks not run. Report: ${resolve(output, "report.json")}`
+      : `Epic native API proof passed: ${proof.events.length} new events, ${proof.checks.length} check groups. Report: ${resolve(output, "report.json")}`,
   );
 } catch (error) {
   proof.error = redact(error.stack || error.message);

@@ -21,6 +21,7 @@ import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
+import { createBuildSpaceGuard, runWithBuildSpace } from "./rules-build-space.mjs";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const upstreamRevision = "03a7f1e74925744f021f6e8fe0e39945d2c3a833";
@@ -98,6 +99,8 @@ const buildOutput = resolve(
 const compilerHeap = process.env.ARKHAM_RULES_GHC_HEAP || "4G";
 if (!/^[1-8]G$/.test(compilerHeap))
   throw new Error("ARKHAM_RULES_GHC_HEAP must be a bounded heap from 1G through 8G.");
+const diskReserveGiB = Number(process.env.ARKHAM_RULES_DISK_RESERVE_GIB || "1");
+const requireBuildSpace = createBuildSpaceGuard([project, source, toolchain], diskReserveGiB);
 const mainGhcOptions = `-Wno-missing-home-modules -j2 +RTS -M${compilerHeap} -N1 -A16m -n2m -c -RTS`;
 const downloads = resolve(toolchain, "downloads");
 const ghcDir = resolve(toolchain, "ghc");
@@ -416,21 +419,13 @@ async function sha256(path) {
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   return hash.digest("hex");
 }
-function run(command, args, options = {}) {
-  return new Promise((resolvePromise, reject) => {
-    const child = spawn(command, args, {
-      cwd: backend,
-      env,
-      stdio: "inherit",
-      ...options,
-    });
-    child.on("error", reject);
-    child.on("exit", (code, signal) =>
-      code === 0
-        ? resolvePromise()
-        : reject(new Error(`${command} failed (${signal || code}).`)),
-    );
-  });
+async function run(command, args, options = {}) {
+  return runWithBuildSpace(command, args, {
+    cwd: backend,
+    env,
+    stdio: "inherit",
+    ...options,
+  }, requireBuildSpace);
 }
 async function capture(command, args, cwd = backend, trim = true) {
   return new Promise((resolvePromise, reject) => {
@@ -455,6 +450,7 @@ async function capture(command, args, cwd = backend, trim = true) {
   });
 }
 async function download(item) {
+  await requireBuildSpace();
   if ((await exists(item.path)) && (await sha256(item.path)) === item.sha256)
     return;
   console.log(`Downloading ${new URL(item.url).pathname.split("/").at(-1)}.`);
@@ -1717,6 +1713,7 @@ try {
     if (!path || path.startsWith("--")) throw new Error("--publish-candidate requires its completed candidate path.");
     await publishPreparedCandidate(path);
   } else {
+    await requireBuildSpace();
     await bootstrapSource();
     if (mode === "stage") await stage();
     else await build();

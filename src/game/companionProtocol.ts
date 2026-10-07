@@ -1608,34 +1608,112 @@ export function buildSpiritDeckAnswer(
   return buildScenarioSpecificAnswer(model, { cardCodes: [...selected] });
 }
 export type CompanionTravelMode = "travel" | "travelVia" | "travelWithTicket";
+export interface CompanionTravelLocation {
+  destination: string;
+  current: boolean;
+  available: boolean;
+  hidden: boolean;
+  travelTime: number | null;
+  canTravel: boolean;
+  canTravelVia: boolean;
+  canUseTicket: boolean;
+}
+export interface CompanionTravel {
+  current: string;
+  isFinale: boolean;
+  locations: CompanionTravelLocation[];
+}
+/** Project only the destinations and routes supplied by the pending native ask.
+ * The engine serializes its list of Aeson pairs as tuples; also accept an
+ * equivalent record without changing the raw question.
+ */
+export function companionTravel(
+  model: CompanionQuestion,
+): CompanionTravel | undefined {
+  if (model.specific?.key !== "embark" || model.specific.scope !== "campaign")
+    return undefined;
+  const prompt = object(model.specific.payload),
+    current = string(prompt.current),
+    available = array(prompt.available).map(string),
+    // At the time limit the native engine moves the cell to Tunguska and asks
+    // for the single remaining stop. There is no isFinale field on the wire.
+    isFinale =
+      current === "Tunguska" &&
+      available.length === 1 &&
+      available[0] === current,
+    entries = Array.isArray(prompt.locations)
+      ? prompt.locations.map((v) => array(v))
+      : Object.entries(object(prompt.locations));
+  return {
+    current,
+    isFinale,
+    locations: entries.flatMap((pair) => {
+      const destination = string(pair[0]);
+      if (!destination) return [];
+      const distance = object(pair[1]).travel,
+        travelTime =
+          typeof distance === "number" &&
+          Number.isSafeInteger(distance) &&
+          distance >= 0
+            ? distance +
+              ([
+                "Arkham",
+                "Cairo",
+                "NewOrleans",
+                "Venice",
+                "MonteCarlo",
+              ].includes(destination)
+                ? 1
+                : 0)
+            : null,
+        isCurrent = destination === current,
+        unlocked = available.includes(destination),
+        hidden = destination === "BermudaTriangle" && !unlocked,
+        route = travelTime !== null && !hidden,
+        canTravel = route && unlocked && (!isCurrent || isFinale),
+        canTravelVia = route && !isCurrent;
+      return [
+        {
+          destination,
+          current: isCurrent,
+          available: unlocked,
+          hidden,
+          travelTime,
+          canTravel,
+          canTravelVia,
+          canUseTicket:
+            canTravel &&
+            !isCurrent &&
+            prompt.hasTicket === true &&
+            travelTime !== null &&
+            travelTime > 1,
+        },
+      ];
+    }),
+  };
+}
 export function buildTravelAnswer(
   model: CompanionQuestion,
   destination: string,
   mode: CompanionTravelMode,
 ): CompanionAnswer {
-  if (model.specific?.key !== "embark" || model.specific.scope !== "campaign")
-    throw new Error("This question does not request travel.");
-  const prompt = object(model.specific.payload);
-  const location = array(prompt.locations).find(
-    (v) => array(v)[0] === destination,
-  );
+  const travel = companionTravel(model);
+  if (!travel) throw new Error("This question does not request travel.");
+  const location = travel.locations.find((v) => v.destination === destination);
   if (!location || !["travel", "travelVia", "travelWithTicket"].includes(mode))
     throw new Error("Choose a destination on this map.");
-  const data = object(array(location)[1]),
-    green = ["Arkham", "Cairo", "NewOrleans", "Venice", "MonteCarlo"].includes(
-      destination,
-    );
-  const days = number(data.travel) + (green ? 1 : 0);
-  if (destination === prompt.current && !prompt.isFinale)
+  if (location.current && !travel.isFinale)
     throw new Error("You are already at that destination.");
-  if (
-    mode !== "travelVia" &&
-    !array(prompt.available).includes(destination) &&
-    destination !== prompt.current
-  )
+  if (location.hidden || location.travelTime === null)
+    throw new Error("There is no available route to that destination.");
+  if (mode !== "travelVia" && !location.available)
     throw new Error("That destination is not unlocked.");
-  if (mode === "travelWithTicket" && (!prompt.hasTicket || days <= 1))
+  if (mode === "travelWithTicket" && !location.canUseTicket)
     throw new Error("An expedited ticket cannot be used for this journey.");
+  if (mode === "travelVia" && !location.canTravelVia)
+    throw new Error(
+      "Travel to the final destination to continue the campaign.",
+    );
   return { tag: "CampaignSpecificAnswer", contents: [mode, destination] };
 }
 
@@ -1651,6 +1729,17 @@ export interface CompanionSettingsState {
   >;
   options: { key: string; ckey?: string }[];
 }
+export const companionPartnerCodes: readonly string[] = [
+  "08720",
+  "08714",
+  "08715",
+  "08721",
+  "08722",
+  "08718",
+  "08717",
+  "08719",
+  "08716",
+];
 export function settingsCondition(
   condition: unknown,
   state: CompanionSettingsState,
@@ -1685,16 +1774,23 @@ export function settingsCondition(
     );
   }
   if (type === "survivedPlaneCrash") {
-    const flatten = (list: readonly unknown[]): NativeRecord[] =>
+    const flatten = (
+      list: readonly unknown[],
+      parents: readonly NativeRecord[] = [],
+    ): { setting: NativeRecord; parents: readonly NativeRecord[] }[] =>
       list.flatMap((v) =>
         object(v).type === "Group"
-          ? flatten(array(object(v).content))
-          : [object(v)],
+          ? flatten(array(object(v).content), [...parents, object(v)])
+          : [{ setting: object(v), parents }],
       );
-    return (
-      flatten(standalone).find((v) => v.key === "KilledInPlaneCrash")
-        ?.content !== key
+    const crash = flatten(standalone).find(
+      ({ setting, parents }) =>
+        setting.key === "KilledInPlaneCrash" &&
+        [...parents, setting].every((v) =>
+          settingsActive(v, state, standalone),
+        ),
     );
+    return crash?.setting.content !== key;
   }
   if (type === "always") return true;
   if (type === "not") return !settingsCondition(c.content, state, standalone);
@@ -1727,48 +1823,67 @@ export function settingsActive(
 export function standaloneSettingsState(
   settings: readonly unknown[],
 ): CompanionSettingsState {
-  const state: CompanionSettingsState = {
-    keys: [],
-    counts: {},
-    sets: {},
-    options: [],
+  const project = (
+    previous?: CompanionSettingsState,
+  ): CompanionSettingsState => {
+    const state: CompanionSettingsState = {
+      keys: [],
+      counts: {},
+      sets: {},
+      options: [],
+    };
+    const active = (s: unknown) =>
+      !previous || settingsActive(s, previous, settings);
+    const walk = (list: readonly unknown[]) =>
+      list.forEach((v) => {
+        const s = object(v),
+          key = string(s.key),
+          type = string(s.type);
+        // An inactive group makes every child inactive, including the values
+        // that would otherwise keep a dependent section visible.
+        if (!active(s)) return;
+        if (type === "Group") walk(array(s.content));
+        if (type === "ToggleKey" && s.content === true)
+          state.keys.push({ key });
+        if (type === "PickKey" && s.content)
+          state.keys.push({ key: string(s.content) });
+        if (type === "ToggleOption" && s.content === true)
+          state.options.push({ key, ckey: key });
+        if (type === "ChooseNum") state.counts[key] = number(s.content);
+        if (type === "ToggleRecords" || type === "ToggleCrossedOut")
+          state.sets[key] = {
+            recordable: string(s.recordable),
+            entries: array(s.content)
+              .filter(active)
+              .map((v) => {
+                const entry = object(v);
+                return {
+                  tag: (
+                    type === "ToggleRecords"
+                      ? entry.content === true
+                      : entry.content !== true
+                  )
+                    ? "Recorded"
+                    : "CrossedOut",
+                  value: entry.key,
+                };
+              }),
+          };
+        if (type === "ChooseRecord" && typeof s.selected === "string")
+          state.sets[key] = {
+            recordable: string(s.recordable),
+            entries: [{ tag: "Recorded", value: s.selected }],
+          };
+      });
+    walk(settings);
+    return state;
   };
-  const walk = (list: readonly unknown[]) =>
-    list.forEach((v) => {
-      const s = object(v),
-        key = string(s.key),
-        type = string(s.type);
-      if (type === "Group") walk(array(s.content));
-      if (type === "ToggleKey" && s.content === true) state.keys.push({ key });
-      if (type === "PickKey" && s.content)
-        state.keys.push({ key: string(s.content) });
-      if (type === "ToggleOption" && s.content === true)
-        state.options.push({ key, ckey: key });
-      if (type === "ChooseNum") state.counts[key] = number(s.content);
-      if (type === "ToggleRecords" || type === "ToggleCrossedOut")
-        state.sets[key] = {
-          recordable: string(s.recordable),
-          entries: array(s.content).map((v) => {
-            const entry = object(v);
-            return {
-              tag: (
-                type === "ToggleRecords"
-                  ? entry.content === true
-                  : entry.content !== true
-              )
-                ? "Recorded"
-                : "CrossedOut",
-              value: entry.key,
-            };
-          }),
-        };
-      if (type === "ChooseRecord" && typeof s.selected === "string")
-        state.sets[key] = {
-          recordable: string(s.recordable),
-          entries: [{ tag: "Recorded", value: s.selected }],
-        };
-    });
-  walk(settings);
+  let state = project();
+  for (let pass = 0; pass < 12; pass++) {
+    const next = project(state);
+    if (JSON.stringify(next) === JSON.stringify(state)) return next;
+    state = next;
+  }
   return state;
 }
 export function standaloneSettingsForAnswer(
@@ -1782,7 +1897,7 @@ export function standaloneSettingsForAnswer(
         const s = object(v);
         if (s.type === "Group")
           return { ...s, content: filter(array(s.content)) };
-        if (s.type === "ToggleRecords")
+        if (s.type === "ToggleRecords" || s.type === "ToggleCrossedOut")
           return {
             ...s,
             content: array(s.content).filter((v) =>
@@ -1808,6 +1923,11 @@ export function standaloneSettingsForAnswer(
           throw new Error(
             `Choose an available ${words(string(s.label ?? s.key))}.`,
           );
+        if (
+          s.type === "SetPartnerKilled" &&
+          !companionPartnerCodes.includes(string(s.content))
+        )
+          throw new Error("Choose the partner killed in the plane crash.");
         if (s.type === "SetPartnerDetails") {
           const details = object(s.content);
           if (

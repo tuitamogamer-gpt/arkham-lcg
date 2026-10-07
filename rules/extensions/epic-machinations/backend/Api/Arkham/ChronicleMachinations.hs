@@ -16,6 +16,7 @@ import Arkham.GameEnv
 import Arkham.Game.State (GameState (..))
 import Arkham.Homebrew.EpicLabyrinth.ReturnBridge qualified as OwnerReturn
 import Arkham.Homebrew.EpicLabyrinth.ReturnTypes
+import Arkham.Homebrew.EpicLabyrinth.UndoBoundary (coupledUndoAllowed, validateParticipantUndo)
 import Arkham.Homebrew.EpicLabyrinth.Types (LabyrinthGroup (..), OperationId, DeliveryId)
 import Arkham.Homebrew.EpicMachinations.Coordinator qualified as Coordinator
 import Arkham.Homebrew.EpicMachinations.Transactions qualified as Physical
@@ -321,6 +322,13 @@ drain n state groups
 undoMachinationsStep :: MonadIO m => ArkhamGameId -> Int -> ReaderT SqlBackend m ()
 undoMachinationsStep gid step = lookupGameEvent gid >>= \case
   Just (Entity eid event, _) | isMachinationsEvent event -> do
+    -- Foreign synthetic steps have no local inverse. Rewinding one would let
+    -- older local patches cross the coupled transport without its journal.
+    foreignRows <- rawSql "SELECT origin_game_id,body::text FROM chronicle_machinations_journal WHERE event_id=? AND origin_game_id<>? AND (body->'journalExpectedSteps') @> ?::jsonb FOR UPDATE"
+      [toPersistValue eid, toPersistValue gid, toPersistValue $ jsonText [(gid, step)]]
+    let boundaries = [(unSingle origin, (decodeStored @MachinationsJournal value).journalExpectedSteps)
+          | (origin, Single value) <- foreignRows]
+    either error pure $ validateParticipantUndo gid [step] boundaries
     rows <- rawSql "SELECT body::text FROM chronicle_machinations_journal WHERE origin_game_id=? AND origin_step=? FOR UPDATE"
       [toPersistValue gid, toPersistValue step]
     for_ rows \(Single value) -> do
@@ -328,8 +336,8 @@ undoMachinationsStep gid step = lookupGameEvent gid >>= \case
       current <- for (journal.journalGroups) \saved -> loadGroup saved.savedId
       stored <- rawSql "SELECT state::text FROM chronicle_machinations_events WHERE event_id=? FOR UPDATE" [toPersistValue eid]
       let state = decodeStored @MachinationsState $ unSingle $ fromJustNote "Coordinator disappeared" $ listToMaybe stored
-      unless (state.machinationsRevision == journal.journalRevision
-        && all (\saved -> saved.savedId == gid || Map.lookup saved.savedId (Map.fromList journal.journalExpectedSteps) == Just saved.savedStep) current)
+      unless (coupledUndoAllowed gid journal.journalRevision state.machinationsRevision
+        journal.journalExpectedSteps [(saved.savedId, saved.savedStep) | saved <- current])
         $ error "Cannot undo this timeline effect after another group has continued"
       for_ journal.journalGroups \saved -> when (saved.savedId /= gid) do
         -- Move the cursor before trimming future steps (native deletion trigger).

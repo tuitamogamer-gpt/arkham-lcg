@@ -10,7 +10,10 @@ const service = process.env.RULES_URL || "http://127.0.0.1:5194";
 const out = process.env.QA_OUT || "output/barkham-tables";
 await mkdir(out, { recursive: true });
 const proof = JSON.parse(
-  await readFile("output/barkham-runtime/report.json", "utf8"),
+  await readFile(
+    process.env.BARKHAM_RUNTIME_REPORT || "output/barkham-runtime/report.json",
+    "utf8",
+  ),
 );
 assert.equal(proof.passed, true);
 const readGame = async (id) => {

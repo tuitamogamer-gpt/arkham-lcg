@@ -27,7 +27,9 @@ import {
   campaignSettingsForAnswer,
   companionCatalogCode,
   companionEntities,
+  companionPartnerCodes,
   companionText,
+  companionTravel,
   describeCompanionCost,
   initialCampaignSettings,
   normalizeCampaignSettings,
@@ -819,90 +821,90 @@ function DecisionForm({
           </Button>
         </>
       );
-    else if (model.specific?.key === "embark")
+    else if (model.specific?.key === "embark") {
+      const travel = companionTravel(model);
       controls = (
         <div className="companion-travel">
-          <p>Current destination: {label(payload.current)}</p>
-          {list(payload.locations).map((v) => {
-            const pair = list(v),
-              destination = text(pair[0]),
-              data = record(pair[1]),
-              green = [
-                "Arkham",
-                "Cairo",
-                "NewOrleans",
-                "Venice",
-                "MonteCarlo",
-              ].includes(destination),
-              days = integer(data.travel) + (green ? 1 : 0),
-              available = list(payload.available).includes(destination),
-              current = destination === payload.current;
-            return (
-              <fieldset key={destination}>
-                <legend>
-                  {companionText(
-                    `$theScarletKeys.locations.${destination}.name`,
-                    context,
-                  ).startsWith("[")
-                    ? label(destination)
-                    : companionText(
-                        `$theScarletKeys.locations.${destination}.name`,
-                        context,
-                      )}
-                </legend>
-                <p>
-                  {current
-                    ? "You are here"
-                    : `${days} travel time${available ? "" : " · stop locked"}`}
-                </p>
-                {!current && (
-                  <div className="companion-actions">
-                    <Button
-                      disabled={locked || !available}
-                      onClick={() =>
-                        void perform(() =>
-                          buildTravelAnswer(model, destination, "travel"),
-                        )
-                      }
-                    >
-                      Travel here
-                    </Button>
-                    <Button
-                      secondary
-                      disabled={locked}
-                      onClick={() =>
-                        void perform(() =>
-                          buildTravelAnswer(model, destination, "travelVia"),
-                        )
-                      }
-                    >
-                      Travel without stopping
-                    </Button>
-                    {payload.hasTicket === true && days > 1 && (
+          <p>Current destination: {label(travel?.current)}</p>
+          {travel?.isFinale && <p>Continue to the final destination.</p>}
+          {travel?.locations
+            .filter((v) => !v.hidden)
+            .map((location) => {
+              const { destination, travelTime, current, available } = location;
+              return (
+                <fieldset key={destination}>
+                  <legend>
+                    {companionText(
+                      `$theScarletKeys.locations.${destination}.name`,
+                      context,
+                    ).startsWith("[")
+                      ? label(destination)
+                      : companionText(
+                          `$theScarletKeys.locations.${destination}.name`,
+                          context,
+                        )}
+                  </legend>
+                  <p>
+                    {current
+                      ? "You are here"
+                      : travelTime === null
+                        ? "No available route"
+                        : `${travelTime} travel time${available ? "" : " · stop locked"}`}
+                  </p>
+                  {(!current || travel.isFinale) && (
+                    <div className="companion-actions">
                       <Button
-                        secondary
-                        disabled={locked || !available}
+                        disabled={locked || !location.canTravel}
                         onClick={() =>
                           void perform(() =>
-                            buildTravelAnswer(
-                              model,
-                              destination,
-                              "travelWithTicket",
-                            ),
+                            buildTravelAnswer(model, destination, "travel"),
                           )
                         }
                       >
-                        Use expedited ticket
+                        Travel here
                       </Button>
-                    )}
-                  </div>
-                )}
-              </fieldset>
-            );
-          })}
+                      {!current && (
+                        <Button
+                          secondary
+                          disabled={locked || !location.canTravelVia}
+                          onClick={() =>
+                            void perform(() =>
+                              buildTravelAnswer(
+                                model,
+                                destination,
+                                "travelVia",
+                              ),
+                            )
+                          }
+                        >
+                          Travel without stopping
+                        </Button>
+                      )}
+                      {location.canUseTicket && (
+                        <Button
+                          secondary
+                          disabled={locked}
+                          onClick={() =>
+                            void perform(() =>
+                              buildTravelAnswer(
+                                model,
+                                destination,
+                                "travelWithTicket",
+                              ),
+                            )
+                          }
+                        >
+                          Use expedited ticket
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </fieldset>
+              );
+            })}
         </div>
       );
-    else
+    } else
       controls = (
         <p role="alert">
           This scenario requests an unrecognized decision ({model.specific?.key}
@@ -1022,17 +1024,7 @@ function DecisionForm({
               ? list(s.keys)
               : type === "ChooseRecord"
                 ? list(s.content).map((v) => record(v).key)
-                : [
-                    "08720",
-                    "08714",
-                    "08715",
-                    "08721",
-                    "08722",
-                    "08718",
-                    "08717",
-                    "08719",
-                    "08716",
-                  ];
+                : companionPartnerCodes;
           const current = type === "ChooseRecord" ? s.selected : s.content;
           return (
             <label className="companion-field" key={key}>

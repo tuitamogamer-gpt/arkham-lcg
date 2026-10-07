@@ -3,6 +3,7 @@ module Arkham.Homebrew.EpicLabyrinth.CoordinatorSpec (spec) where
 import Arkham.Card.Id (unsafeMakeCardId)
 import Arkham.Homebrew.EpicLabyrinth.Coordinator
 import Arkham.Homebrew.EpicLabyrinth.Types
+import Arkham.Homebrew.EpicLabyrinth.UndoBoundary
 import Arkham.Id
 import Arkham.Prelude
 import Data.Aeson qualified as Aeson
@@ -14,6 +15,54 @@ import Test.Hspec qualified as H
 
 spec :: H.Spec
 spec = H.describe "Epic Labyrinth coordinator" do
+  H.describe "shared participant undo boundaries used by both Epic adapters" do
+    let origin = "past-game" :: Text
+        participant = "present-game" :: Text
+        third = "future-game" :: Text
+        expected = [(origin, 11), (participant, 21), (third, 31)]
+        journal = (origin, expected)
+        rejection = Left "Cannot undo another group's shared effect; undo from the originating group"
+
+    H.it "rejects a sibling's exact synthetic step even without its own origin journal" do
+      validateParticipantUndo participant [21] [journal] `H.shouldBe` rejection
+
+    H.it "rejects a multi-step range that crosses a foreign synthetic step" do
+      validateParticipantUndo participant [24, 23, 22, 21, 20] [journal] `H.shouldBe` rejection
+
+    H.it "allows local steps on either side when the requested range does not cross the foreign step" do
+      validateParticipantUndo participant [24, 23, 22] [journal] `H.shouldBe` Right ()
+      validateParticipantUndo participant [20, 19] [journal] `H.shouldBe` Right ()
+
+    H.it "uses the physical game identity and exact cursor, rather than another table's matching step" do
+      validateParticipantUndo third [21] [journal] `H.shouldBe` Right ()
+      validateParticipantUndo participant [31] [journal] `H.shouldBe` Right ()
+      validateParticipantUndo ("unrelated-game" :: Text) [21] [journal] `H.shouldBe` Right ()
+
+    H.it "allows an origin journal but still checks foreign journals in a mixed undo range" do
+      let second = (participant, [(origin, 12), (participant, 22), (third, 32)])
+      validateParticipantUndo participant [22] [journal, second] `H.shouldBe` Right ()
+      validateParticipantUndo participant [22, 21] [second, journal] `H.shouldBe` rejection
+      validateParticipantUndo origin [11] [journal, second] `H.shouldBe` Right ()
+      validateParticipantUndo origin [12, 11] [journal, second] `H.shouldBe` rejection
+
+    H.it "does not block a game with no journal in its selected event" do
+      validateParticipantUndo participant [21] [] `H.shouldBe` Right ()
+
+    H.it "allows the initiating group's coupled restore while sibling cursors and revision are unchanged" do
+      validateParticipantUndo origin [11] [journal] `H.shouldBe` Right ()
+      coupledUndoAllowed origin 7 7 expected [(origin, 10), (participant, 21), (third, 31)]
+        `H.shouldBe` True
+
+    H.it "rejects an origin restore after a sibling acts or the shared revision changes" do
+      coupledUndoAllowed origin 7 7 expected [(origin, 10), (participant, 22), (third, 31)]
+        `H.shouldBe` False
+      coupledUndoAllowed origin 7 8 expected expected `H.shouldBe` False
+
+    H.it "requires every current sibling to have its recorded cursor" do
+      coupledUndoAllowed origin 7 7 [(origin, 11), (participant, 21)] expected `H.shouldBe` False
+      coupledUndoAllowed origin 7 7 expected [(origin, 10), (participant, 20), (third, 31)]
+        `H.shouldBe` False
+
   H.it "requires exactly three groups with one to four investigators each" do
     initialEvent (Map.delete GroupC rosters) `H.shouldBe` Left InvalidGroups
     initialEvent (Map.insert GroupB mempty rosters) `H.shouldBe` Left (InvalidInvestigatorCount GroupB)

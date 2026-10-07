@@ -21,6 +21,7 @@ import Arkham.Homebrew.EpicLabyrinth.Transfer (transferParcel)
 import Arkham.Homebrew.EpicLabyrinth.ReturnBridge qualified as OwnerReturn
 import Arkham.Homebrew.EpicLabyrinth.ReturnTypes
 import Arkham.Homebrew.EpicLabyrinth.Types
+import Arkham.Homebrew.EpicLabyrinth.UndoBoundary (coupledUndoAllowed, validateParticipantUndo)
 import Arkham.Id
 import Arkham.Message
 import Arkham.Phase (Phase (InvestigationPhase))
@@ -348,6 +349,13 @@ reconcileLabyrinth gid originRef originQueue = lookupGameEvent gid >>= \case
 undoLabyrinthStep :: MonadIO m => ArkhamGameId -> Int -> ReaderT SqlBackend m ()
 undoLabyrinthStep gid step = lookupGameEvent gid >>= \case
   Just (Entity eid event, _) | isLabyrinthEvent event -> do
+    -- A sibling's synthetic step is an indivisible part of the originating
+    -- group's transaction. Check it even when this table has no origin journal.
+    foreignRows <- rawSql "SELECT origin_game_id,body::text FROM chronicle_labyrinth_journal WHERE event_id=? AND origin_game_id<>? AND (body->'journalExpectedSteps') @> ?::jsonb FOR UPDATE"
+      [toPersistValue eid, toPersistValue gid, toPersistValue $ jsonText [(gid, step)]]
+    let boundaries = [(unSingle origin, (decodeStored @UndoJournal value).journalExpectedSteps)
+          | (origin, Single value) <- foreignRows]
+    either error pure $ validateParticipantUndo gid [step] boundaries
     rows <- rawSql "SELECT body::text FROM chronicle_labyrinth_journal WHERE origin_game_id=? AND origin_step=? FOR UPDATE"
       [toPersistValue gid, toPersistValue step]
     for_ rows \(Single value) -> do
@@ -355,8 +363,8 @@ undoLabyrinthStep gid step = lookupGameEvent gid >>= \case
       current <- for (journal.journalGroups) \saved -> loadGroup saved.savedId
       stored <- rawSql "SELECT state::text FROM chronicle_labyrinth_events WHERE event_id=? FOR UPDATE" [toPersistValue eid]
       let state = decodeStored @EventState $ unSingle $ fromJustNote "Coordinator disappeared" $ listToMaybe stored
-      unless (state.eventRevision == journal.journalRevision
-        && all (\saved -> saved.savedId == gid || Map.lookup saved.savedId (Map.fromList journal.journalExpectedSteps) == Just saved.savedStep) current)
+      unless (coupledUndoAllowed gid journal.journalRevision state.eventRevision
+        journal.journalExpectedSteps [(saved.savedId, saved.savedStep) | saved <- current])
         $ error "Cannot undo this exchange after another group has continued"
       for_ journal.journalGroups \saved -> when (saved.savedId /= gid) do
         -- Move the cursor before trimming future steps (native deletion trigger).
