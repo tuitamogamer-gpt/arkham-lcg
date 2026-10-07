@@ -87,7 +87,9 @@ applyMachinationsOperation origin operation state = case operation of
   BringEdwin iid lid -> participant origin iid state >> pure (state, [(origin, MoveActualEdwin iid lid)])
   CheckTimeline ->
     let complete g = g.eraScientistsEscorted && Set.null g.eraStories
-     in if isNothing state.machinationsResolution && isJust state.machinationsMachination && isJust state.machinationsPlot
+        storiesComplete = all (maybe False (`Set.member` state.machinationsCompletedStories))
+          [state.machinationsMachination, state.machinationsPlot]
+     in if isNothing state.machinationsResolution && storiesComplete
           && all complete (Map.elems state.machinationsEras)
           then pure (state {machinationsResolution = Just 1}, broadcast $ ResolveTimeline 1 False)
           else pure (state, [])
@@ -108,7 +110,9 @@ applyMachinationsOperation origin operation state = case operation of
     case previous of
       Just old -> require (old == code) WrongStory >> pure (state, [])
       Nothing ->
-        let changed = if machination then state {machinationsMachination = Just code} else state {machinationsPlot = Just code}
+        let selected = if machination then state {machinationsMachination = Just code} else state {machinationsPlot = Just code}
+            changed = selected {machinationsEras = Map.map
+              (\g -> g {eraStories = Set.insert code g.eraStories}) selected.machinationsEras}
          in pure (changed, broadcast $ InstallSharedStory code)
 
 machinationsReplicaFor :: Era -> MachinationsState -> Either MachinationsError MachinationsReplica

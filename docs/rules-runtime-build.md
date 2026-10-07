@@ -79,6 +79,80 @@ The complete original aggregate also accepts `--with-epic-machinations`, which i
 ARKHAM_RULES_GHC_HEAP=4G node scripts/build-rules-runtime.mjs --with-epic-machinations --incremental-native --direct-objects --test --compact-build
 ```
 
+## Private Linux compilation checks
+
+Linux x86_64 workers can restore the pinned source and dependencies, then compile
+and execute the same aggregate Haskell suite with `--compile-only`. This route
+does not require the macOS base distribution or rebuild its release frontend.
+It downloads checksum-pinned GHC 9.14.1 (Debian 12 bindist) and Stack 3.11.1,
+and builds the same PostgreSQL and PCRE development files. It requires a glibc
+Linux worker with `git`, `curl`, `tar`, `xz`, `make`, a C/C++ compiler, the GNU
+gold linker (`ld.gold`, provided by `binutils-gold` on Debian), GMP and
+the shared runtime libraries required by the GHC bindist. On Linux, the default
+external directories are `/tmp/arkham-upstream-research` and
+`/tmp/arkham-build-toolchain`; the existing environment overrides still apply.
+
+Check the actual source/toolchain volumes before a cold build. A worker's `/tmp`
+may have much less capacity than its workspace. Put the external checkout and
+cache on the larger volume when necessary, still outside the repository:
+
+```sh
+export ARKHAM_RULES_SOURCE=/workspace/arkham-upstream-research
+export ARKHAM_RULES_TOOLCHAIN=/workspace/arkham-native-toolchain
+```
+
+The 7 October Linux worker uses an extracted private Debian gold linker. Its
+continuation commands also require this prefix in `PATH`:
+
+```sh
+export PATH=/workspace/arkham-native-toolchain/system/usr/bin:$PATH
+```
+
+```sh
+ARKHAM_RULES_DISK_RESERVE_GIB=2 node scripts/build-rules-runtime.mjs --with-epic-machinations --dependencies
+ARKHAM_RULES_DISK_RESERVE_GIB=2 node scripts/build-rules-runtime.mjs --with-epic-machinations --stage
+ARKHAM_RULES_DISK_RESERVE_GIB=2 node scripts/build-rules-runtime.mjs --with-epic-machinations --test-dependencies
+ARKHAM_RULES_DISK_RESERVE_GIB=2 node scripts/build-rules-runtime.mjs --with-epic-machinations --compile-only --incremental-native --direct-objects --test --compact-build
+```
+
+Freeze the original extension sources before staging/compiling. An ordinary
+Linux build without `--compile-only` fails before toolchain restoration. A
+successful full check writes the ignored `output/rules-server/rules-native-check.json`
+with the actual platform, source, engine and test hashes and passing example
+count. Partial dependency restoration, staging, configuration or object
+compilation creates no passing check record. Existing compiled objects and
+package caches remain available after an interrupted build.
+
+For a smaller native behavior check while the full engine graph is pending,
+run the actual Labyrinth and Machinations coordinator Hspec suites:
+
+```sh
+ARKHAM_RULES_DISK_RESERVE_GIB=2 node scripts/build-rules-runtime.mjs --with-epic-machinations --coordinator-tests
+```
+
+This mode restores their external dependencies and compiles the original suites
+and their real local source dependencies directly from the staged checkout.
+It uses the pinned engine's generated Cabal language and extension settings,
+without substitutes or stubs. Its separate `rules-coordinator-tests.json`
+explicitly declares `scope: coordinator-only` and `fullAggregate: false`.
+It preserves any aggregate native-check and runtime behavior records. The
+coordinator suites exercise state, selected-story completion and participant
+undo invariants; native entity handlers, API transactions, persistence and the
+complete aggregate remain outside this check. A Labyrinth-only selection can
+also run its coordinator suite using `--with-epic-labyrinth`.
+
+Both native proof runners remove inherited `HSPEC_*` settings and ignore
+`.hspec` configuration files, so dry-run, match, skip or other local options
+cannot turn a partial/nonexecuting run into a passing behavior record.
+
+The Linux check creates no runtime candidate, signature, installation or
+capability manifest. It leaves existing native behavior/runtime records alone;
+`--prepare-only`, `--package-built` and publishing are unavailable with
+`--compile-only`. Runtime packaging, strict signing, atomic replacement and
+the installed macOS gameplay/persistence checks remain separate requirements
+before Epic can be enabled. A passing Linux Haskell check alone does not satisfy
+those requirements.
+
 A checkout already containing Machinations rejects a build that omits that flag. Packaging generates the private data-only `chronicle-presentation.json` from the pinned text/settings resources and records its `presentationSha256` together with the native binary and frontend hashes.
 
 For an installation handoff while an existing companion is active, add `--prepare-only`. The complete build, native tests and strict signing still run, but the installed directory is left in place. After stopping that companion, publish the printed candidate path with the same extension selection:

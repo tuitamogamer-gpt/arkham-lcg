@@ -31,7 +31,9 @@ spec = H.describe "Epic Machinations coordinator" do
     applyMachinationsOperation PresentEra (SelectMachination "87033") base `H.shouldBe` Left WrongStory
     applyMachinationsOperation PastEra (SelectPlot "87033") base `H.shouldBe` Left WrongStory
     let selected = step 2 PastEra (SelectPlot "87038") $ step 1 PastEra (SelectMachination "87033") base
-    for_ allEras $ \era -> bodies era selected `H.shouldBe` [InstallSharedStory "87033", InstallSharedStory "87038"]
+    for_ allEras $ \era -> do
+      bodies era selected `H.shouldBe` [InstallSharedStory "87033", InstallSharedStory "87038"]
+      eraStories (group era selected) `H.shouldBe` Set.fromList ["87033", "87038"]
     applyMachinationsOperation PastEra (SelectMachination "87034") selected `H.shouldBe` Left WrongStory
 
   H.it "retries the same native operation without redelivering or incrementing revision" do
@@ -137,13 +139,17 @@ spec = H.describe "Epic Machinations coordinator" do
 
   H.it "requires both scientists and zero stories in every era before resolution one" do
     let selected = step 2 PastEra (SelectPlot "87038") $ step 1 PastEra (SelectMachination "87034") base
-        ready = selected {machinationsEras = Map.map (\g -> g {eraScientistsEscorted = True}) selected.machinationsEras,
-          machinationsDeliveries = mempty}
+        escorted = selected {machinationsEras = Map.map (\g -> g {eraScientistsEscorted = True}) selected.machinationsEras}
+        machinationDone = step 3 PresentEra (CompleteStory "87034") escorted
+        plotsDone = step 6 FutureEra (CompleteStory "87038") $ step 5 PresentEra (CompleteStory "87038") $
+          step 4 PastEra (CompleteStory "87038") machinationDone
+        ready = plotsDone {machinationsDeliveries = mempty}
         waiting = ready {machinationsEras = Map.adjust (\g -> g {eraStories = Set.singleton "87038"}) PresentEra ready.machinationsEras}
-        won = step 3 PastEra CheckTimeline ready
-    machinationsResolution (step 3 PastEra CheckTimeline waiting) `H.shouldBe` Nothing
+        won = step 7 PastEra CheckTimeline ready
+    machinationsResolution (step 7 PastEra CheckTimeline escorted) `H.shouldBe` Nothing
+    machinationsResolution (step 7 PastEra CheckTimeline waiting) `H.shouldBe` Nothing
     machinationsResolution won `H.shouldBe` Just 1
-    bodies FutureEra (step 4 FutureEra CheckTimeline won) `H.shouldBe` [ResolveTimeline 1 False]
+    bodies FutureEra (step 8 FutureEra CheckTimeline won) `H.shouldBe` [ResolveTimeline 1 False]
 
   H.it "chooses global failure resolution from the actual Edwin state and resolves once" do
     for_ [(True, False, 2), (False, True, 3), (False, False, 4)] $ \(asset, enemy, result) -> do
@@ -151,6 +157,22 @@ spec = H.describe "Epic Machinations coordinator" do
           failed = step 1 FutureEra FailTimeline edwin
       machinationsResolution failed `H.shouldBe` Just result
       for_ allEras $ \era -> bodies era (step 2 PastEra FailTimeline failed) `H.shouldBe` [ResolveTimeline result True]
+
+  H.it "does not resolve a timeline from empty native progress before both selected stories complete" do
+    let selected = step 2 PastEra (SelectPlot "87038") $ step 1 PastEra (SelectMachination "87034") base
+        report state (n, era) =
+          let progress = (group era state) {eraScientistsEscorted = True, eraStories = mempty}
+           in step n era (ReportProgress progress) state
+        emptyReports = foldl' report selected $ zip [3 ..] allEras
+        checked = step 6 PastEra CheckTimeline emptyReports
+        machinationDone = step 7 PresentEra (CompleteStory "87034") checked
+        twoPlotsDone = step 9 PresentEra (CompleteStory "87038") $ step 8 PastEra (CompleteStory "87038") machinationDone
+        allDone = step 11 FutureEra (CompleteStory "87038") $ step 10 FutureEra CheckTimeline twoPlotsDone
+    for_ allEras $ \era -> eraStories (group era emptyReports) `H.shouldBe` mempty
+    machinationsResolution checked `H.shouldBe` Nothing
+    bodies FutureEra checked `H.shouldBe` [InstallSharedStory "87034", InstallSharedStory "87038"]
+    machinationsResolution (step 10 FutureEra CheckTimeline twoPlotsDone) `H.shouldBe` Nothing
+    machinationsResolution (step 12 FutureEra CheckTimeline allDone) `H.shouldBe` Just 1
 
   H.it "persists only unacknowledged delivery envelopes across save and reload" do
     let selected = step 1 PastEra (SelectPlot "87039") base

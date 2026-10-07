@@ -27,6 +27,15 @@ health, distinguishes global machination completion from local Mob/Anomalies
 completion and chooses one global ending. Its replicas contain public progress
 and no investigator hands or decks.
 
+Selecting a shared story immediately records it as unfinished in every era,
+before its native installation delivery runs. Uneasy Alliance requires the
+selected plot's authoritative completion and no remaining plot copies; an empty
+initial or stale era report cannot complete that objective. Resolution one
+likewise requires both selected stories' authoritative completion. Locked native
+progress counts only Edwin's live face. Native removed records, including the
+former Rival retained after redemption, cannot choose a failure ending or offer
+a cross-era movement action.
+
 Native scenario metadata contains `epicMachinationsReplica`,
 `epicMachinationsOutbox`, installed story codes, delivery receipts and an explicit
 list of abducted card IDs. The latter prevents a scientist merely set aside for
@@ -61,10 +70,21 @@ investigator code.
 
 ## Verification status
 
-Twenty original coordinator Hspec cases cover group sizing, repeated
+Twenty-one original coordinator Hspec cases cover group sizing, repeated
 investigator codes, shared setup, announcement ownership, independent progress,
 paired clue effects, shared health, legal location targets, local/global story
-completion, resolution branches and persisted receipts. The Epic native source,
-server adapter and tests still require the deliberate aggregate Haskell build
-and live three-group validation. Source registration alone is not a successful
-mechanics or runtime test.
+completion, resolution branches and persisted receipts. On 7 October 2026 these
+real suites compiled and executed on Linux with GHC 9.14.1: **21 Machinations +
+30 Labyrinth examples, zero failures**. The separate
+`output/rules-server/rules-coordinator-tests.json` records the actual compiled
+source, driver and binary hashes with `scope: coordinator-only`. The full Epic
+native entities/server graph still requires aggregate compilation and live
+three-group validation; this focused result does not unlock a runtime.
+
+The continuation adds three authored entity regressions for Rival removal and
+native JSON reload, Colleague removal, and Uneasy Alliance's plot completion
+boundary. The existing redemption and coordinator cases also assert live-face
+progress and unfinished shared selection; the executed coordinator regression
+rejects empty native progress until both chosen stories complete. The three
+entity regressions and live placement projection remain pending full native
+compilation and execution. See [continuation evidence and exact scope](import-continuation-linux-2026-10-07.md).

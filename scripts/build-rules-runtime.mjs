@@ -22,14 +22,19 @@ import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
 import { createBuildSpaceGuard, runWithBuildSpace } from "./rules-build-space.mjs";
+import { nativeTestEnvironment } from "./rules-native-test-environment.mjs";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const upstreamRevision = "03a7f1e74925744f021f6e8fe0e39945d2c3a833";
+const linuxNative = process.platform === "linux" && process.arch === "x64";
+const supportedNativePlatform = linuxNative || (process.platform === "darwin" && process.arch === "arm64");
+const buildPlatform = linuxNative ? "x86_64-linux" : "aarch64-osx";
+const temporaryRoot = linuxNative ? "/tmp" : "/private/tmp";
 const source = resolve(
-  process.env.ARKHAM_RULES_SOURCE || "/private/tmp/arkham-upstream-research",
+  process.env.ARKHAM_RULES_SOURCE || `${temporaryRoot}/arkham-upstream-research`,
 );
 const toolchain = resolve(
-  process.env.ARKHAM_RULES_TOOLCHAIN || "/private/tmp/arkham-build-toolchain",
+  process.env.ARKHAM_RULES_TOOLCHAIN || `${temporaryRoot}/arkham-build-toolchain`,
 );
 const extension = resolve(project, "rules/extensions/barkham");
 const withEpicMachinations = process.argv.includes("--with-epic-machinations");
@@ -77,6 +82,9 @@ const mode = process.argv.includes("--stage")
       ? "test-dependencies"
       : "build";
 const dependencyOnly = mode === "dependencies" || mode === "test-dependencies";
+const coordinatorTests = process.argv.includes("--coordinator-tests");
+const compileOnly = process.argv.includes("--compile-only") || coordinatorTests;
+const coordinatorProofPath = resolve(project, "output/rules-server/rules-coordinator-tests.json");
 const testBuilt = process.argv.includes("--test-built");
 const incrementalNative = process.argv.includes("--incremental-native");
 const configureOnly = process.argv.includes("--configure-only");
@@ -94,7 +102,7 @@ const buildInputPath = resolve(
 );
 const buildOutput = resolve(
   source,
-  "backend/arkham-api/.chronicle-stack-work/dist/aarch64-osx/ghc-9.14.1/build",
+  `backend/arkham-api/.chronicle-stack-work/dist/${buildPlatform}/ghc-9.14.1/build`,
 );
 const compilerHeap = process.env.ARKHAM_RULES_GHC_HEAP || "4G";
 if (!/^[1-8]G$/.test(compilerHeap))
@@ -104,7 +112,7 @@ const requireBuildSpace = createBuildSpaceGuard([project, source, toolchain], di
 const mainGhcOptions = `-Wno-missing-home-modules -j2 +RTS -M${compilerHeap} -N1 -A16m -n2m -c -RTS`;
 const downloads = resolve(toolchain, "downloads");
 const ghcDir = resolve(toolchain, "ghc");
-const stack = resolve(toolchain, "stack-bin/stack-3.11.1-osx-aarch64/stack");
+const stack = resolve(toolchain, `stack-bin/stack-3.11.1-${linuxNative ? "linux-x86_64" : "osx-aarch64"}/stack`);
 const backend = resolve(source, "backend");
 const env = {
   ...process.env,
@@ -113,6 +121,11 @@ const env = {
   XDG_CACHE_HOME: resolve(toolchain, "cache"),
   XDG_CONFIG_HOME: resolve(toolchain, "config"),
   ARKHAM_RULES_SOURCE: source,
+  ...(linuxNative ? {
+    TMPDIR: resolve(toolchain, "tmp"),
+    LD_LIBRARY_PATH: [resolve(toolchain, "postgres/lib"), process.env.LD_LIBRARY_PATH]
+      .filter(Boolean).join(":"),
+  } : {}),
   PATH: [
     resolve(ghcDir, "bin"),
     dirname(stack),
@@ -147,13 +160,17 @@ const env = {
 };
 const sources = {
   ghc: {
-    url: "https://downloads.haskell.org/~ghc/9.14.1/ghc-9.14.1-aarch64-apple-darwin.tar.xz",
-    sha256: "841591f152085be605616682779341847d24fd56bd6d22ca61bb37ee32b50681",
+    url: `https://downloads.haskell.org/~ghc/9.14.1/ghc-9.14.1-${linuxNative ? "x86_64-deb12-linux" : "aarch64-apple-darwin"}.tar.xz`,
+    sha256: linuxNative
+      ? "60f7ab75f28df892729fbaff3a54f58ee3ad7e731929f1b2f3eb0208f73de841"
+      : "841591f152085be605616682779341847d24fd56bd6d22ca61bb37ee32b50681",
     path: resolve(downloads, "ghc.tar.xz"),
   },
   stack: {
-    url: "https://github.com/commercialhaskell/stack/releases/download/v3.11.1/stack-3.11.1-osx-aarch64.tar.gz",
-    sha256: "652572ddf74616a7975892de9c61a9e5e6b5979db4f9b00fcd659ac6a15d7330",
+    url: `https://github.com/commercialhaskell/stack/releases/download/v3.11.1/stack-3.11.1-${linuxNative ? "linux-x86_64" : "osx-aarch64"}.tar.gz`,
+    sha256: linuxNative
+      ? "1fda71e657cd8d355625cc66b61b352699279dfee2664c014a392163bd19a952"
+      : "652572ddf74616a7975892de9c61a9e5e6b5979db4f9b00fcd659ac6a15d7330",
     path: resolve(downloads, "stack.tar.gz"),
   },
   postgres: {
@@ -427,11 +444,11 @@ async function run(command, args, options = {}) {
     ...options,
   }, requireBuildSpace);
 }
-async function capture(command, args, cwd = backend, trim = true) {
+async function capture(command, args, cwd = backend, trim = true, childEnv = env) {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(command, args, {
       cwd,
-      env,
+      env: childEnv,
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";
@@ -454,13 +471,20 @@ async function download(item) {
   if ((await exists(item.path)) && (await sha256(item.path)) === item.sha256)
     return;
   console.log(`Downloading ${new URL(item.url).pathname.split("/").at(-1)}.`);
-  const response = await fetch(item.url);
-  if (!response.ok || !response.body)
-    throw new Error(`Download failed (${response.status}).`);
-  await pipeline(
-    Readable.fromWeb(response.body),
-    createWriteStream(item.path, { mode: 0o600 }),
-  );
+  if (linuxNative) {
+    // curl honors the proxy configuration of isolated Linux build workers.
+    // The build-space guard also monitors these comparatively large downloads.
+    await run("curl", ["--fail", "--location", "--retry", "3", "--output", item.path, item.url]);
+    await chmod(item.path, 0o600);
+  } else {
+    const response = await fetch(item.url);
+    if (!response.ok || !response.body)
+      throw new Error(`Download failed (${response.status}).`);
+    await pipeline(
+      Readable.fromWeb(response.body),
+      createWriteStream(item.path, { mode: 0o600 }),
+    );
+  }
   if ((await sha256(item.path)) !== item.sha256)
     throw new Error("Official toolchain archive checksum mismatch.");
 }
@@ -524,10 +548,13 @@ async function prepareFrontend() {
     );
 }
 async function bootstrap() {
-  if (process.platform !== "darwin" || process.arch !== "arm64")
+  if (!supportedNativePlatform)
     throw new Error(
-      "This build profile currently supports macOS Apple Silicon.",
+      "Native compilation supports macOS Apple Silicon and Linux x86_64; runtime packaging requires macOS Apple Silicon.",
     );
+  if (linuxNative && !dependencyOnly && !compileOnly)
+    throw new Error("Linux native builds require --compile-only; signing, installation and capability manifests require macOS Apple Silicon.");
+  if (linuxNative) await mkdir(env.TMPDIR, {recursive: true});
   await mkdir(downloads, { recursive: true });
   if (!(await exists(stack))) {
     await download(sources.stack);
@@ -804,11 +831,15 @@ async function stage() {
   );
 }
 async function build() {
-  if (verifyBarkham && !dependencyOnly)
+  if (coordinatorTests)
+    await rm(coordinatorProofPath, { force: true });
+  else if (compileOnly && !dependencyOnly)
+    await rm(resolve(project, "output/rules-server/rules-native-check.json"), { force: true });
+  if (verifyBarkham && !dependencyOnly && !compileOnly)
     await rm(behaviorProofPath, {
       force: true,
     });
-  if (!dependencyOnly) {
+  if (!dependencyOnly && !compileOnly) {
     for (const relative of [
       "lib/libpq.5.dylib",
       "pgsql/bin/pg_ctl",
@@ -835,8 +866,13 @@ async function build() {
       );
   }
   await bootstrap();
+  if (coordinatorTests) {
+    await stage();
+    await runCoordinatorTests();
+    return;
+  }
   if (testBuilt || incrementalNative) {
-    await prepareFrontend();
+    if (!compileOnly) await prepareFrontend();
     await stage();
     const buildSourceHash = await extensionHash();
     const binary = resolve(buildOutput, "arkham-api/arkham-api");
@@ -874,7 +910,7 @@ async function build() {
       }
       const helperDirectory = resolve(
         toolchain,
-        "stack-root/setup-exe-cache/aarch64-osx",
+        `stack-root/setup-exe-cache/${buildPlatform}`,
       );
       const helpers = (await readdir(helperDirectory)).filter((name) =>
         /^Cabal-simple_.+_3\.16\.0\.0_ghc-9\.14\.1$/.test(name),
@@ -957,7 +993,7 @@ async function build() {
     if (mode === "test-dependencies") await stage();
     args.push("--only-dependencies");
   } else {
-    await prepareFrontend();
+    if (!compileOnly) await prepareFrontend();
     await stage();
     buildSourceHash = await extensionHash();
     await writeBuildInput(buildSourceHash);
@@ -1126,7 +1162,7 @@ async function compileNativeComponent(heading, componentName, mainFile) {
   // avoiding the large unstripped intermediate on constrained disks. Global
   // symbols and the configured executable code remain available; native tests
   // still run against the resulting actual executable before packaging.
-  if (compactBuild) options.push("-optl-Wl,-S,-x");
+  if (compactBuild && process.platform === "darwin") options.push("-optl-Wl,-S,-x");
   const args = ["-package-env=-", "--make", ...options, "-hide-all-packages", "-no-user-package-db", "-fbuilding-cabal-package", "-Wno-missing-home-modules", "-XGHC2021", ...fields["default-extensions"].split(/\s+/).filter(Boolean).map((name) => `-X${name}`), "-i", ...sourceDirs.map((path) => `-i${path}`), `-i${objects}`, `-i${resolve(component, "autogen")}`, `-I${resolve(component, "autogen")}`, "-package-db", snapshotDb, "-package-db", localDb, "-package-db", nativeOverlayDb, ...packages.flatMap((name) => ["-package", name]), "-outputdir", objects, "-o", resolve(component, componentName), resolve(backend, "arkham-api", sourceDirs[0], mainFile), ...nativeObjects];
   const response = resolve(nativePlanDirectory, `${componentName}.rsp`);
   await runGhcResponse(response, args);
@@ -1257,6 +1293,30 @@ async function packageRuntime(binary, buildSourceHash) {
     throw new Error("Compiled engine executable was not found.");
   const nativeEngineSha256 = await sha256(binary);
   const behavior = verifyBarkham ? await runFocusedTests() : undefined;
+  if (compileOnly) {
+    if ((await extensionHash()) !== buildSourceHash)
+      throw new Error("The original extension changed during the native check; rerun with frozen sources.");
+    await verifyLinkedInput(binary);
+    await writeFile(resolve(project, "output/rules-server/rules-native-check.json"), JSON.stringify({
+      schema: 1,
+      upstreamRevision,
+      platform: process.platform,
+      architecture: process.arch,
+      extensions: selectedExtensions,
+      extensionSourceSha256: buildSourceHash,
+      extensionSourceHashes: await extensionHashes(),
+      nativeEngineSha256,
+      behavior,
+      binary,
+      verifiedAt: new Date().toISOString(),
+      packaged: false,
+      installed: false,
+    }, null, 2) + "\n", { mode: 0o600 });
+    console.log("Completed the private native compilation check; no runtime package, signature, installation or capability manifest was created.");
+    return;
+  }
+  if (process.platform !== "darwin" || process.arch !== "arm64")
+    throw new Error("Runtime packaging requires macOS Apple Silicon.");
   if (compactBuild) {
     if (!behavior)
       throw new Error(
@@ -1566,6 +1626,8 @@ if swap(-2, os.fsencode(sys.argv[1]), -2, os.fsencode(sys.argv[2]), 2) != 0:
 }
 
 async function publishPreparedCandidate(path) {
+  if (process.platform !== "darwin" || process.arch !== "arm64")
+    throw new Error("Publishing a signed runtime requires macOS Apple Silicon.");
   const candidate = resolve(path || "");
   if (dirname(candidate) !== dirname(installedRuntime) ||
     !/^\.candidate-[0-9]+$/.test(candidate.slice(candidate.lastIndexOf("/") + 1)))
@@ -1688,8 +1750,10 @@ async function runFocusedTests() {
   const testRuntimeOptions = ["+RTS", "-N1", "-A16m", "-RTS"];
   const behaviorOutput = await capture(
     testBinary,
-    testRuntimeOptions,
+    ["--ignore-dot-hspec", ...testRuntimeOptions],
     resolve(backend, "arkham-api"),
+    true,
+    nativeTestEnvironment(env),
   );
   console.log(behaviorOutput);
   const result = behaviorOutput.match(/(\d+) examples?, (\d+) failures?/);
@@ -1701,13 +1765,83 @@ async function runFocusedTests() {
     examples: Number(result[1]),
     failures: Number(result[2]),
     runtimeOptions: testRuntimeOptions,
+    hspecOptions: ["--ignore-dot-hspec"],
+    environmentSanitized: true,
     verifiedAt: new Date().toISOString(),
     testDriverSha256: await sha256(testDriver),
     testBinarySha256: await sha256(testBinary),
   };
 }
 
+async function runCoordinatorTests() {
+  const buildSourceHash = await extensionHash();
+  const suites = ["Arkham.Homebrew.EpicLabyrinth.CoordinatorSpec",
+    ...(withEpicMachinations ? ["Arkham.Homebrew.EpicMachinations.CoordinatorSpec"] : [])];
+  // These are the real suites' transitive external imports. Their small local
+  // graph compiles directly from the staged upstream/extension source, with no
+  // substitute Prelude, engine, entity, API or test-harness modules.
+  await run(stack, ["build", "classy-prelude", "lens", "extra", "MonadRandom",
+    "aeson", "aeson-casing", "semialign", "these", "uuid", "safe", "random-shuffle", "hspec",
+    "--fast", "--no-haddock", "--no-library-profiling", "--no-executable-profiling",
+    "--jobs=2", `--ghc-options=${mainGhcOptions}`]);
+  const cabal = await readFile(resolve(backend, "arkham-api/arkham-api.cabal"), "utf8");
+  const fields = cabalFields(cabal, "library");
+  if (fields["default-language"] !== "GHC2021")
+    throw new Error("The configured coordinator source language differs from the pinned engine.");
+  const directory = resolve(toolchain, "coordinator-tests");
+  await mkdir(directory, { recursive: true });
+  const driver = resolve(directory, "CoordinatorSpec.hs");
+  await writeFile(driver, "module Main where\nimport Prelude (IO)\nimport Test.Hspec qualified as H\n" +
+    suites.map((name, index) => `import ${name} qualified as Suite${index}\n`).join("") +
+    "main :: IO ()\nmain = H.hspec do\n" + suites.map((_, index) => `  Suite${index}.spec\n`).join(""));
+  const binary = resolve(directory, "coordinator-spec");
+  const packageDb = await capture(stack, ["path", "--snapshot-pkg-db"]);
+  await runGhcResponse(resolve(directory, "coordinator.rsp"), ["--make", "-O0", "-threaded", "-rtsopts",
+    "-no-user-package-db", "-package-db", packageDb, "-XGHC2021",
+    ...fields["default-extensions"].split(/\s+/).filter(Boolean).map((name) => `-X${name}`),
+    "-ilibrary", "-itests", "-outputdir", resolve(directory, "objects"), "-o", binary, driver]);
+  const runtimeOptions = ["+RTS", "-N1", "-A16m", "-RTS"];
+  const output = await capture(binary, ["--ignore-dot-hspec", ...runtimeOptions], resolve(backend, "arkham-api"), true, nativeTestEnvironment(env));
+  console.log(output);
+  const result = output.match(/(\d+) examples?, (\d+) failures?/);
+  if (!result || Number(result[1]) < 1 || Number(result[2]) !== 0)
+    throw new Error("The actual native coordinator suites did not report passing examples.");
+  if ((await extensionHash()) !== buildSourceHash)
+    throw new Error("The original extension changed during coordinator compilation/testing.");
+  const compiledSourceHashes = {};
+  for (const relative of await readdir(resolve(directory, "objects"), {recursive: true})) {
+    if (!relative.endsWith(".hi") || relative === "Main.hi") continue;
+    const modulePath = relative.slice(0, -3) + ".hs";
+    for (const sourceDirectory of ["library", "tests"]) {
+      const path = resolve(backend, "arkham-api", sourceDirectory, modulePath);
+      if (await exists(path)) {
+        compiledSourceHashes[`${sourceDirectory}/${modulePath}`] = await sha256(path);
+        break;
+      }
+    }
+  }
+  await mkdir(dirname(coordinatorProofPath), { recursive: true });
+  await writeFile(coordinatorProofPath, JSON.stringify({schema: 1, scope: "coordinator-only", upstreamRevision,
+    platform: process.platform, architecture: process.arch, suites, extensions: selectedExtensions,
+    extensionSourceSha256: buildSourceHash, extensionSourceHashes: await extensionHashes(),
+    examples: Number(result[1]), failures: Number(result[2]), runtimeOptions,
+    hspecOptions: ["--ignore-dot-hspec"], environmentSanitized: true,
+    testBinarySha256: await sha256(binary), testDriverSha256: await sha256(driver), compiledSourceHashes,
+    verifiedAt: new Date().toISOString(), fullAggregate: false, packaged: false, installed: false}, null, 2) + "\n",
+    {mode: 0o600});
+  console.log("Recorded actual coordinator-only Haskell behavior; full native entities/API, aggregate linking and runtime acceptance remain pending.");
+}
+
 try {
+  // Reject packaging modes before fetching source or touching native records.
+  if (mode !== "stage" && !supportedNativePlatform && publishCandidateIndex < 0)
+    throw new Error("Native compilation supports macOS Apple Silicon and Linux x86_64; runtime packaging requires macOS Apple Silicon.");
+  if (compileOnly && (packageBuilt || prepareOnly || publishCandidateIndex >= 0))
+    throw new Error("--compile-only cannot prepare, recover or publish a runtime package.");
+  if (coordinatorTests && (!withEpicLabyrinth || mode !== "build" || incrementalNative || testBuilt || directObjects || configureOnly || linkObjects || nativeObjectsOnly))
+    throw new Error("--coordinator-tests requires an Epic extension selection and cannot combine with another native build mode.");
+  if (linuxNative && mode !== "stage" && !dependencyOnly && !compileOnly && publishCandidateIndex < 0)
+    throw new Error("Linux native builds require --compile-only; signing, installation and capability manifests require macOS Apple Silicon.");
   if (publishCandidateIndex >= 0) {
     const path = process.argv[publishCandidateIndex + 1];
     if (!path || path.startsWith("--")) throw new Error("--publish-candidate requires its completed candidate path.");

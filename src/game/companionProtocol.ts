@@ -93,6 +93,12 @@ export interface CompanionQuestion {
   specific?: { scope: "scenario" | "campaign"; key: string; payload: unknown };
   settings: unknown;
   continuation: unknown;
+  /** Native roster and scenario restrictions for this continuation only. */
+  continuationLead?: {
+    eligibleIds: string[];
+    requiredId?: string;
+    existingId?: string;
+  };
   exchange?: {
     source: unknown;
     from: string;
@@ -1221,6 +1227,27 @@ export function companionQuestion(
     (kind === "unsupported"
       ? `Unsupported question: ${type}`
       : "Make a choice");
+  const continuation =
+    kind === "continue"
+      ? (object(game.scenario).campaignStep ?? object(game.campaign).step)
+      : undefined;
+  const nextStep = object(nativeContinuation(continuation).nextStep),
+    scenarioId = companionScenarioStepId(nextStep),
+    scenarioOptions = object(
+      array(nextStep.contents)[
+        nextStep.tag === "StandaloneScenarioStepWithOptions" ? 2 : 1
+      ],
+    );
+  // Those scenarios handle ChooseLeadInvestigator with the expedition leader.
+  // Passing a different option bypasses that native rule during LoadScenario.
+  const requiredLead =
+    scenarioId &&
+    ["04043", "04054", "53016", "53017"].includes(
+      companionCatalogCode(scenarioId),
+    ) &&
+    scenarioOptions.scenarioOptionsStandalone !== true
+      ? string(object(object(game.campaign).meta).expeditionLeader) || undefined
+      : undefined;
   return {
     playerId,
     questionVersion: number(game.scenarioSteps),
@@ -1266,9 +1293,19 @@ export function companionQuestion(
           ? (object(game.campaign).settings ??
             context.campaignSettings?.(string(object(game.campaign).id)))
           : undefined,
-    continuation:
-      kind === "continue"
-        ? (object(game.scenario).campaignStep ?? object(game.campaign).step)
+    continuation,
+    continuationLead:
+      kind === "continue" && scenarioId
+        ? {
+            eligibleIds: companionEntities(game, "investigators")
+              .filter((v) => !v.killed && !v.drivenInsane)
+              .map((v) => string(v.id))
+              .filter(Boolean),
+            requiredId: requiredLead,
+            existingId:
+              string(scenarioOptions.scenarioOptionsLeadInvestigator) ||
+              undefined,
+          }
         : undefined,
     exchange:
       type === "ChooseExchangeAmounts"
@@ -2137,16 +2174,36 @@ export function campaignSettingsForAnswer(
   };
 }
 
-export function companionContinuation(model: CompanionQuestion): NativeRecord {
-  let step = object(model.continuation);
+/** Only these native step constructors name a scenario. Other tuples carry
+ * interlude numbers or campaign keys, never an investigator-selection prompt.
+ */
+export function companionScenarioStepId(step: unknown): string | undefined {
+  const value = object(step);
+  if (value.tag === "ScenarioStep") return string(value.contents) || undefined;
   if (
-    step.tag === "StandaloneScenarioStep" ||
-    step.tag === "StandaloneScenarioStepWithOptions"
+    [
+      "ScenarioStepWithOptions",
+      "StandaloneScenarioStep",
+      "StandaloneScenarioStepWithOptions",
+    ].includes(string(value.tag))
+  )
+    return string(array(value.contents)[0]) || undefined;
+  return undefined;
+}
+function nativeContinuation(value: unknown): NativeRecord {
+  let step = object(value);
+  if (
+    (step.tag === "StandaloneScenarioStep" ||
+      step.tag === "StandaloneScenarioStepWithOptions") &&
+    tag(array(step.contents)[1]) === "ContinueCampaignStep"
   )
     step = object(array(step.contents)[1]);
   return step.tag === "ContinueCampaignStep"
     ? object(step.contents)
     : { nextStep: step, canUpgradeDecks: false, canChooseSideStory: false };
+}
+export function companionContinuation(model: CompanionQuestion): NativeRecord {
+  return nativeContinuation(model.continuation);
 }
 /** Preserve existing scenario options and use the native mandatory defaults. */
 export function buildContinueAnswer(
@@ -2154,6 +2211,16 @@ export function buildContinueAnswer(
   leadInvestigator?: string,
 ): CompanionAnswer {
   const step = object(companionContinuation(model).nextStep);
+  const lead = model.continuationLead;
+  if (leadInvestigator && !companionScenarioStepId(step))
+    throw new Error("This campaign step does not choose a lead investigator.");
+  if (lead?.requiredId) {
+    if (leadInvestigator && leadInvestigator !== lead.requiredId)
+      throw new Error("The expedition leader must lead this scenario.");
+    leadInvestigator = lead.requiredId;
+  }
+  if (leadInvestigator && lead && !lead.eligibleIds.includes(leadInvestigator))
+    throw new Error("Choose a living investigator in this campaign.");
   let next: unknown = step;
   if (leadInvestigator) {
     const defaults = {

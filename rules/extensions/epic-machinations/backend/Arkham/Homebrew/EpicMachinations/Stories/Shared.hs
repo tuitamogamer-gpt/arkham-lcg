@@ -34,5 +34,11 @@ edwinElsewhere predicate attrs = maybe False (\replica -> any
   (\(era, progress) -> era /= replica.currentEra && predicate progress) $ mapToList replica.eraProgress) $ storyReplica attrs
 
 allPlotsFinished :: StoryAttrs -> Bool
-allPlotsFinished attrs = maybe False (all (\progress -> all (`notElem` progress.eraStories) ["87038", "87039", "87042"])
-  . map snd . mapToList . eraProgress) $ storyReplica attrs
+allPlotsFinished attrs = maybe False finished $ storyReplica attrs
+ where
+  -- An empty initial or stale progress report does not mean the selected plot
+  -- has finished. Mob and Anomalies enter completedStories only after all
+  -- three local copies complete; Abomination completes globally.
+  finished replica = maybe False (`elem` replica.completedStories) replica.chosenPlot
+    && all (\progress -> all (`notElem` progress.eraStories) ["87038", "87039", "87042"])
+      (map snd $ mapToList replica.eraProgress)

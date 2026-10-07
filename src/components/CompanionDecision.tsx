@@ -28,6 +28,7 @@ import {
   companionCatalogCode,
   companionEntities,
   companionPartnerCodes,
+  companionScenarioStepId,
   companionText,
   companionTravel,
   describeCompanionCost,
@@ -206,6 +207,17 @@ function DecisionForm({
   const [investigator, setInvestigator] = useState(
     text(playerInvestigators.length === 1 ? playerInvestigators[0].id : ""),
   );
+  const [leadInvestigator, setLeadInvestigator] = useState(() => {
+    const lead = model.continuationLead;
+    return (
+      lead?.requiredId ||
+      (lead?.existingId && lead.eligibleIds.includes(lead.existingId)
+        ? lead.existingId
+        : lead?.eligibleIds.length === 1
+          ? lead.eligibleIds[0]
+          : "")
+    );
+  });
   const [noteText, setNoteText] = useState("");
   const [spirit, setSpirit] = useState<string[]>([]);
   const [drawings, setDrawings] = useState<unknown[]>(
@@ -1305,9 +1317,10 @@ function DecisionForm({
       eligibleSideStory(s, game),
     );
     const nextLabel = label(next.tag).replace(/ Step$/, ""),
-      scenarioCode = text(
-        next.tag === "ScenarioStep" ? next.contents : list(next.contents)[0],
-      ).replace(/^c/, "");
+      scenarioCode = companionCatalogCode(companionScenarioStepId(next) || ""),
+      lead = model.continuationLead,
+      missingRequiredLead =
+        !!lead?.requiredId && !lead.eligibleIds.includes(lead.requiredId);
     controls = (
       <>
         <p>
@@ -1317,20 +1330,43 @@ function DecisionForm({
               scenarioCode
             : nextLabel}
         </p>
-        {scenarioCode && investigators.length > 1 && (
+        {lead?.requiredId && (
+          <p>
+            The expedition leader leads this scenario:{" "}
+            {entityName(
+              investigators.find((v) => v.id === lead.requiredId) ?? {
+                id: lead.requiredId,
+              },
+            )}
+            .
+          </p>
+        )}
+        {missingRequiredLead && (
+          <p role="alert">
+            The recorded expedition leader is unavailable. This question is
+            preserved.
+          </p>
+        )}
+        {scenarioCode && lead && lead.eligibleIds.length > 1 && (
           <label className="companion-field">
             Lead investigator
             <select
               aria-label="Lead investigator"
-              value={investigator}
+              value={leadInvestigator}
               disabled={locked}
-              onChange={(e) => setInvestigator(e.target.value)}
+              onChange={(e) => setLeadInvestigator(e.target.value)}
             >
-              <option value="">Choose lead investigator…</option>
+              <option value="" disabled={!!lead.requiredId}>
+                Choose lead investigator…
+              </option>
               {investigators
-                .filter((v) => !v.killed && !v.drivenInsane)
+                .filter((v) => lead.eligibleIds.includes(text(v.id)))
                 .map((v) => (
-                  <option key={text(v.id)} value={text(v.id)}>
+                  <option
+                    key={text(v.id)}
+                    value={text(v.id)}
+                    disabled={!!lead.requiredId && v.id !== lead.requiredId}
+                  >
                     {entityName(v)}
                   </option>
                 ))}
@@ -1342,11 +1378,14 @@ function DecisionForm({
             disabled={
               locked ||
               !next.tag ||
-              (!!scenarioCode && investigators.length > 1 && !investigator)
+              missingRequiredLead ||
+              (!!scenarioCode &&
+                (lead?.eligibleIds.length ?? 0) > 1 &&
+                !leadInvestigator)
             }
             onClick={() =>
               void perform(() =>
-                buildContinueAnswer(model, investigator || undefined),
+                buildContinueAnswer(model, leadInvestigator || undefined),
               )
             }
           >

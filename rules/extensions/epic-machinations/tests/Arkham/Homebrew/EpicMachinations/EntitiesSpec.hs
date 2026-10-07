@@ -19,7 +19,9 @@ import Arkham.Homebrew.EpicMachinations.Enemies.Tyrthrha qualified as Tyr
 import Arkham.Homebrew.EpicMachinations.Helpers (getMachinationsReplica)
 import Arkham.Homebrew.EpicMachinations.Stories.ABitterRivalry qualified as Bitter
 import Arkham.Homebrew.EpicMachinations.Stories.RedeemAFormerColleague qualified as Redeem
+import Arkham.Homebrew.EpicMachinations.Stories.Shared (allPlotsFinished)
 import Arkham.Homebrew.EpicMachinations.Stories.UneasyAlliance qualified as Alliance
+import Arkham.Homebrew.EpicMachinations.Transactions (nativeEraProgress)
 import Arkham.Homebrew.EpicMachinations.Types
 import Arkham.Message.Story
 import Arkham.Message.Lifted qualified as Lifted
@@ -30,6 +32,7 @@ import Arkham.Projection
 import Arkham.Scenario.Types (setMetaKey)
 import Arkham.Story.CardDefs.MachinationsThroughTime qualified as Stories
 import Arkham.Token qualified as Token
+import Data.Aeson qualified as Aeson
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import TestImport qualified as TI
@@ -108,6 +111,10 @@ spec = describe "Epic Machinations original entities and story actions" do
       -- Native RemoveEnemy retains an OutOfPlay tombstone for historical
       -- references; its former enemy face must no longer be in play.
       selectCount (EnemyWithId edwin.id) `shouldReturn` 0
+      redeemed <- getGame
+      let progress = nativeEraProgress PresentEra redeemed
+      progress.eraEdwinEnemy `shouldBe` False
+      progress.eraEdwinAsset `shouldBe` True
       colleagues <- select $ assetIs Assets.edwinBennetEsteemedColleague
       length colleagues `shouldBe` 1
       for_ colleagues $ \aid -> do
@@ -115,6 +122,48 @@ spec = describe "Epic Machinations original entities and story actions" do
         field AssetTokens aid `shouldReturn` Map.singleton Token.Target 2
         selectCount (AssetWithId aid <> AssetExhausted) `shouldReturn` 1
         field AssetPlacement attached `shouldReturn` AttachedToAsset aid Nothing
+
+  it "chooses resolution four after the Rival is removed, including a saved historical entity"
+    . scenarioTest "87001" $ \self -> do
+      initializeEpic PresentEra self
+      location <- testLocation
+      edwin <- testEnemyWithDef Enemies.edwinBennetEnviousRival id
+      edwin `spawnAt` location
+      active <- getGame
+      (nativeEraProgress PresentEra active).eraEdwinEnemy `shouldBe` True
+      run $ RemoveFromGame $ EnemyTarget edwin.id
+      removed <- getGame
+      let historical = fromJustNote "native removal retains the physical Rival record" $
+            Map.lookup edwin.id $ entitiesEnemies removed.gameEntities
+      historical.placement.isInPlay `shouldBe` False
+      restored <- either (\problem -> expectationFailure problem >> error "native reload failed") pure $
+        Aeson.eitherDecode $ Aeson.encode removed
+      let progress = nativeEraProgress PresentEra restored
+          initial = either (error . show) id $ initialMachinations $
+            Map.fromList [(era, Set.singleton self.id) | era <- allEras]
+          reported = initial {machinationsEras = Map.insert PresentEra progress initial.machinationsEras}
+          failed = fst $ either (error . show) id $ applyMachinationsOperation PresentEra FailTimeline reported
+      progress.eraEdwinEnemy `shouldBe` False
+      progress.eraEdwinAsset `shouldBe` False
+      failed.machinationsResolution `shouldBe` Just 4
+
+  it "does not count a removed Colleague as the live asset for failure resolution"
+    . scenarioTest "87001" $ \self -> do
+      initializeEpic PresentEra self
+      location <- testLocation
+      self `moveTo` location
+      edwin <- self `putAssetIntoPlay` Assets.edwinBennetEsteemedColleague
+      active <- getGame
+      (nativeEraProgress PresentEra active).eraEdwinAsset `shouldBe` True
+      run $ RemoveFromGame $ AssetTarget edwin
+      removed <- getGame
+      let progress = nativeEraProgress PresentEra removed
+          initial = either (error . show) id $ initialMachinations $
+            Map.fromList [(era, Set.singleton self.id) | era <- allEras]
+          reported = initial {machinationsEras = Map.insert PresentEra progress initial.machinationsEras}
+          failed = fst $ either (error . show) id $ applyMachinationsOperation PresentEra FailTimeline reported
+      progress.eraEdwinAsset `shouldBe` False
+      failed.machinationsResolution `shouldBe` Just 4
 
   it "sizes a redemption payment by all three groups and refuses insufficient local clues"
     . scenarioTest "87001" $ \self -> do
@@ -139,6 +188,26 @@ spec = describe "Epic Machinations original entities and story actions" do
     story <- putStory Stories.uneasyAlliance
     run $ UseCardAbility self.id (StorySource story) 3 [] NoPayment
     field AssetClues aid `shouldReturn` 1
+
+  it "keeps Uneasy Alliance's global plot objective closed until every local plot completes"
+    . scenarioTest "87001" $ \self -> do
+      initializeEpic PresentEra self
+      story <- putStory Stories.uneasyAlliance
+      let initial = either (error . show) id $ initialMachinations $
+            Map.fromList [(era, Set.singleton self.id) | era <- allEras]
+          apply era operation = fst . either (error . show) id . applyMachinationsOperation era operation
+          selected = apply PastEra (SelectPlot "87038") initial
+          unreported = selected {machinationsEras = Map.map (\progress -> progress {eraStories = mempty}) selected.machinationsEras}
+          pastDone = apply PastEra (CompleteStory "87038") selected
+          presentDone = apply PresentEra (CompleteStory "87038") pastDone
+          allDone = apply FutureEra (CompleteStory "87038") presentDone
+      for_ [(selected, False), (unreported, False), (pastDone, False), (presentDone, False), (allDone, True)] $
+        \(state, expected) -> do
+          let replica = either (error . show) id $ machinationsReplicaFor PresentEra state
+          run $ ScenarioSpecific "epicMachinations.replica" $ toJSON replica
+          game <- getGame
+          let actual = fromJustNote "the physical Uneasy Alliance story" $ Map.lookup story game.gameEntities.entitiesStories
+          allPlotsFinished (toAttrs actual) `shouldBe` expected
 
   it "records the damage that actually survived native processing exactly once"
     . scenarioTest "87001" $ \self -> do

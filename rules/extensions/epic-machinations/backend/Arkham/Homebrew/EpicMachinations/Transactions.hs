@@ -68,9 +68,13 @@ nativeEraProgress era game = EraProgress
   (Set.fromList $ map toCardCode $ Map.elems entities.entitiesStories)
   (sum [Map.findWithDefault 0 Clue (toAttrs location).locationTokens |
     location <- Map.elems entities.entitiesLocations, toCardCode location == "87005b"])
-  (any ((== "87037b") . toCardCode) $ Map.elems entities.entitiesAssets)
-  (any ((`elem` ["87037", "87037a"]) . toCardCode) $ Map.elems entities.entitiesEnemies)
+  (any (\asset -> toCardCode asset == "87037b" && asset.placement.isInPlay) $ Map.elems entities.entitiesAssets)
+  (any (\enemy -> toCardCode enemy `elem` ["87037", "87037a"] && enemy.placement.isInPlay)
+    $ Map.elems entities.entitiesEnemies)
  where
+  -- Native removal and flipping retain entity records for historical
+  -- references. Only Edwin's live face determines the shared ending and
+  -- cross-era action availability, as in the native play-area matchers.
   entities = gameEntities game
   scientists = case era of
     PastEra -> ["87012", "87013"]

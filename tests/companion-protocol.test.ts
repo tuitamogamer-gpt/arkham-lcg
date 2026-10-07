@@ -1537,6 +1537,10 @@ test("existing scenario tarot/setup options survive changing only the lead inves
   const q = companionQuestion(
     {
       ...game,
+      investigators: {
+        ...(game.investigators as Record<string, unknown>),
+        "01002": { id: "01002", name: { title: "Daisy Walker" } },
+      },
       campaign: {
         step: { tag: "ContinueCampaignStep", contents: { nextStep: next } },
       },

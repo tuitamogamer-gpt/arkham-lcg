@@ -85,7 +85,18 @@ test("low space still kills compiler descendants after their parent exits", { ti
     }, { pollIntervalMs: 10, killGraceMs: 30, onLowDisk: () => {} }), /descendant disk reserve reached/);
     await delay(100);
     assert.ok(descendantPid);
-    assert.throws(() => process.kill(descendantPid!, 0), { code: "ESRCH" });
+    try {
+      process.kill(descendantPid, 0);
+      // Container PID 1 may not reap an orphan after SIGKILL. A zombie has
+      // exited and cannot compile or write, even though its PID still exists.
+      assert.equal(process.platform, "linux", "the compiler descendant must exit");
+      const status = await readFile(`/proc/${descendantPid}/status`, "utf8");
+      assert.match(status, /^State:\s+Z\b/m, "the compiler descendant must not still run");
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      // Linux may reap the orphan between the PID probe and the status read.
+      if (code !== "ESRCH" && !(process.platform === "linux" && code === "ENOENT")) throw error;
+    }
   } finally {
     if (descendantPid) {
       try { process.kill(descendantPid, "SIGKILL"); } catch {}
