@@ -128,8 +128,16 @@ instance RunMessage EpicMachinations where
           when atTindalos failSkillTest
           pure scenario
         ScenarioResolution NoResolution -> do
-          publishEraProgress
-          emitMachinations FailTimeline
+          -- Defeating the last local investigator invokes the native
+          -- no-remaining-investigators handler, which clears the queued
+          -- resolution. Restore the already chosen global result rather than
+          -- starting another failure while the empty local phase continues.
+          replica <- getMachinationsReplica
+          case replica.globalResolution of
+            Just result -> push $ ScenarioResolution $ Resolution result
+            Nothing -> do
+              publishEraProgress
+              emitMachinations FailTimeline
           pure scenario
         ScenarioSpecific "epicMachinations.delivery" value -> do
           let envelope = toResult @MachinationsEnvelope value

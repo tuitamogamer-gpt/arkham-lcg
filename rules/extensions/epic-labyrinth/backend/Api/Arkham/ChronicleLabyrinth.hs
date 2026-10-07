@@ -17,6 +17,7 @@ import Arkham.Game
 import Arkham.GameEnv
 import Arkham.Game.State (GameState (..))
 import Arkham.Homebrew.EpicLabyrinth.Coordinator qualified as Coordinator
+import Arkham.Homebrew.EpicLabyrinth.Helpers (resumeBarrierQueue)
 import Arkham.Homebrew.EpicLabyrinth.Transfer (transferParcel)
 import Arkham.Homebrew.EpicLabyrinth.ReturnBridge qualified as OwnerReturn
 import Arkham.Homebrew.EpicLabyrinth.ReturnTypes
@@ -78,7 +79,7 @@ decodeStored = either (error . ("Invalid Chronicle event journal: " <>) . Text.p
   . eitherDecodeStrict . Text.encodeUtf8
 
 isLabyrinthEvent :: ArkhamEpicEvent -> Bool
-isLabyrinthEvent event = event.arkhamEpicEventScenarioId == Just "70001"
+isLabyrinthEvent event = matchesStoredScenarioId "70001" event.arkhamEpicEventScenarioId
 
 groupForOrdinal :: Int -> LabyrinthGroup
 groupForOrdinal = \case
@@ -200,16 +201,18 @@ runInjected saved messages = do
   else if not mayInterrupt then pure saved {savedGame = game0, savedQueue = saved.savedQueue <> work}
   else do
     gameRef <- newIORef game0
-    -- A final retained ask stops the native loop without replacing an unrelated
-    -- pending test or payment with a fresh investigation window. A delivery
-    -- that asks its own question pauses before this saved continuation.
-    queueRef <- newQueue $ work <> [AskMap game0.gameQuestion | not $ null game0.gameQuestion]
+    let resumed = if ending then Nothing else resumeBarrierQueue game0 saved.savedQueue work
+    -- A round opening or any release resumes its saved native tail. Stage
+    -- openings and other work retain the existing checkpoint or ask/tail.
+    queueRef <- newQueue $ fromMaybe
+      (work <> [AskMap game0.gameQuestion | not $ null game0.gameQuestion]) resumed
     genRef <- newIORef $ mkStdGen game0.gameSeed
     runGameApp (GameApp gameRef queueRef genRef (pure . const ()) Nothing)
       $ runMessages (tshow saved.savedId) Nothing
     game <- readIORef gameRef
     queue <- readIORef $ queueToRef queueRef
-    pure saved {savedGame = game, savedQueue = queue <> if ending then [] else saved.savedQueue}
+    pure saved {savedGame = game,
+      savedQueue = queue <> if ending || isJust resumed then [] else saved.savedQueue}
  where
   decodeValue :: FromJSON a => Value -> a
   decodeValue = \value -> case fromJSON value of

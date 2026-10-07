@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/** Capture/verify the six full-harness QA saves across a managed restart.
+/** Capture/verify the six full-harness QA saves across a managed restart,
+ * optionally including the five passed fresh Barkham saves.
  * This script starts no services and sends only GETs plus read-only SQL.
  * Bridge seat authentication can warm its cache and set beta=true on QA users;
  * users/authentication are outside the game/coordinator persistence comparison.
@@ -12,11 +13,13 @@ import { promisify } from "node:util";
 import { mkdir, readFile, writeFile, realpath } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { acceptanceManifest, nativeQaKind } from "./rules-qa-runtime-identity.mjs";
 
 if (process.argv.includes("--help")) {
   console.log(`EPIC_QA_CONFIRMED=1 node scripts/epic-persistence-check.mjs --baseline|--verify
 Required: EPIC_REPORT=<passed full epic-runtime-check report>, ARKHAM_RULES_DATA_DIR=<isolated output directory>, ARKHAM_RULES_URL=<loopback bridge>, ARKHAM_RULES_PG_PORT, and ARKHAM_RULES_QA_MANIFEST (or ARKHAM_RULES_RUNTIME).
-Optional: QA_OUT=output/epic-persistence, ARKHAM_RULES_PSQL.
+Optional: QA_OUT=output/epic-persistence, ARKHAM_RULES_PSQL, BARKHAM_REPORT=<passed fresh isolated native report>.
+BARKHAM_REPORT includes five complete Barkham saves alongside the exact two Epic events / six games; provide the same report for baseline and verify.
 Run --baseline after full acceptance, close other QA clients, then let the managed launcher stop/restart the SAME isolated data directory and run --verify with the SAME arguments. Verification requires a new PostgreSQL start time. Existing baseline evidence is never overwritten. No event dashboard, answers, timer operations, or service controls are used. Bridge auth warm-up may set beta=true on QA users; authoritative saves remain read-only.`);
   process.exit(0);
 }
@@ -46,6 +49,7 @@ const mode = modes[0].slice(2),
     return process.env[name];
   },
   reportPath = resolve(required("EPIC_REPORT")),
+  barkhamReportPath = process.env.BARKHAM_REPORT && resolve(process.env.BARKHAM_REPORT),
   dataDir = await realpath(required("ARKHAM_RULES_DATA_DIR")),
   outputRoot = await realpath(resolve(project, "output")),
   pgData = await realpath(resolve(dataDir, "pgdata")),
@@ -71,11 +75,14 @@ const proof = {
   mode,
   startedAt: new Date().toISOString(),
   ...(mode === "baseline" ? { captured: false } : { passed: false }),
-  scope: { dataDir, pgData, service: service.origin, pgPort: Number(pgPort), events: 2, games: 6 },
+  scope: { dataDir, pgData, service: service.origin, pgPort: Number(pgPort), events: 2,
+    games: barkhamReportPath ? 11 : 6,
+    ...(barkhamReportPath ? { epicGames: 6, barkhamGames: 5 } : {}),
+  },
   authentication: "Bridge GETs can warm seat authentication and set beta=true on QA users; user rows are outside save comparisons.",
   timers: "Compare every stored timer/state field exactly. Elapsed wall time is observational and is never applied or normalized into saves.",
 };
-let seats = [], events = [], expected;
+let seats = [], events = [], barkhamGames = [], expected;
 const privateWrite = (path, value, flag = "wx") =>
   writeFile(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600, flag });
 async function get(path) {
@@ -149,10 +156,40 @@ function eventQuery(event) {
     'journal', (SELECT coalesce(jsonb_agg(jsonb_build_object('originGameId',j.origin_game_id,'originStep',j.origin_step,'md5',md5(to_jsonb(j)::text)) ORDER BY j.origin_game_id,j.origin_step),'[]'::jsonb) FROM ${journal} j WHERE j.event_id=${id})
   )`;
 }
+function barkhamQuery() {
+  const ids = barkhamGames.map(({ gameId }) => `'${gameId}'::uuid`).join(",");
+  // Hash every complete row, including queues, undo patches and private state;
+  // public snapshots alone do not cover the native save/history tables.
+  return `jsonb_build_object(
+    'games', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',g.id,'step',g.step,'md5',md5(to_jsonb(g)::text)) ORDER BY g.id),'[]'::jsonb) FROM arkham_games g WHERE g.id IN (${ids})),
+    'players', (SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY p.id),'[]'::jsonb) FROM arkham_players p WHERE p.arkham_game_id IN (${ids})),
+    'steps', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',s.id,'gameId',s.arkham_game_id,'step',s.step,'md5',md5(to_jsonb(s)::text)) ORDER BY s.arkham_game_id,s.step,s.id),'[]'::jsonb) FROM arkham_steps s WHERE s.arkham_game_id IN (${ids})),
+    'logs', (SELECT coalesce(jsonb_agg(jsonb_build_object('id',l.id,'md5',md5(to_jsonb(l)::text)) ORDER BY l.id),'[]'::jsonb) FROM arkham_log_entries l WHERE l.arkham_game_id IN (${ids})),
+    'undoFloors', (SELECT coalesce(jsonb_agg(to_jsonb(f) ORDER BY f.arkham_game_id),'[]'::jsonb) FROM arkham_game_undo_floors f WHERE f.arkham_game_id IN (${ids}))
+  )`;
+}
+const saveDatabase = (data) => barkhamReportPath
+  ? { events: data.events, barkham: data.barkham }
+  : data.events;
+function authenticatedInvestigator(snapshot, player) {
+  const databaseId = player.investigator_id;
+  // InvestigatorId's public wire form prefixes printed codes with "c";
+  // arkham_players stores their raw codes. Only these known code grammars may
+  // use that encoding equivalence. UUIDs and other identifiers stay exact.
+  const encodedId = /^(?:\d{5}|:barkham:\d{3})$/.test(databaseId)
+    ? `c${databaseId}` : databaseId;
+  const matches = Object.values(snapshot.game.investigators || {}).filter(
+    (investigator) => investigator.id === databaseId || investigator.id === encodedId,
+  );
+  assert.equal(matches.length, 1, "The authenticated player's exact native investigator must be in this game.");
+  assert.equal(matches[0].playerId, snapshot.playerId, "The native investigator must retain its authenticated player UUID.");
+  return matches[0];
+}
 async function database() {
   const data = await sql(`SELECT jsonb_build_object(
     'identity', jsonb_build_object('dataDirectory',current_setting('data_directory'),'database',current_database(),'port',current_setting('port'),'readOnly',current_setting('transaction_read_only'),'serverStartedAt',pg_postmaster_start_time()),
     'events',jsonb_build_array(${events.map(eventQuery).join(",")})
+    ${barkhamReportPath ? `,'barkham',${barkhamQuery()}` : ""}
   )::text`);
   assert.equal(await realpath(data.identity.dataDirectory), pgData, "SQL must read this exact isolated pgdata.");
   assert.equal(data.identity.database, "arkham_chronicle");
@@ -172,10 +209,20 @@ async function database() {
       assert.equal(stored.players.filter((player) => player.arkham_game_id === game.gameId).length, 1);
     }
   }
+  if (barkhamReportPath) {
+    assert.equal(data.barkham.games.length, 5);
+    assert.equal(data.barkham.players.length, 5);
+    for (const game of barkhamGames) {
+      assert.ok(data.barkham.games.some((row) => row.id === game.gameId), "Every Barkham save must exist in this isolated database.");
+      const players = data.barkham.players.filter((player) => player.arkham_game_id === game.gameId);
+      assert.equal(players.length, 1, "Every passed fresh Barkham save must retain its sole native player.");
+      assert.equal(players[0].investigator_id, game.investigatorCode.replace("barkham-", ":barkham:"));
+    }
+  }
   return data;
 }
 async function capture() {
-  const runtime = await readRuntime(), before = await database(), snapshots = [];
+  const runtime = await readRuntime(), before = await database(), snapshots = [], barkhamSnapshots = [];
   for (const seat of seats) {
     const snapshot = await get(`/chronicle/play/games/${seat.gameId}?seat=${seat.id}`),
       stored = before.events.find((entry) => entry.event.id === seat.eventId),
@@ -184,15 +231,13 @@ async function capture() {
     assert.equal(snapshot.game.id, seat.gameId);
     assert.equal(snapshot.eventId, seat.eventId);
     assert.equal(snapshot.playerId, player.id, "The correct local seat must authenticate its native player.");
-    assert.ok(
-      Object.values(snapshot.game.investigators || {}).some((investigator) => investigator.id === player.investigator_id),
-      "The authenticated player's investigator must be in this game.",
-    );
+    const investigator = authenticatedInvestigator(snapshot, player);
     const question = snapshot.game.question?.[snapshot.playerId] ?? null;
     snapshots.push({
       eventId: seat.eventId, scenarioId: seat.scenarioId, ordinal: seat.ordinal,
       gameId: seat.gameId, seatId: seat.id, seatIndex: seat.seatIndex,
       playerId: snapshot.playerId, investigatorId: player.investigator_id,
+      publicInvestigatorId: investigator.id, investigatorPlayerId: investigator.playerId,
       gameSha256: digest(snapshot.game), snapshotSha256: digest(snapshot),
       questionsSha256: digest(snapshot.game.question ?? null),
       ownQuestionSha256: digest(question), ownQuestionPresent: question !== null,
@@ -201,8 +246,33 @@ async function capture() {
       snapshot,
     });
   }
+  for (const source of barkhamGames) {
+    // These standalone games use the bridge's original default session, exactly
+    // as the fresh Barkham harness does; Epic seat credentials do not apply.
+    const snapshot = await get(`/chronicle/play/games/${source.gameId}`),
+      step = await get(`/chronicle/play/games/${source.gameId}/step`),
+      player = before.barkham.players.find((row) => row.arkham_game_id === source.gameId),
+      storedGame = before.barkham.games.find((row) => row.id === source.gameId);
+    assert.ok(snapshot.game && typeof snapshot.game === "object");
+    assert.equal(snapshot.game.id, source.gameId);
+    assert.equal(snapshot.playerId, player.id, "The original Barkham session must authenticate its native player.");
+    const investigator = authenticatedInvestigator(snapshot, player);
+    assert.equal(step.step, storedGame.step, "Public and durable Barkham steps must agree.");
+    const question = snapshot.game.question?.[snapshot.playerId] ?? null;
+    barkhamSnapshots.push({
+      gameId: source.gameId, investigatorCode: source.investigatorCode,
+      playerId: snapshot.playerId, investigatorId: player.investigator_id,
+      publicInvestigatorId: investigator.id, investigatorPlayerId: investigator.playerId,
+      gameSha256: digest(snapshot.game), snapshotSha256: digest(snapshot),
+      questionsSha256: digest(snapshot.game.question ?? null),
+      ownQuestionSha256: digest(question), ownQuestionPresent: question !== null,
+      phase: snapshot.game.phase, scenarioSteps: snapshot.game.scenarioSteps,
+      databaseStep: storedGame.step, publicStep: step.step,
+      snapshot,
+    });
+  }
   const after = await database();
-  assert.equal(digest(after.events), digest(before.events), "Save state must stay quiescent throughout capture; close other QA clients.");
+  assert.equal(digest(saveDatabase(after)), digest(saveDatabase(before)), "All selected save state must stay quiescent throughout capture; close other QA clients.");
   assert.equal(after.identity.serverStartedAt, before.identity.serverStartedAt);
   assert.deepEqual(await readRuntime(), runtime);
   const observedAt = new Date().toISOString(), nowEpoch = Math.floor(Date.now() / 1000),
@@ -213,17 +283,18 @@ async function capture() {
       return { eventId: event.id, observedAt, startedAt, limitSeconds,
         elapsedByWallClock: startedAt > 0 && limitSeconds > 0 && nowEpoch >= startedAt + limitSeconds };
     });
-  return { observedAt, runtime, database: after, databaseSha256: digest(after.events), timerObservations, seats: snapshots };
+  return { observedAt, runtime, database: after, databaseSha256: digest(saveDatabase(after)), timerObservations, seats: snapshots,
+    ...(barkhamReportPath ? { barkhamGames: barkhamSnapshots } : {}),
+  };
 }
 
 await mkdir(output, { recursive: true, mode: 0o700 });
 try {
   const reportBytes = await readFile(reportPath), source = JSON.parse(reportBytes),
     manifestBytes = await readFile(manifestPath);
-  expected = JSON.parse(manifestBytes);
+  expected = await acceptanceManifest(manifestPath);
   assert.equal(source.passed, true, "Use a passed full Epic harness report, not a table seed or arbitrary saves.");
   assert.equal(source.mode, undefined, "Table preparation is not full acceptance.");
-  assert.equal(expected.kind, "chronicle-derived");
   assert.equal(expected.schema, 1);
   assert.equal(expected.upstreamRevision, "03a7f1e74925744f021f6e8fe0e39945d2c3a833");
   assert.deepEqual([...expected.extensions].sort(), extensions);
@@ -261,7 +332,33 @@ try {
   }
   assert.equal(new Set(seats.map((seat) => seat.id)).size, 6);
   proof.source = { path: reportPath, sha256: sha(reportBytes), events };
-  proof.candidate = { path: manifestPath, sha256: sha(manifestBytes), binarySha256: expected.binarySha256,
+  if (barkhamReportPath) {
+    const bytes = await readFile(barkhamReportPath), barkham = JSON.parse(bytes);
+    assert.equal(expected.kind, nativeQaKind, "Combined Barkham persistence requires the verified private native aggregate.");
+    assert.equal(expected.scope, "native-acceptance");
+    assert.equal(expected.capabilityCertified, false);
+    assert.equal(barkham.schema, 1);
+    assert.equal(barkham.mode, "fresh-isolated");
+    assert.equal(barkham.passed, true, "Use a passed fresh Barkham report, never a verification report or arbitrary saves.");
+    assert.equal(barkham.scope, "native-acceptance");
+    assert.deepEqual(barkham.candidate, { kind: nativeQaKind, platform: "linux", capabilityCertified: false });
+    for (const key of ["binarySha256", "extensionSourceSha256"])
+      assert.equal(barkham[key], expected[key], `Barkham QA ${key} must match the same aggregate as Epic QA.`);
+    assert.equal(barkham.checks.length, 5);
+    assert.deepEqual(barkham.checks.map((check) => check.investigatorCode).sort(),
+      ["barkham-001", "barkham-004", "barkham-007", "barkham-010", "barkham-013"]);
+    barkhamGames = barkham.checks.map(({ gameId, investigatorCode, savedRefetch }) => {
+      assert.ok(uuid.test(gameId));
+      assert.equal(savedRefetch, true, "Each fresh Barkham game must have passed its original saved-state refetch.");
+      return { gameId, investigatorCode };
+    }).sort((a, b) => a.investigatorCode.localeCompare(b.investigatorCode));
+    assert.equal(new Set(barkhamGames.map((game) => game.gameId)).size, 5);
+    assert.equal(new Set([...seats, ...barkhamGames].map((game) => game.gameId)).size, 11,
+      "The five Barkham saves must be distinct from the six Epic saves.");
+    proof.barkhamSource = { path: barkhamReportPath, sha256: sha(bytes), games: barkhamGames };
+  }
+  proof.candidate = { path: manifestPath, sha256: sha(manifestBytes), kind: expected.kind,
+    ...(expected.scope ? { scope: expected.scope, platform: expected.platform, capabilityCertified: false } : {}), binarySha256: expected.binarySha256,
     extensionSourceSha256: expected.extensionSourceSha256, extensions };
   let baseline;
   if (mode === "verify") {
@@ -271,9 +368,12 @@ try {
     assert.equal(baseline.captured, true);
     assert.deepEqual(baseline.scope, proof.scope);
     assert.deepEqual(baseline.source, proof.source);
+    assert.deepEqual(baseline.barkhamSource, proof.barkhamSource);
     assert.deepEqual(baseline.candidate, proof.candidate);
-    assert.equal(digest(baseline.capture.database.events), baseline.capture.databaseSha256);
-    for (const seat of baseline.capture.seats) {
+    assert.equal(digest(saveDatabase(baseline.capture.database)), baseline.capture.databaseSha256);
+    assert.equal(baseline.capture.seats.length, 6);
+    if (barkhamReportPath) assert.equal(baseline.capture.barkhamGames.length, 5);
+    for (const seat of [...baseline.capture.seats, ...(baseline.capture.barkhamGames || [])]) {
       const snapshot = JSON.parse(await readFile(resolve(output, `baseline-${seat.gameId}.json`), "utf8"));
       assert.equal(digest(snapshot), seat.snapshotSha256, "Saved baseline snapshot must match its proof.");
       assert.equal(digest(snapshot.game), seat.gameSha256);
@@ -283,7 +383,7 @@ try {
     catch (error) { if (error.code !== "ENOENT") throw error; }
   }
   const current = await capture();
-  for (const seat of current.seats) {
+  for (const seat of [...current.seats, ...(current.barkhamGames || [])]) {
     await privateWrite(resolve(output, `${mode}-${seat.gameId}.json`), seat.snapshot);
     delete seat.snapshot;
   }
@@ -296,14 +396,17 @@ try {
     proof.runtimeMatched = true;
     assert.equal(current.databaseSha256, baseline.capture.databaseSha256, "Every authoritative game/coordinator/history row must survive exactly.");
     assert.deepEqual(current.seats, baseline.capture.seats, "All six full game snapshots, seat players, and current questions must survive exactly.");
+    if (barkhamReportPath) assert.deepEqual(current.barkhamGames, baseline.capture.barkhamGames,
+      "All five full Barkham snapshots, original players, current questions and durable/public steps must survive exactly.");
     proof.savesMatched = true;
     proof.passed = true;
   }
   proof.finishedAt = new Date().toISOString();
   await privateWrite(resolve(output, `${mode}.json`), proof);
+  const saves = barkhamReportPath ? "eleven complete saves (six Epic and five Barkham)" : "six complete Epic saves";
   console.log(mode === "baseline"
-    ? `Epic persistence baseline captured: six owned games; ${baselinePath}`
-    : `Epic restart persistence verified: same aggregate runtime and six complete saves; ${resolve(output, "verify.json")}`);
+    ? `Persistence baseline captured: ${saves}; ${baselinePath}`
+    : `Restart persistence verified: same aggregate runtime and ${saves}; ${resolve(output, "verify.json")}`);
 } catch (error) {
   // Do not serialize HTTP bodies, private seat records, or execFile stderr.
   proof.error = String(error.message || error);

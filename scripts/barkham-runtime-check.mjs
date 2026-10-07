@@ -1,11 +1,63 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { acceptanceManifest, nativeQaKind } from "./rules-qa-runtime-identity.mjs";
+
+if (process.argv.includes("--help")) {
+  console.log(`node scripts/barkham-runtime-check.mjs [--verify-existing]
+Default mode retains historical integration-save checks and creates five Barkham games.
+For fresh isolated Linux QA, set ARKHAM_RULES_QA_MANIFEST, ARKHAM_RULES_URL and explicit QA_OUT under this project's output directory. The actual aggregate proof and running binary/source identities are verified; no historical saves are claimed.
+After a managed restart of the same private data directory, use --verify-existing with BARKHAM_REPORT=<passed fresh report> and a separate explicit QA_OUT. This mode sends only GET requests and verifies the five saved resource/action/sniff/treat states; it starts no services or games.`);
+  process.exit(0);
+}
+const args = process.argv.slice(2);
+assert.ok(args.length === 0 || (args.length === 1 && args[0] === "--verify-existing"), "Use only the optional --verify-existing mode.");
+const verifyExisting = args[0] === "--verify-existing";
+const qaManifestPath = process.env.ARKHAM_RULES_QA_MANIFEST;
+const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const base = process.env.ARKHAM_RULES_URL || "http://127.0.0.1:5194";
 const output = process.env.QA_OUT || "output/barkham-runtime";
+let candidate;
+if (qaManifestPath) {
+  assert.ok(process.env.QA_OUT, "Provide an explicit isolated QA_OUT for native QA.");
+  assert.ok(process.env.ARKHAM_RULES_URL, "Provide the explicit isolated QA bridge URL.");
+  const outputPath = resolve(output), outputRoot = resolve(project, "output");
+  assert.ok(outputPath.startsWith(outputRoot + sep), "Native QA output must remain under this project's output directory.");
+  for (const reserved of ["rules-server", "barkham-runtime"])
+    assert.ok(outputPath !== resolve(outputRoot, reserved) && !outputPath.startsWith(resolve(outputRoot, reserved) + sep), "Use a separate isolated native QA output directory.");
+  const service = new URL(base);
+  assert.ok(["127.0.0.1", "localhost"].includes(service.hostname));
+  assert.equal(service.protocol, "http:");
+  assert.equal(service.username + service.password + service.search + service.hash, "");
+  assert.equal(service.pathname, "/");
+  assert.ok(service.port, "Use an explicit isolated bridge port.");
+  candidate = await acceptanceManifest(resolve(qaManifestPath));
+}
+if (verifyExisting) {
+  assert.ok(qaManifestPath, "Read-only native QA verification requires ARKHAM_RULES_QA_MANIFEST.");
+  assert.ok(process.env.BARKHAM_REPORT, "Provide the passed fresh Barkham report in BARKHAM_REPORT.");
+  assert.notEqual(resolve(output), dirname(resolve(process.env.BARKHAM_REPORT)), "Use a separate verification QA_OUT to preserve the original report.");
+}
 await mkdir(output, { recursive: true });
-const status = await (await fetch(`${base}/chronicle/status`)).json();
-assert.match(status.version, /^Chronicle \+ Barkham/);
+const statusResponse = await fetch(`${base}/chronicle/status`);
+assert.ok(statusResponse.ok, "Runtime status must load.");
+const status = await statusResponse.json();
+assert.match(status.version, candidate?.kind === nativeQaKind
+  ? /^Private Linux native acceptance/
+  : /^Chronicle \+ Barkham/);
+if (candidate) {
+  assert.equal(status.ready, true);
+  assert.equal(status.binarySha256, candidate.binarySha256, "Running native binary must match the verified QA aggregate.");
+  assert.equal(status.extensionSourceSha256, candidate.extensionSourceSha256, "Running native source must match the verified QA aggregate.");
+  assert.deepEqual([...status.extensions].sort(), [...candidate.extensions].sort());
+  if (candidate.kind === nativeQaKind) {
+    assert.equal(status.runtimeScope, "native-acceptance");
+    assert.equal(status.platform, "linux");
+  }
+}
 const expected = Array.from({ length: 57 }, (_, i) => `barkham-${String(i + 1).padStart(3, "0")}`);
 assert.ok(expected.every(code => status.supportedCardCodes.includes(code)), "all 57 full cards registered");
 const { token } = await (await fetch(`${base}/chronicle/session`)).json();
@@ -85,8 +137,52 @@ function investigator(snapshot) { return Object.values(snapshot.game.investigato
 function tokenCount(entity, name) {
   return Array.isArray(entity.tokens) ? entity.tokens.find(([key]) => key === name)?.[1] || 0 : entity.tokens?.[name] || 0;
 }
-const proof = { version: status.version, binarySha256: status.binarySha256, extensionSourceSha256: status.extensionSourceSha256, savedGames: [], checks: [] };
+function savedState(snapshot) {
+  const actor = investigator(snapshot);
+  const human = Object.values(snapshot.game.assets).find(asset => asset.cardCode === "c:barkham:014");
+  return {
+    resources: tokenCount(actor, "Resource"),
+    remainingActions: actor.remainingActions,
+    sniffedLocations: [...(actor.meta?.sniffedLocations || [])].sort(),
+    friendlyHuman: human ? { id: human.id, cardId: human.cardId, treats: tokenCount(human, "Supply") } : null,
+  };
+}
+const proof = { version: status.version, binarySha256: status.binarySha256, extensionSourceSha256: status.extensionSourceSha256, savedGames: [], checks: [],
+  ...(candidate ? { schema: 1, mode: verifyExisting ? "verify-existing" : "fresh-isolated", scope: candidate.scope || "packaged-acceptance", candidate: { kind: candidate.kind, platform: candidate.platform, capabilityCertified: candidate.capabilityCertified === true },
+    historicalSaveChecks: { performed: false, reason: "Fresh isolated native QA has no historical integration saves; the five newly created Barkham games are checked explicitly." } } : {}) };
+if (verifyExisting) {
+  const reportPath = resolve(process.env.BARKHAM_REPORT);
+  const previous = JSON.parse(await readFile(reportPath, "utf8"));
+  assert.equal(previous.passed, true, "Use a passed fresh Barkham report.");
+  assert.equal(previous.mode, "fresh-isolated");
+  assert.equal(previous.binarySha256, status.binarySha256);
+  assert.equal(previous.extensionSourceSha256, status.extensionSourceSha256);
+  assert.deepEqual(previous.candidate, proof.candidate);
+  assert.equal(previous.checks.length, 5);
+  assert.deepEqual(previous.checks.map(check => check.investigatorCode).sort(), ["barkham-001", "barkham-004", "barkham-007", "barkham-010", "barkham-013"]);
+  assert.equal(new Set(previous.checks.map(check => check.gameId)).size, 5);
+  proof.sourceReport = reportPath;
+  proof.sourceReportSha256 = createHash("sha256").update(await readFile(reportPath)).digest("hex");
+  proof.requests = "GET only; no answers, fixtures, deck imports, game creation or service control.";
+  for (const check of previous.checks) {
+    assert.match(check.gameId, /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/);
+    assert.ok(check.savedState, "The fresh report must record final native save state.");
+    const snapshot = await getGame(check.gameId);
+    assert.equal(snapshot.game.id, check.gameId);
+    assert.equal(savedState(snapshot).resources, check.resourceAction.resourcesAfter);
+    assert.equal(savedState(snapshot).remainingActions, check.resourceAction.actionsAfter);
+    if (check.sniff) assert.ok(savedState(snapshot).sniffedLocations.includes(check.sniff.locationId));
+    if (check.friendlyHumanStartsWithTreats !== undefined) assert.equal(savedState(snapshot).friendlyHuman?.treats, check.friendlyHumanStartsWithTreats);
+    assert.deepEqual(savedState(snapshot), check.savedState, "Final native resource/action/sniff/treat states must survive the managed restart exactly.");
+    proof.checks.push({ gameId: check.gameId, investigatorCode: check.investigatorCode, savedState: savedState(snapshot), loaded: true });
+  }
+  proof.passed = true;
+  await writeFile(`${output}/verify-existing.json`, JSON.stringify(proof, null, 2));
+  console.log("Five saved Barkham games verified using GET requests only.");
+  process.exit(0);
+}
 // Existing integration games are read only. A runtime upgrade must retain them.
+if (!candidate) {
 const previous = JSON.parse(await readFile("output/rules-server/integration-proof.json", "utf8"));
 for (const check of previous.checks) {
   const snapshot = await getGame(check.gameId);
@@ -94,6 +190,7 @@ for (const check of previous.checks) {
   assert.equal(i.remainingActions, check.resourceAction.actionsAfter);
   assert.equal(tokenCount(i, "Resource"), check.resourceAction.resourcesAfter);
   proof.savedGames.push({ gameId: check.gameId, loaded: true, remainingActions: i.remainingActions, resources: tokenCount(i, "Resource") });
+}
 }
 for (const [code, faction, signatures] of [
   ["barkham-004", "seeker", ["barkham-005", "barkham-006"]],
@@ -143,6 +240,7 @@ for (const [code, faction, signatures] of [
   assert.equal(after.remainingActions, before.remainingActions - 1);
   check.resourceAction = { resourcesBefore: tokenCount(before, "Resource"), resourcesAfter: tokenCount(after, "Resource"), actionsBefore: before.remainingActions, actionsAfter: after.remainingActions };
   check.savedRefetch = true;
+  check.savedState = savedState(snapshot);
   proof.checks.push(check);
   await writeFile(`${output}/report.json`, JSON.stringify(proof, null, 2));
   console.log(`${code}: setup, action and persisted state verified (${snapshot.game.id})`);

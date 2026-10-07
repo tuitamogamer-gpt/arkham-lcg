@@ -3,6 +3,7 @@ module Arkham.Homebrew.EpicMachinations.Transactions
   , takeTindalosClue
   , setSharedTyrthrha
   , nativeEraProgress
+  , syncNativeEraProgress
   ) where
 
 import Arkham.Asset.Types (AssetAttrs (..))
@@ -90,6 +91,24 @@ nativeEraProgress era game = EraProgress
     _ -> False
   escorted = all (\code -> any (\asset -> toCardCode asset == code && outsideTindalos asset)
     $ Map.elems entities.entitiesAssets) scientists
+
+-- Replica criteria must follow the locked physical worlds after setup,
+-- redemption and cross-era movement, even when no explicit progress request
+-- was emitted. A selected story remains unfinished until its authoritative
+-- completion; delayed installation must not make an empty table look finished.
+-- Conversely, a completed story's actual face still counts while its native
+-- removal delivery is waiting behind that table's player decision.
+syncNativeEraProgress :: Map Era Game -> MachinationsState -> MachinationsState
+syncNativeEraProgress worlds state = state {machinationsEras = Map.mapWithKey progress worlds}
+ where
+  selected = catMaybes [state.machinationsMachination, state.machinationsPlot]
+  progress era game =
+    let actual = nativeEraProgress era game
+        locallyCompleted = Map.findWithDefault mempty era state.machinationsLocalCompleted
+        unfinished = Set.fromList [code | code <- selected,
+          code `Set.notMember` state.machinationsCompletedStories,
+          code `Set.notMember` locallyCompleted]
+     in actual {eraStories = actual.eraStories <> unfinished}
 
 tindalos game = case filter ((== "87005b") . toCardCode) $ Map.elems $ entitiesLocations $ gameEntities game of
   [location] -> Right location

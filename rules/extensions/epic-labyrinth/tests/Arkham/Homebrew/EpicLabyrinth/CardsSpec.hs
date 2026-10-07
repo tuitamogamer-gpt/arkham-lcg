@@ -2,9 +2,13 @@ module Arkham.Homebrew.EpicLabyrinth.CardsSpec (spec) where
 
 import Arkham.Asset.Cards.Standalone qualified as Assets
 import Arkham.Action qualified as Action
+import Arkham.Agenda.Sequence qualified as Agenda
+import Arkham.Agenda.Types (Field (AgendaSequence))
 import Arkham.Card
 import Arkham.Card.Id (unsafeMakeCardId)
+import Arkham.Classes.HasGame (getGame)
 import Arkham.Cost (Payment (NoPayment))
+import Arkham.Difficulty (Difficulty (Standard))
 import Arkham.Enemy.CardDefs.TheLabyrinthsOfLunacy qualified as Enemies
 import Arkham.Enemy.Types (EnemyAttrs (..), Field (EnemyPlacement))
 import Arkham.Homebrew.EpicLabyrinth.Assets.DecayDiagram qualified as Decay
@@ -12,25 +16,133 @@ import Arkham.Homebrew.EpicLabyrinth.Assets.HungerDiagram qualified as Hunger
 import Arkham.Homebrew.EpicLabyrinth.Assets.RotDiagram qualified as Rot
 import Arkham.Homebrew.EpicLabyrinth.Enemies.EixodolonsPet qualified as Pet
 import Arkham.Homebrew.EpicLabyrinth.Enemies.TheJailor qualified as Jailor
+import Arkham.Homebrew.EpicLabyrinth.Coordinator (initialEvent, replicaFor)
+import Arkham.Homebrew.EpicLabyrinth.Helpers (getEpicGroup, seedEpicReplicaMessages, resumeBarrierQueue)
+import Arkham.Homebrew.EpicLabyrinth.Types (LabyrinthGroup (..), allGroups)
+import Arkham.Homebrew.EpicLabyrinth.Types qualified as Epic
 import Arkham.Homebrew.EpicLabyrinth.Treacheries.ParadoxEffect qualified as Paradox
 import Arkham.Id
 import Arkham.Game.Base (Game (..))
-import Arkham.Helpers.Scenario (getVictoryDisplay)
+import Arkham.Helpers.Scenario (getVictoryDisplay, getScenarioMetaKeyDefault)
 import Arkham.Investigator.Cards qualified as Investigators
 import Arkham.Location.CardDefs.TheLabyrinthsOfLunacy qualified as Locations
 import Arkham.Location.Types (Field (LocationDoom))
 import Arkham.Matcher qualified as Matcher
+import Arkham.Message.Story (StoryMessage (PlaceStory))
 import Arkham.Placement
+import Arkham.Phase (Phase (CampaignPhase, MythosPhase))
 import Arkham.Projection
 import Arkham.Source
+import Arkham.Scenario.Types (setMetaKey)
+import Arkham.Story.CardDefs.TheLabyrinthsOfLunacy qualified as Stories
 import Arkham.Treachery.CardDefs.TheLabyrinthsOfLunacy qualified as Treacheries
 import Arkham.Zone (OutOfPlayZone (SetAsideZone))
 import Data.UUID qualified as UUID
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import TestImport qualified as TI
 import TestImport.New
 
 spec :: Spec
 spec = describe "Epic Labyrinth original player interactions and encounter cards" do
+  for_ allGroups $ \group ->
+    it ("seeds the locked " <> show group <> " replica before native PreScenarioSetup in a fresh Epic game")
+      . scenarioTestWithDifficulty Investigators.jennyBarnes Standard "70001" $ \self -> do
+        let change = overAttrs $ setMetaKey "epicMultiplayer" True
+              . setMetaKey "epicLabyrinthOutbox" ([] :: [Text])
+        overTest $ modeL %~ fmap change
+        getScenarioMetaKeyDefault "epicLabyrinthReplica" Null `shouldReturn` Null
+        fresh <- getGame
+        let state = either (error . show) id $ initialEvent $ Map.fromList
+              [(table, Set.singleton self.id) | table <- allGroups]
+            replica = either (error . show) id $ replicaFor group state
+            synchronized = seedEpicReplicaMessages [ScenarioSpecific "epicLabyrinth.replica" $ toJSON replica] fresh
+        overTest $ const synchronized
+        -- The actual handler reads the authoritative group before merging its
+        -- native scenario metadata. It must succeed without a queued pull first.
+        run PreScenarioSetup
+        getEpicGroup `shouldReturn` group
+        getScenarioMetaKeyDefault "epicMultiplayer" False `shouldReturn` True
+        getScenarioMetaKeyDefault "epicLabyrinthOutbox" ([] :: [Text]) `shouldReturn` []
+
+  it "resumes round barrier windows and the saved finish through the actual native message loop"
+    . scenarioTestWithDifficulty Investigators.jennyBarnes Standard "70001" $ \self -> do
+      void $ genPlayerCard $ toCardDef $ toAttrs self
+      void $ testAgenda "01105" id
+      let state = either (error . show) id $ initialEvent $ Map.fromList
+            [(group, Set.singleton self.id) | group <- allGroups]
+          replica = either (error . show) id $ replicaFor GroupA state
+          change = overAttrs $ setMetaKey "epicMultiplayer" True
+            . setMetaKey "epicLabyrinthReplica" replica
+      overTest $ modeL %~ fmap change
+      chamber <- testLocation
+      self `moveTo` chamber
+      vent <- genCard Stories.theVent
+      run $ StoryMessage $ PlaceStory vent $ AtLocation chamber.id
+      -- This runs Game.runMessages, rather than calling the gate or the
+      -- ScenarioSpecific handler directly. The original window must wait.
+      run EndRoundWindow
+      pending <- getScenarioMetaKeyDefault "epicLabyrinthOutbox" [] :: TestAppT [Epic.Request]
+      map Epic.requestOperation pending `shouldBe` [Epic.SetDoom 0, Epic.Arrive $ Epic.RoundBarrier 1]
+      continuations <- getScenarioMetaKeyDefault "epicLabyrinthContinuations" mempty
+        :: TestAppT (Map.Map Epic.BarrierKey Message)
+      Map.lookup (Epic.RoundBarrier 1) continuations `shouldBe` Just EndRoundWindow
+      waiting <- getGame
+      let opened = ScenarioSpecific "epicLabyrinth.delivery" $ toJSON $
+            Epic.DeliveryEnvelope (Epic.DeliveryId "native-round:open") (Epic.OpenBarrier (Epic.RoundBarrier 1) 1)
+          resumed = fromJustNote "an opened barrier resumes the real native tail" $
+            resumeBarrierQueue waiting [EndRound] [opened]
+          unrelated = waiting {gameQuestion = Map.map (const $ ChooseOne [Label "Unrelated decision" [Noop]]) waiting.gameQuestion}
+      resumeBarrierQueue unrelated [EndRound] [opened] `shouldBe` Nothing
+      resumeBarrierQueue waiting [EndRound] [ScenarioSpecific "unrelated" Null] `shouldBe` Nothing
+      runAll resumed
+      -- The printed Vent reaction must pause the resumed native work first.
+      chooseOptionMatching "decline the real Vent round-end trigger" \case
+        SkipTriggersButton {} -> True
+        _ -> False
+      finished <- getScenarioMetaKeyDefault "epicLabyrinthOutbox" [] :: TestAppT [Epic.Request]
+      map Epic.requestOperation finished `shouldSatisfy` elem (Epic.FinishWindow $ Epic.RoundBarrier 1)
+      after <- getScenarioMetaKeyDefault "epicLabyrinthContinuations" mempty
+        :: TestAppT (Map.Map Epic.BarrierKey Message)
+      Map.lookup (Epic.RoundBarrier 1) after `shouldBe` Just EndRound
+
+  it "keeps a stage checkpoint until release resumes the actual agenda before its saved phase tail"
+    . scenarioTestWithDifficulty Investigators.jennyBarnes Standard "70001" $ \self -> do
+      void $ genPlayerCard $ toCardDef $ toAttrs self
+      agenda <- testAgenda "01105" id
+      let state = either (error . show) id $ initialEvent $ Map.fromList
+            [(group, Set.singleton self.id) | group <- allGroups]
+          replica = either (error . show) id $ replicaFor GroupA state
+          change = overAttrs $ setMetaKey "epicMultiplayer" True
+            . setMetaKey "epicLabyrinthReplica" replica
+          stage = Epic.StageBarrier 1
+          envelope label body = ScenarioSpecific "epicLabyrinth.delivery" $ toJSON $
+            Epic.DeliveryEnvelope (Epic.DeliveryId label) body
+          savedTail = [Begin MythosPhase]
+      overTest $ modeL %~ fmap change
+      run $ AdvanceAgendaBy agenda.id AgendaAdvancedWithDoom
+      waiting <- getGame
+      let opened = envelope "native-stage:open" $ Epic.OpenBarrier stage 1
+      resumeBarrierQueue waiting savedTail [opened] `shouldBe` Nothing
+      -- Use the adapter's preserved checkpoint path for a stage opening.
+      runAll [opened, AskMap waiting.gameQuestion]
+      acknowledged <- getScenarioMetaKeyDefault "epicLabyrinthOutbox" [] :: TestAppT [Epic.Request]
+      map Epic.requestOperation acknowledged `shouldSatisfy` elem (Epic.FinishWindow stage)
+      checkpoint <- getGame
+      checkpoint.gameQuestion `shouldBe` waiting.gameQuestion
+      checkpoint.gamePhase `shouldBe` CampaignPhase
+      Agenda.agendaSide <$> field AgendaSequence agenda.id `shouldReturn` Agenda.A
+      let released = envelope "native-stage:release" $ Epic.ReleaseBarrier stage 1
+          resumed = fromJustNote "stage release resumes the native agenda continuation" $
+            resumeBarrierQueue checkpoint savedTail [released]
+      runAll resumed
+      -- The real agenda flips and asks its native confirmation before the
+      -- pending Mythos tail can run or create an unrelated encounter question.
+      Agenda.agendaSide <$> field AgendaSequence agenda.id `shouldReturn` Agenda.B
+      after <- getGame
+      after.gamePhase `shouldBe` CampaignPhase
+      after.gameQuestion `shouldNotBe` waiting.gameQuestion
+
   it "registers the six printed Epic identities instead of single-group substitutes" do
     map toCardCode [Assets.rotDiagramEpicMultiplayer, Assets.hungerDiagramEpicMultiplayer, Assets.decayDiagramEpicMultiplayer,
       Enemies.eixodolonsPetEpicMultiplayer, Enemies.theJailor, Treacheries.paradoxEffectEpicMultiplayer]

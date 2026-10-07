@@ -82,7 +82,7 @@ spec = describe "Printed Epic Noble Legacy branches" do
 
 setupEra :: Era -> Investigator -> TestAppT ()
 setupEra era self = do
-  void $ genPlayerCard $ fromJustNote "native investigator definition" $ lookupCardDef $ toCardCode self
+  void $ genPlayerCard $ toCardDef $ toAttrs self
   let state = either (error . show) id $ initialMachinations $ Map.fromList [(group, Set.singleton self.id) | group <- allEras]
       replica = either (error . show) id $ machinationsReplicaFor era state
       change = overAttrs $ setMetaKey "epicMultiplayer" True . setMetaKey "epicMachinationsReplica" replica

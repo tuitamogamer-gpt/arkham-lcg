@@ -320,6 +320,14 @@ export const undoCompanionGame = (session: CompanionSession) =>
   request<unknown>(`play/games/${session.gameId}/undo${companionQuery(session)}`, {});
 export const getCompanionGameStep = (session: CompanionSession) =>
   request<{ step: number }>(`play/games/${session.gameId}/step${companionQuery(session)}`);
+export const getCompanionEpicReady = (session: CompanionSession) =>
+  request<import("../../scripts/companion-epic-ready.mjs").EpicReadyStatus>(
+    `play/games/${session.gameId}/ready${companionQuery(session)}`,
+  );
+export const markCompanionEpicReady = (session: CompanionSession) =>
+  request<import("../../scripts/companion-epic-ready.mjs").EpicReadyStatus>(
+    `play/games/${session.gameId}/ready${companionQuery(session)}`, {},
+  );
 export const upgradeCompanionDeck = (session: CompanionSession, upgrade: unknown) =>
   request<unknown>(`play/games/${session.gameId}/upgrade-deck${companionQuery(session)}`, upgrade);
 export const sendCompanionVentNote = (session: CompanionSession, note: unknown) =>

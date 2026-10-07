@@ -12,6 +12,13 @@ data LabyrinthGroup = GroupA | GroupB | GroupC
 allGroups :: [LabyrinthGroup]
 allGroups = [GroupA, GroupB, GroupC]
 
+-- The native event creator previously persisted Show's quoted Text form.
+-- Accept that exact legacy spelling as well as the canonical raw code, using
+-- Text equality so a scenario's back face cannot become an event identity.
+matchesStoredScenarioId :: ScenarioId -> Maybe Text -> Bool
+matchesStoredScenarioId expected stored = stored `elem`
+  [Just $ unCardCode $ toCardCode expected, Just $ tshow expected]
+
 newtype OperationId = OperationId UUID
   deriving stock Show
   deriving newtype (Eq, Ord, ToJSON, FromJSON, ToJSONKey, FromJSONKey)

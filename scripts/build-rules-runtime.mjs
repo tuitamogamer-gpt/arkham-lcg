@@ -1156,6 +1156,9 @@ async function compileNativeComponent(heading, componentName, mainFile) {
   const [snapshotDb, localDb] = await Promise.all([capture(stack, ["path", "--snapshot-pkg-db"]), capture(stack, ["path", "--local-pkg-db"])]);
   const component = resolve(buildOutput, componentName);
   const objects = resolve(component, `${componentName}-tmp`);
+  // A fresh compile-only build has configured only the library. GHC validates
+  // the executable output directory before creating its -outputdir tree.
+  await mkdir(objects, {recursive: true});
   const sourceDirs = fields["hs-source-dirs"].split(/\s+/).filter(Boolean);
   const options = [...fields["ghc-options"].matchAll(/"([^"\n]+)"|(\S+)/g)].map((match) => match[1] || match[2]);
   // Darwin's linker can omit debug/local symbols while producing the image,
@@ -1297,8 +1300,19 @@ async function packageRuntime(binary, buildSourceHash) {
     if ((await extensionHash()) !== buildSourceHash)
       throw new Error("The original extension changed during the native check; rerun with frozen sources.");
     await verifyLinkedInput(binary);
+    const nativeObjectProof = resolve(nativePlanDirectory, "native-objects.json");
+    const configuredLibrary = cabalFields(await readFile(resolve(backend, "arkham-api/arkham-api.cabal"), "utf8"), "library");
+    const configuredModules = [configuredLibrary["exposed-modules"], configuredLibrary["other-modules"]]
+      .filter(Boolean).join(" ").split(/\s+/).filter(Boolean);
+    if (directObjects && nativeObjects?.length !== configuredModules.length)
+      throw new Error("The native object proof does not cover the complete configured library/API module graph.");
     await writeFile(resolve(project, "output/rules-server/rules-native-check.json"), JSON.stringify({
       schema: 1,
+      scope: withEpicMachinations ? "native-aggregate" : "native-component",
+      fullAggregate: withEpicMachinations,
+      fullAggregateBehaviorTested: withEpicMachinations && Boolean(behavior),
+      nativeModuleCount: configuredModules.length,
+      nativeObjectsProofSha256: directObjects ? await sha256(nativeObjectProof) : undefined,
       upstreamRevision,
       platform: process.platform,
       architecture: process.arch,

@@ -6,7 +6,7 @@ The build uses upstream revision `03a7f1e74925744f021f6e8fe0e39945d2c3a833`, GHC
 
 The default source checkout is `/private/tmp/arkham-upstream-research`. If it is absent, the script fetches the exact pinned commit into a new external checkout. Set `ARKHAM_RULES_SOURCE` to use another checkout at that revision. An existing checkout with a different revision stops the build. The default toolchain and cache root is `/private/tmp/arkham-build-toolchain`, overridable through `ARKHAM_RULES_TOOLCHAIN`. The compiler is extracted in place, without profiling libraries or documentation. Only libpq, its headers and `pg_config` are compiled from PostgreSQL source; the existing isolated rules service keeps its own database runtime.
 
-The base `v20260904.1` distribution must already be installed. On a fresh machine, start `npm run rules:server` once to install it, then run the build in another terminal. The build verifies that the base shared library, database executables, setup SQL and release frontend hash are present before compiling.
+For macOS packaging, the base `v20260904.1` distribution must already be installed. On a fresh machine, start `npm run rules:server` once to install it, then run the build in another terminal. The build verifies that the base shared library, database executables, setup SQL and release frontend hash are present before compiling. The separate Linux compilation and private API routes below do not require that distribution.
 
 ```sh
 node scripts/build-rules-runtime.mjs --dependencies
@@ -119,7 +119,13 @@ Freeze the original extension sources before staging/compiling. An ordinary
 Linux build without `--compile-only` fails before toolchain restoration. A
 successful full check writes the ignored `output/rules-server/rules-native-check.json`
 with the actual platform, source, engine and test hashes and passing example
-count. Partial dependency restoration, staging, configuration or object
+count. A completed Machinations aggregate also records `scope: native-aggregate`,
+`fullAggregate`, `fullAggregateBehaviorTested`, the configured library/API module
+count and, with direct objects, the SHA-256 of the verified complete object plan.
+The behavior flag requires the real aggregate suite to pass. After a change to
+test sources alone, `--compile-only --test-built --direct-objects` recompiles and
+runs those tests against the retained verified engine objects.
+Partial dependency restoration, staging, configuration or object
 compilation creates no passing check record. Existing compiled objects and
 package caches remain available after an interrupted build.
 
@@ -153,6 +159,116 @@ the installed macOS gameplay/persistence checks remain separate requirements
 before Epic can be enabled. A passing Linux Haskell check alone does not satisfy
 those requirements.
 
+### Real private Linux API acceptance
+
+After the complete `--compile-only --with-epic-machinations --test` check passes,
+`scripts/linux-native-acceptance.mjs` can launch that actual aggregate against
+an isolated PostgreSQL database. This is a private Linux QA route with an
+explicit `native-acceptance` identity. It does not create a normal distribution
+manifest or satisfy the production installation gate.
+
+Run it as a non-root user. Supply a full PostgreSQL **14.15** installation with
+`postgres`, `initdb`, `pg_ctl`, `psql`, `pg_dump` and `uuid-ossp`; the compiler's
+libpq-only development prefix is insufficient. Retain the complete engine
+objects, source, full Hspec executable and native proof. Build Chronicle's
+actual frontend with the explicit private bridge URL before preparing the
+runtime. Match this URL to `ARKHAM_RULES_PORT` if overriding the default port.
+
+```sh
+export ARKHAM_RULES_QA_PG_PREFIX=/path/to/postgresql-14.15
+VITE_ARKHAM_RULES_URL=http://127.0.0.1:5494 npm run build
+node scripts/linux-native-acceptance.mjs --prepare
+node scripts/linux-native-acceptance.mjs --start
+```
+
+The default private directory is `output/native-api-acceptance`, with bridge,
+API and PostgreSQL ports **5494 / 5495 / 5496**. Use the environment overrides
+shown by `--help` for another isolated directory or port set. The launcher
+retains its database under `<QA_DIR>/data` and manages API/database shutdown.
+Terminate this launcher, then run `--start` again against the same directory
+for restart acceptance.
+
+The private verifier requires the full aggregate proof, actual object-plan and
+API/test executable hashes, complete passing Hspec driver, and current staged
+and original extension source hashes. It also resolves and hashes the exact
+`runtime/bin/arkham-api` executed by the launcher. A coordinator-only proof,
+stale source, different executable or claimed package/install/certification
+status is rejected. The ordinary production validator rejects the private
+QA identity.
+
+The bootstrap adapts only an ignored copy of the original bridge's verifier,
+module paths and explicit QA status label. Its SQL/API/game routes remain real.
+It copies Chronicle's built client and generates the pinned presentation data;
+the adaptation record explicitly states `upstreamFrontendBuilt: false`.
+
+Acceptance scripts use the explicit private manifest:
+
+```sh
+export ARKHAM_RULES_QA_MANIFEST="$PWD/output/native-api-acceptance/runtime/chronicle-native-qa.json"
+export ARKHAM_RULES_URL=http://127.0.0.1:5494
+export ARKHAM_RULES_DATA_DIR="$PWD/output/native-api-acceptance/data"
+export ARKHAM_RULES_PG_PORT=5496
+EPIC_QA_CONFIRMED=1 QA_OUT=output/native-api-acceptance/epic-runtime node --import tsx scripts/epic-runtime-check.mjs
+QA_OUT=output/native-api-acceptance/barkham-runtime node scripts/barkham-runtime-check.mjs
+```
+
+Use `epic-persistence-check.mjs --help` to capture the passed Epic report before
+the managed restart and verify its same six games afterward. Supply the same
+optional `BARKHAM_REPORT` for both commands to include all five fresh Barkham
+games in the complete SQL/public save comparison. Verification requires a new
+PostgreSQL start time, identical runtime identity and the same source reports;
+it preserves every stored timer field exactly. Close other QA clients before
+capture and keep them closed until verification completes. Barkham's
+`--verify-existing` mode separately checks those five games' resource/action,
+sniff and treat state using GET requests. The Epic browser checker uses a fresh `--prepare-table` report and
+checks actual native answers, reload and pending-decision continuity in Chromium
+and WebKit; table seeding alone is not full mechanics acceptance. See each
+script's `--help` for its required report paths and isolated output arguments.
+For browser acceptance, serve that actual built client with
+`npm run preview -- --host 127.0.0.1 --port 5498` and set
+`BASE_URL=http://127.0.0.1:5498` and `RULES_URL=http://127.0.0.1:5494` for the
+browser checker. The normal frontend's default companion URL remains 5194.
+
+The table checker uses three separate actual WebKit processes per event.
+Its default is headless. On Linux, `EPIC_WEBKIT_HEADLESS=0` selects Playwright's
+genuine headed GTK implementation; supply a working local `DISPLAY`, such as
+a private Xvfb screen. The verified private route uses `DISPLAY=:97`,
+`GDK_BACKEND=x11` and `LIBGL_ALWAYS_SOFTWARE=1`. Reports disclose the launch
+mode, implementation, environment and process topology. This choice preserves
+every action, reload, asset and error assertion; a GET-only diagnostic still
+cannot qualify as the twelve-action acceptance proof.
+
+For setup and Ready acceptance, create a separate fresh seed with
+`epic-runtime-check.mjs --prepare-client-setup`, then run
+`epic-setup-browser-check.mjs` with `EPIC_SETUP_SEED` pointing to that report and
+the same private manifest and browser URLs. These six seats begin at genuine
+unanswered native `ChooseDeck` prompts. The checker drives the built client's
+setup answers and automatic Ready requests, verifies both shared timers, then
+checks actual resource actions and persisted reloads. Setup seeding is recorded
+as preparation and does not itself qualify as acceptance.
+
+The client binds Ready to the persisted seat's actual event, group and game.
+It waits for the native setup-complete investigation checkpoint, preserves the
+current native question, and holds answers and Undo until all three groups are
+ready. Failed requests offer an explicit retry. Ordinary tables retain their
+existing answer flow.
+
+Browser checks retain raw console and network failures. An external ArkhamDB
+image HTTP 503 is accepted only with same-document evidence for that exact
+native card or investigator and its visible face: a verified alternate scan,
+readable card text, or the accessible portrait name/initials fallback.
+Unrevealed locations expose only their generic reverse label. Unknown errors,
+native/local request failures and unmatched artwork remain failures; there are
+no mocked responses. Loaded client assets are checked against the actual built
+files rather than inferred from a manifest alone.
+
+After private browser acceptance, stop its preview and rebuild without the
+private URL before preparing a normal client release. The private runtime keeps
+its own verified frontend copy; the public deployment must use its normal
+companion configuration.
+
+## macOS candidate installation
+
 A checkout already containing Machinations rejects a build that omits that flag. Packaging generates the private data-only `chronicle-presentation.json` from the pinned text/settings resources and records its `presentationSha256` together with the native binary and frontend hashes.
 
 For an installation handoff while an existing companion is active, add `--prepare-only`. The complete build, native tests and strict signing still run, but the installed directory is left in place. After stopping that companion, publish the printed candidate path with the same extension selection:
@@ -163,7 +279,11 @@ node scripts/build-rules-runtime.mjs --with-epic-machinations --publish-candidat
 
 Publishing rechecks the actual original source, binary, frontend and presentation hashes, matching passing behavior proof and signature before the atomic directory exchange.
 
-## Restored cache checkpoint — 7 October 2026
+## Earlier macOS cache checkpoint — 7 October 2026
+
+This records the earlier macOS workspace. The subsequent full Linux aggregate
+and actual private API continuation are recorded separately in
+[native aggregate evidence](import-native-aggregate-linux-2026-10-07.md).
 
 The exact pinned source was restored at `/private/tmp/arkham-upstream-research`, and the aggregate Barkham + Labyrinth + Machinations stage completed. The private toolchain at `/private/tmp/arkham-build-toolchain` contains verified GHC 9.14.1, Stack 3.11.1, PostgreSQL 14.15 development files and PCRE 8.45. Hackage's signed index was validated and Pantry's package cache populated. Dependency restoration advanced the reusable cache but remains incomplete: the 2 GiB reserve stopped the first attempt with 1.98 GiB available and the resumed attempt with 1.67 GiB available. These were controlled stops before ENOSPC, not native compilation or behavior results.
 

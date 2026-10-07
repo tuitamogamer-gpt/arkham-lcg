@@ -16,6 +16,7 @@ import { verifyDerivedRuntime } from './rules-runtime-manifest.mjs';
 import { chronicleOriginAllowed, publishedChronicleOrigin } from './chronicle-origin.mjs';
 import { companionVentNoteAnswer } from './companion-note.mjs';
 import { barkhamDeckRejection } from './barkham-deck-guard.mjs';
+import { companionEpicReady } from './companion-epic-ready.mjs';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const barkhamCards = JSON.parse(await readFile(resolve(project, 'scripts/data/barkham.json'), 'utf8'));
@@ -357,7 +358,7 @@ async function handle(req, res) {
   }
   // Original Chronicle presentation uses the native rules without moving
   // session credentials into its client. Epic seats are bound to one game.
-  const playGame = url.pathname.match(/^\/chronicle\/play\/games\/([a-f0-9-]+)(?:\/(answer|undo|step|upgrade-deck|vent-note))?$/);
+  const playGame = url.pathname.match(/^\/chronicle\/play\/games\/([a-f0-9-]+)(?:\/(answer|undo|step|upgrade-deck|vent-note|ready))?$/);
   if (url.pathname === '/chronicle/play/options' && req.method === 'GET') {
     json(res, 200, JSON.parse(await readFile(resolve(project, 'scripts/data/native-play-options.json'), 'utf8'))); return;
   }
@@ -397,6 +398,10 @@ async function handle(req, res) {
     const seat = seatId ? await findEpicSeat(seatId) : null;
     if (seat && (!playGame || seat.gameId !== playGame[1]) && url.pathname !== '/chronicle/play/decks') { json(res, 403, { error: 'This seat belongs to another investigation.' }); return; }
     const authentication = seat ? await epicSeatToken(seat) : true;
+    if (playGame?.[2] === 'ready') {
+      json(res, 200, await companionEpicReady(seat, playGame[1], req.method,
+        (path, input, method) => engineJson(path, input, method, authentication))); return;
+    }
     if (req.method === 'GET' && playGame?.[2] === 'step') {
       json(res, 200, await engineJson(`arkham/games/${playGame[1]}/step`, undefined, 'GET', authentication)); return;
     }

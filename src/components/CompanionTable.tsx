@@ -21,10 +21,12 @@ import {
   CARD_BACKS,
   LOCATION_ART,
   cardArt,
+  cardArtSources,
   plain,
   thumbArt,
 } from "../game/data";
 import type { Card } from "../game/types";
+import { nativeCardArtworkPath } from "../../scripts/card-artwork.mjs";
 import { kindLabel, productsForCard } from "../game/catalog";
 import {
   companionCatalogCode,
@@ -44,9 +46,11 @@ import {
   getCompanionCardDefinitions,
   getCompanionGame,
   getCompanionGameStep,
+  getCompanionEpicReady,
   getCompanionPlayOptions,
   getCompanionPresentation,
   RULES_SERVER_URL,
+  markCompanionEpicReady,
   sendCompanionVentNote,
   undoCompanionGame,
   upgradeCompanionDeck,
@@ -55,6 +59,11 @@ import {
   type CompanionSession,
   type CompanionCardDefinition,
 } from "../game/rulesServer";
+import {
+  createEpicReadyGate,
+  nativeEpicSetupComplete,
+  type EpicReadyState,
+} from "../game/epicReady";
 import {
   Button,
   CardFace,
@@ -199,12 +208,67 @@ const nativeArt = (
   const barkham = /^:barkham:(\d{3})$/.exec(definition.art);
   if (barkham)
     return `${RULES_SERVER_URL}/chronicle/barkham/card/${barkham[1]}${reverse ? "b" : ""}.svg`;
-  const file =
-    reverse && definition.customBack
-      ? definition.customBack
-      : `${definition.art}${reverse ? "b" : ""}.avif`;
-  return `https://assets.arkhamhorror.app/img/arkham/cards/${file}`;
+  return `https://assets.arkhamhorror.app/img/arkham/${nativeCardArtworkPath(definition, reverse)}`;
 };
+
+function NativePortrait({
+  card,
+  investigatorId,
+}: {
+  card: Card;
+  investigatorId: string;
+}) {
+  const sources = cardArtSources(card),
+    sourceKey = sources.join("|");
+  const [sourceIndex, setSourceIndex] = useState(0),
+    [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    setSourceIndex(0);
+    setLoaded(false);
+  }, [card.code, sourceKey]);
+  const source = sources[sourceIndex];
+  const next = () => {
+    setLoaded(false);
+    setSourceIndex(sourceIndex + 1);
+  };
+  useEffect(() => {
+    if (!source || loaded || source.startsWith("/")) return;
+    const timer = window.setTimeout(next, 8000);
+    return () => window.clearTimeout(timer);
+  }, [source, loaded]);
+  const initials = card.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("");
+  return (
+    <span
+      className="companion-portrait"
+      data-visible-face="portrait"
+      data-preview-code={card.code}
+      data-investigator-id={investigatorId}
+      data-visible-label={card.name}
+    >
+      {source ? (
+        <img
+          src={thumbArt(source)}
+          alt={`${card.name} portrait`}
+          onLoad={() => setLoaded(true)}
+          onError={next}
+        />
+      ) : (
+        <span
+          className="companion-portrait-fallback"
+          role="img"
+          aria-label={`${card.name}, portrait unavailable`}
+        >
+          <span aria-hidden="true">{initials || "?"}</span>
+        </span>
+      )}
+    </span>
+  );
+}
 
 function Counters({ entity, code }: { entity: NativeRecord; code?: string }) {
   const tokens = tokenMap(entity.tokens);
@@ -332,6 +396,11 @@ function NativeCard({
                 : `Inspect ${c.name}, reverse face`
             }
             data-preview-face="back"
+            data-visible-face={reverse ? "unrevealed" : "reverse"}
+            data-visible-label={
+              reverse ? "Unrevealed location" : c.back_name || c.name
+            }
+            data-art-source={src || ""}
             onClick={() => !reverse && inspect(c.code, true)}
             disabled={reverse}
           >
@@ -359,7 +428,13 @@ function NativeCard({
         </HoverPreview>
       )}
       <figcaption>
-        {hidden ? "Facedown" : reverse ? "Unrevealed location" : c.name}
+        {hidden
+          ? "Facedown"
+          : reverse
+            ? "Unrevealed location"
+            : back
+              ? c.back_name || c.name
+              : c.name}
       </figcaption>
       <Counters entity={entity} code={c.code} />
       {!hidden &&
@@ -496,6 +571,12 @@ export function CompanionTable({
   const [solo, setSolo] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [epicReady, setEpicReady] = useState<{
+    sessionKey: string;
+    state: EpicReadyState;
+  } | null>(null);
+  const epicGate = useRef<ReturnType<typeof createEpicReadyGate> | null>(null);
+  const latestEpicGame = useRef<unknown>(null);
   const [selected, setSelected] = useState("");
   const [view, setView] = useState<
     "bag" | "discard" | "victory" | "hand" | "log" | null
@@ -516,7 +597,9 @@ export function CompanionTable({
       // Keep the earlier revision when another seat changed the game during
       // the final read. The next poll must still detect that newer revision.
       step.current = before.step;
-      setSnapshot(companionSnapshot(raw));
+      const loaded = companionSnapshot(raw);
+      latestEpicGame.current = loaded.game;
+      setSnapshot(loaded);
       setSolo(obj(raw).multiplayerMode === "Solo");
       setError("");
       return;
@@ -574,8 +657,44 @@ export function CompanionTable({
       document.removeEventListener("visibilitychange", resume);
     };
   }, [sessionKey, load]);
+  useEffect(() => {
+    setEpicReady(null);
+    latestEpicGame.current = null;
+    if (!session.seatId) return;
+    const gate = createEpicReadyGate({
+      read: () => getCompanionEpicReady(session),
+      mark: () => markCompanionEpicReady(session),
+      change: (state) => setEpicReady({ sessionKey, state }),
+    });
+    epicGate.current = gate;
+    const timer = window.setInterval(() => {
+      if (!document.hidden && latestEpicGame.current)
+        void gate.refresh(latestEpicGame.current);
+    }, 1500);
+    return () => {
+      gate.dispose();
+      if (epicGate.current === gate) epicGate.current = null;
+      window.clearInterval(timer);
+    };
+  }, [sessionKey]);
+  useEffect(() => {
+    if (snapshot?.game.id === session.gameId) {
+      latestEpicGame.current = snapshot.game;
+      void epicGate.current?.refresh(snapshot.game);
+    }
+  }, [snapshot, sessionKey]);
+  const epicReadyState =
+    epicReady?.sessionKey === sessionKey ? epicReady.state : undefined;
+  const epicBlocked =
+    !!session.seatId &&
+    nativeEpicSetupComplete(snapshot?.game) &&
+    epicReadyState?.status?.ready !== true;
   const perform = useCallback(
     async (action: () => Promise<unknown>) => {
+      if (epicBlocked)
+        throw new Error(
+          "Wait for all three groups to finish setup before continuing.",
+        );
       if (inFlight.current) return;
       inFlight.current = true;
       generation.current++;
@@ -597,7 +716,7 @@ export function CompanionTable({
         if (mounted.current) setBusy(false);
       }
     },
-    [load],
+    [load, epicBlocked],
   );
   const submit = (reply: CompanionAnswer) =>
     perform(() => answerCompanionGame(session, reply));
@@ -893,7 +1012,7 @@ export function CompanionTable({
             </button>
             <button
               className="icon-button"
-              disabled={busy || game.undoActionStep == null}
+              disabled={busy || epicBlocked || game.undoActionStep == null}
               onClick={() => {
                 void perform(() => undoCompanionGame(session)).catch(() => {});
               }}
@@ -938,11 +1057,10 @@ export function CompanionTable({
                       aria-pressed={actorId === idOf(investigator)}
                     >
                       <span className="seat-portrait">
-                        {cardArt(c) ? (
-                          <img src={thumbArt(cardArt(c))} alt="" />
-                        ) : (
-                          <StarFour />
-                        )}
+                        <NativePortrait
+                          card={c}
+                          investigatorId={idOf(investigator)}
+                        />
                       </span>
                       <span className="seat-copy">
                         <small>
@@ -1441,8 +1559,39 @@ export function CompanionTable({
             <section
               className="companion-checkpoint"
               aria-label="Current decision"
-              aria-busy={busy}
+              aria-busy={busy || epicBlocked}
             >
+              {epicBlocked && (
+                <div
+                  className="companion-waiting"
+                  aria-label="Epic setup readiness"
+                  role="status"
+                >
+                  <p>
+                    {epicReadyState?.pending
+                      ? "Confirming this group's setup…"
+                      : "Waiting for all three groups to finish setup."}
+                  </p>
+                  {epicReadyState?.error ? (
+                    <>
+                      <p role="alert">{epicReadyState.error}</p>
+                      <Button
+                        secondary
+                        onClick={() => {
+                          void epicGate.current?.refresh(snapshot?.game, true);
+                        }}
+                      >
+                        Retry readiness
+                      </Button>
+                    </>
+                  ) : (
+                    <p>
+                      Open the other groups to finish their setup. This table
+                      will continue automatically.
+                    </p>
+                  )}
+                </div>
+              )}
               {model && snapshot ? (
                 <CompanionDecision
                   key={`${model.playerId}:${model.questionVersion}:${model.tag}`}
@@ -1450,7 +1599,7 @@ export function CompanionTable({
                   model={model}
                   context={context}
                   cards={cardMap}
-                  busy={busy}
+                  busy={busy || epicBlocked}
                   inspect={inspectCard}
                   submit={submit}
                   upgrade={upgrade}

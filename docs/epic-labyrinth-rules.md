@@ -1,6 +1,6 @@
 # Epic Labyrinth rules extension
 
-Implementation is in progress. A printed card definition or a front/back alias does not establish gameplay support. The separate `rules/extensions/epic-labyrinth` tree must be staged, compiled and exercised before it is included in a runtime completion claim.
+The separate `rules/extensions/epic-labyrinth` tree is staged and compiled in the shared Barkham/Labyrinth/Machinations native aggregate. Its exercised mechanics are recorded below; a printed definition or front/back alias alone does not establish gameplay support.
 
 ## Verified scope
 
@@ -31,4 +31,10 @@ The existing Epic framework persists invertible integer deltas. Cards and entiti
 
 Round and stage barriers have two phases: all live groups arrive, then all finish their permitted windows. The coordinator releases a generation once. Retries, reconnects and saved games consume the same generation without replaying rewards or transfers. Private exchanges are scoped to the investigators authorized by the relevant card; other groups receive only public progress.
 
-Required proof includes all three setup roles, both chaos bags, synchronized story draws, round/stage barriers, every story branch, card/token/entity identity preservation through transfers, rejected duplicate operations, undo, and save/reload while waiting or exchanging. The current build is completing Barkham first; this extension is not part of that artifact yet.
+Entire-playthrough completion requires all three setup roles, both chaos bags, synchronized story draws, round/stage barriers, every story branch, card/token/entity identity preservation through transfers, rejected duplicate operations, undo, and save/reload while waiting or exchanging.
+
+## Verification status
+
+On 7 October 2026 the complete Linux native engine/API graph compiled and linked with all 8,307 library objects. The full sanitized suite passes **194 examples, zero failures**, including **73 Labyrinth cases**. These exercise the coordinator, original cards/stories/transfers and actual native-loop round arrival. Fresh group A/B/C setup receives its locked replica before the native loop; exact canonical and legacy quoted event IDs reach the same adapter.
+
+The shared dispatcher now executes the transformed gate message instead of the outer original message. Actual API, managed-restart and browser results are recorded separately in [aggregate evidence and exact scope](import-native-aggregate-linux-2026-10-07.md). The private Linux build does not create a signed macOS distribution or unlock the normal installation gate.

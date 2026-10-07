@@ -5,6 +5,11 @@
     "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth\nimport Api.Arkham.ChronicleMachinations qualified as ChronicleMachinations"
   ],
   [
+    "arkham-api/library/Api/Handler/Arkham/Games/Shared.hs",
+    "seedEpicReplicaMessages labyrinthSync gameJson",
+    "seedEpicReplicaMessages (labyrinthSync <> machinationsSync) gameJson"
+  ],
+  [
     "arkham-api/library/Api/Handler/Arkham/Undo.hs",
     "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth",
     "import Api.Arkham.ChronicleLabyrinth qualified as ChronicleLabyrinth\nimport Api.Arkham.ChronicleMachinations qualified as ChronicleMachinations"

@@ -1,5 +1,6 @@
 import scans from "../../public/data/art-manifest.json";
 import raw from "../../public/data/core-2026.json";
+import { reverseCardPrinting } from "../../scripts/card-artwork.mjs";
 import type { Card, Difficulty } from "./types";
 import { SPREADING_FLAMES } from "./scenario";
 export const cards = raw as Card[];
@@ -175,7 +176,8 @@ export const thumbArt = (src?: string) =>
     ? src.replace("/art/cards/", "/art/cards/thumb/")
     : src;
 export const cardArt = (c: Card, reverse = false) => {
-  const local = CARD_ART[reverse ? `${c.code}b` : c.code];
+  const local =
+    CARD_ART[reverse ? reverseCardPrinting(c.code, c.type_code) : c.code];
   if (local) return local;
   const src = reverse ? c.backimagesrc : c.imagesrc;
   return src?.startsWith("/") ? `https://arkhamdb.com${src}` : src;
@@ -186,8 +188,9 @@ export const cardArt = (c: Card, reverse = false) => {
  */
 export const cardArtSources = (c: Card, reverse = false): string[] => {
   const primary = cardArt(c, reverse);
+  const printing = reverse ? reverseCardPrinting(c.code, c.type_code) : c.code;
   const published = /^\d{5}[a-z]*$/.test(c.code)
-    ? `https://assets.arkhamhorror.app/img/arkham/cards/${c.code}${reverse ? "b" : ""}.avif`
+    ? `https://assets.arkhamhorror.app/img/arkham/cards/${printing}.avif`
     : undefined;
   return [...new Set([primary, published].filter((v): v is string => !!v))];
 };

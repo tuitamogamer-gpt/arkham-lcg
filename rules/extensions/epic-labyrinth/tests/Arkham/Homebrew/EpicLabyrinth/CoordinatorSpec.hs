@@ -1,6 +1,7 @@
 module Arkham.Homebrew.EpicLabyrinth.CoordinatorSpec (spec) where
 
 import Arkham.Card.Id (unsafeMakeCardId)
+import Arkham.Card.CardCode (CardCode (..), HasCardCode (toCardCode))
 import Arkham.Homebrew.EpicLabyrinth.Coordinator
 import Arkham.Homebrew.EpicLabyrinth.Types
 import Arkham.Homebrew.EpicLabyrinth.UndoBoundary
@@ -15,6 +16,28 @@ import Test.Hspec qualified as H
 
 spec :: H.Spec
 spec = H.describe "Epic Labyrinth coordinator" do
+  H.describe "native persisted Epic scenario identity used by both adapters" do
+    let scenarios = ["70001", "87001"] :: [ScenarioId]
+        rawCode = unCardCode . toCardCode
+
+    H.it "recognizes the actual native creator's previously persisted quoted Show values" do
+      map tshow scenarios `H.shouldBe` ["\"70001\"", "\"87001\""]
+      for_ scenarios \scenario ->
+        matchesStoredScenarioId scenario (Just $ tshow scenario) `H.shouldBe` True
+
+    H.it "recognizes canonical raw scenario codes for newly created events" do
+      for_ scenarios \scenario ->
+        matchesStoredScenarioId scenario (Just $ rawCode scenario) `H.shouldBe` True
+
+    H.it "rejects other scenarios, back faces, malformed quoting and missing identities" do
+      for_ scenarios \scenario -> do
+        let code = rawCode scenario
+            other = if code == "70001" then "87001" else "70001" :: ScenarioId
+            invalid = [Nothing, Just $ rawCode other, Just $ tshow other,
+              Just $ code <> "b", Just $ tshow $ code <> "b",
+              Just $ " " <> code, Just $ "\"" <> code]
+        map (matchesStoredScenarioId scenario) invalid `H.shouldBe` replicate (length invalid) False
+
   H.describe "shared participant undo boundaries used by both Epic adapters" do
     let origin = "past-game" :: Text
         participant = "present-game" :: Text

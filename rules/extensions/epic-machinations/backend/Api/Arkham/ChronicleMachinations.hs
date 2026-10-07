@@ -6,7 +6,7 @@ module Api.Arkham.ChronicleMachinations where
 
 import Api.Arkham.Epic (lookupGameEvent)
 import Api.Arkham.Helpers (GameApp (..), runGameApp)
-import Api.Arkham.ChronicleLabyrinth (SavedGroup (..), loadGroup, scenarioMetaValue, roster, jsonText, decodeStored)
+import Api.Arkham.ChronicleLabyrinth (SavedGroup (..), loadGroup, scenarioMetaValue, jsonText, decodeStored)
 import Arkham.Card.CardCode (CardCode (..))
 import Arkham.Classes.HasQueue (newQueue)
 import Arkham.Entities (Entities (..))
@@ -17,8 +17,9 @@ import Arkham.Game.State (GameState (..))
 import Arkham.Homebrew.EpicLabyrinth.ReturnBridge qualified as OwnerReturn
 import Arkham.Homebrew.EpicLabyrinth.ReturnTypes
 import Arkham.Homebrew.EpicLabyrinth.UndoBoundary (coupledUndoAllowed, validateParticipantUndo)
-import Arkham.Homebrew.EpicLabyrinth.Types (LabyrinthGroup (..), OperationId, DeliveryId)
+import Arkham.Homebrew.EpicLabyrinth.Types (LabyrinthGroup (..), OperationId, DeliveryId, matchesStoredScenarioId)
 import Arkham.Homebrew.EpicMachinations.Coordinator qualified as Coordinator
+import Arkham.Homebrew.EpicMachinations.Helpers (resumeSharedSetupQueue)
 import Arkham.Homebrew.EpicMachinations.Transactions qualified as Physical
 import Arkham.Homebrew.EpicMachinations.Transport (moveEdwin, edwinInteractionPending)
 import Arkham.Homebrew.EpicMachinations.Types
@@ -53,7 +54,7 @@ data MachinationsJournal = MachinationsJournal
   deriving stock Generic
   deriving anyclass (ToJSON, FromJSON)
 
-isMachinationsEvent event = event.arkhamEpicEventScenarioId == Just "87001"
+isMachinationsEvent event = matchesStoredScenarioId "87001" event.arkhamEpicEventScenarioId
 eraForOrdinal = \case
   0 -> PastEra
   1 -> PresentEra
@@ -94,9 +95,10 @@ loadCoordinator eid groups = do
         machinationsBossHealth = 6 * parent.arkhamEpicEventTotalInvestigators,
         machinationsBossRemaining = 6 * parent.arkhamEpicEventTotalInvestigators}
       stored = case rows of [] -> fresh; Single value : _ -> decodeStored value
-      hydrated = stored {machinationsEras = Map.fromList
-        [(era, (Map.findWithDefault (EraProgress mempty False mempty 0 False False) era stored.machinationsEras)
-          {eraInvestigators = roster saved.savedGame}) | (era, saved) <- groups]}
+      -- The initial action criteria must already see the actual Edwin, before
+      -- an unrelated clue transfer or explicit progress request can run.
+      hydrated = Physical.syncNativeEraProgress (Map.fromList
+        [(era, saved.savedGame) | (era, saved) <- groups]) stored
   rawExecute "INSERT INTO chronicle_machinations_events(event_id,state) VALUES (?,?::jsonb) ON CONFLICT(event_id) DO NOTHING"
     [toPersistValue eid, toPersistValue $ jsonText hydrated]
   pure hydrated
@@ -145,14 +147,17 @@ runInjected saved messages = do
       runGameApp (GameApp ref queue gen (pure . const ()) Nothing) $ runMessages (tshow saved.savedId) Nothing
       readIORef ref
   let mayInterrupt = null game0.gameQuestion || all waitingQuestion (Map.elems game0.gameQuestion)
-  if null work then pure saved {savedGame = game0}
+      resumed = if ending then Nothing else resumeSharedSetupQueue game0 saved.savedQueue work
+  if null work && isNothing resumed then pure saved {savedGame = game0}
   else if not mayInterrupt then pure saved {savedGame = game0, savedQueue = saved.savedQueue <> work}
   else do
     gameRef <- newIORef game0
-    -- A final retained ask stops the native loop without replacing an unrelated
-    -- pending test or payment with a fresh investigation window. A delivery
-    -- that asks its own question pauses before this saved continuation.
-    queueRef <- newQueue $ work <> [AskMap game0.gameQuestion | not $ null game0.gameQuestion]
+    -- Ordinary deliveries retain the current ask and saved continuation. At
+    -- the typed shared-setup checkpoint, deferred installations and their tail
+    -- run once without restoring the obsolete wait. A new delivery question
+    -- still pauses the native loop before that continuation.
+    queueRef <- newQueue $ fromMaybe
+      (work <> [AskMap game0.gameQuestion | not $ null game0.gameQuestion]) resumed
     genRef <- newIORef $ mkStdGen game0.gameSeed
     runGameApp (GameApp gameRef queueRef genRef (pure . const ()) Nothing)
       $ runMessages (tshow saved.savedId) Nothing
@@ -160,7 +165,8 @@ runInjected saved messages = do
     queue <- readIORef $ queueToRef queueRef
     -- A global printed ending discards the interrupted test/action continuation.
     -- Any new native resolution/reward question and its queue remain intact.
-    pure saved {savedGame = game, savedQueue = queue <> if ending then [] else saved.savedQueue}
+    pure saved {savedGame = game,
+      savedQueue = queue <> if ending || isJust resumed then [] else saved.savedQueue}
  where
   decodeValue :: FromJSON a => Value -> a
   decodeValue = \value -> case fromJSON value of
@@ -235,29 +241,32 @@ drain :: Int -> MachinationsState -> Map Era SavedGroup -> IO (MachinationsState
 drain n state groups
   | n >= 64 = error "Machinations coordinator exceeded its transaction limit"
   | otherwise = do
-      let returns = [(era, request) | (era, saved) <- Map.toList groups,
+      let authoritative = refresh state groups
+          returns = [(era, request) | (era, saved) <- Map.toList groups,
             request <- OwnerReturn.ownerReturnRequests saved.savedGame]
           pending = [(era, request) | (era, saved) <- Map.toList groups, request <- eraRequests saved.savedGame]
           available era saved = filter (eligibleDelivery saved) $ Map.findWithDefault [] era state.machinationsDeliveries
-      if null returns && null pending && all (\(era, saved) -> null $ available era saved) (Map.toList groups)
+      if authoritative == state && null returns && null pending
+        && all (\(era, saved) -> null $ available era saved) (Map.toList groups)
+        && all (\saved -> isNothing $ resumeSharedSetupQueue saved.savedGame saved.savedQueue []) (Map.elems groups)
         then pure (state, groups) else do
-        (returned, returnedGroups) <- foldM applyReturn (state, groups) returns
+        (returned, returnedGroups) <- foldM applyReturn (authoritative, groups) returns
         (next, physical) <- foldM apply (returned, returnedGroups) pending
+        let synchronized = refresh next physical
         updated <- for (Map.toList physical) \(era, saved) -> do
           let acknowledgments = [request.machinationsRequestId | (origin, request) <- pending, origin == era]
-              replica = either (error . show) id $ Coordinator.machinationsReplicaFor era next
+              replica = either (error . show) id $ Coordinator.machinationsReplicaFor era synchronized
               deliveries = filter (eligibleDelivery saved) $ Map.findWithDefault [] era next.machinationsDeliveries
               messages = [ScenarioSpecific "epicMachinations.replica" $ toJSON replica]
                 <> [ScenarioSpecific "epicMachinations.ackRequests" $ toJSON acknowledgments | not $ null acknowledgments]
                 <> map (ScenarioSpecific "epicMachinations.delivery" . toJSON) deliveries
           (era,) <$> runInjected saved messages
-        drain (n + 1) next $ Map.fromList updated
+        drain (n + 1) synchronized $ Map.fromList updated
  where
-  refresh current worlds = current {machinationsEras = Map.mapWithKey
-    (\era saved -> Physical.nativeEraProgress era saved.savedGame) worlds}
+  refresh current worlds = Physical.syncNativeEraProgress (Map.map savedGame worlds) current
   apply (current, worlds) (origin, serialized) = do
     let operation = case serialized.machinationsRequestOperation of
-          ReportProgress _ -> ReportProgress $ Physical.nativeEraProgress origin (worlds Map.! origin).savedGame
+          ReportProgress _ -> ReportProgress $ (refresh current worlds).machinationsEras Map.! origin
           other -> other
         request = serialized {machinationsRequestEra = origin, machinationsRequestOperation = operation}
         authoritative = case operation of

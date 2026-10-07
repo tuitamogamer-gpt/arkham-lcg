@@ -76,18 +76,26 @@ reloaded the persisted result.
 
 **Full-catalog scripting is not complete.** The original Barkham extension now
 implements its 57 full cards and five investigators in a verified native build.
-Its 42 focused Haskell examples and all five real saved-game setup/action checks
-pass. Epic Labyrinth and Machinations group extensions are being compiled and
-verified; several upstream campaigns/standalones retain beta content. A declared card
+Its 42 focused Haskell examples and all five fresh real saved-game setup/action
+checks pass. The shared Barkham, Epic Labyrinth and Machinations native engine/API
+now passes **194 Haskell examples** and **31 actual API check groups across six
+Epic games**, including physical transfers, undo boundaries, timers and endings.
+Fresh client setup/Ready, twelve real Chromium/WebKit table actions and complete
+eleven-save persistence across a managed database restart also pass.
+[Current evidence and exact scope](docs/import-native-aggregate-linux-2026-10-07.md)
+records the targeted fixtures and remaining playthrough/distribution boundaries.
+Several upstream campaigns/standalones retain beta content. A declared card
 definition is not a certification of all its interactions. Product availability
 reports registration separately from implementation claims. The companion
-currently runs locally on Apple silicon; the static production deployment does
-not include its Haskell/PostgreSQL server. The native game remains usable
+distribution runs locally on Apple silicon. The separate private Linux acceptance
+route uses the actual compiled aggregate without claiming a signed installation;
+the static production deployment does not include its Haskell/PostgreSQL server.
+The native game remains usable
 without the companion.
 
 The engine scripts these five fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **358 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **410 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 

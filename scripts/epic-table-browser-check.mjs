@@ -8,13 +8,20 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, webkit } from "playwright";
+import { acceptanceManifest } from "./rules-qa-runtime-identity.mjs";
+import { installEpicArtworkCapture, verifyEpicArtwork, replaceEpicArtworkIndexes } from "./epic-browser-artwork.mjs";
 
 if (process.argv.includes("--help")) {
   console.log(
-    "EPIC_QA_CONFIRMED=1 node scripts/epic-table-browser-check.mjs\nRequires a fresh epic-runtime-check.mjs --prepare-table report. Defaults: API http://127.0.0.1:5294, UI http://127.0.0.1:5298, EPIC_TABLE_SEED=output/epic-table-seed-2026-10-07/report.json, QA_OUT=output/epic-tables-2026-10-07. Optional: RULES_URL (or ARKHAM_RULES_URL), BASE_URL, ARKHAM_RULES_QA_MANIFEST. Performs twelve actual UI resource actions across Chromium and WebKit; never creates events or seeds native state.",
+    "EPIC_QA_CONFIRMED=1 node scripts/epic-table-browser-check.mjs\nRequires a fresh epic-runtime-check.mjs --prepare-table report. Defaults: API http://127.0.0.1:5294, UI http://127.0.0.1:5298, EPIC_TABLE_SEED=output/epic-table-seed-2026-10-07/report.json, QA_OUT=output/epic-tables-2026-10-07. Optional: RULES_URL (or ARKHAM_RULES_URL), BASE_URL, ARKHAM_RULES_QA_MANIFEST. Performs twelve actual UI resource actions across Chromium and WebKit; never creates events or seeds native state.\nWebKit uses a separate actual browser process per seat. EPIC_WEBKIT_HEADLESS=0 selects the genuine headed implementation (GTK on Linux); provide a local DISPLAY, optionally GDK_BACKEND=x11 and LIBGL_ALWAYS_SOFTWARE=1. The report records the actual launch settings.\n--diagnose-existing-tail instead reads and reloads the three existing Labyrinth tables in WebKit with every write blocked. It records diagnosticPassed and always leaves passed=false; existing games may already have been answered.",
   );
   process.exit(0);
 }
+const diagnostic = process.argv.includes("--diagnose-existing-tail");
+assert.ok([undefined, "0", "1"].includes(process.env.EPIC_WEBKIT_HEADLESS), "EPIC_WEBKIT_HEADLESS must be 0 or 1 when provided.");
+const webkitHeadless = process.env.EPIC_WEBKIT_HEADLESS !== "0";
+if (process.platform === "linux" && !webkitHeadless) assert.ok(process.env.DISPLAY, "Headed Linux WebKit requires an actual display (for example, a private Xvfb display).");
+assert.ok(process.argv.length === 2 || (process.argv.length === 3 && diagnostic), "Use the full proof or --diagnose-existing-tail.");
 assert.equal(
   process.env.EPIC_QA_CONFIRMED,
   "1",
@@ -63,7 +70,14 @@ const sha = (value) => createHash("sha256").update(value).digest("hex"),
 const proof = {
   startedAt: new Date().toISOString(),
   passed: false,
-  mode: "live candidate UI; actual seat contexts and resource answers; no response mocks",
+  mode: diagnostic ? "GET-only existing WebKit reload-tail diagnostic; no native writes" : "live candidate UI; actual seat contexts and resource answers; no response mocks",
+  diagnosticOnly: diagnostic,
+  seatObservation: "Each real seat page is brought to foreground before decision visibility and animation-frame checks.",
+  browserSeatTopology: "Chromium: one real browser process with three distinct isolated seat contexts per event. WebKit: three separately launched real browser processes per event, each owning one seat context.",
+  webkitLaunch: { headless: webkitHeadless,
+    ...(process.platform === "linux" ? { implementation: webkitHeadless ? "WPE" : "GTK",
+      environment: { DISPLAY: process.env.DISPLAY ?? null, GDK_BACKEND: process.env.GDK_BACKEND ?? null,
+        LIBGL_ALWAYS_SOFTWARE: process.env.LIBGL_ALWAYS_SOFTWARE ?? null } } : {}) },
   service: service.origin,
   ui: base.origin,
   seedPath,
@@ -72,10 +86,74 @@ const proof = {
   writes: [],
   blockedRequests: [],
   errors: [],
+  resourceFailures: [],
+  toleratedArtwork: [],
+  clientAssets: [],
+  clientAssetAttempts: [],
+  stages: [],
+  cleanupErrors: [],
+  failureDiagnostics: [],
+  nativeReadCompletions: [],
+  seatBrowserProcesses: [],
 };
 await mkdir(output, { recursive: true });
 const checkpoint = () =>
   writeFile(resolve(output, "report.json"), JSON.stringify(proof, null, 2) + "\n");
+const pageTables = new WeakMap();
+async function bounded(operation, milliseconds, label) {
+  let timer;
+  try {
+    return await Promise.race([operation(), new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Acceptance operation timed out: ${label}`)), milliseconds);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+async function stage(page, label, operation, milliseconds = 35000) {
+  const table = pageTables.get(page), entry = { label, engine: table?.engine, gameId: table?.seat.gameId,
+    documentId: table?.documentId, startedAt: new Date().toISOString() };
+  proof.stages.push(entry);
+  proof.progress = entry;
+  await checkpoint();
+  try {
+    const result = await bounded(operation, milliseconds, label);
+    entry.finishedAt = new Date().toISOString();
+    return result;
+  } catch (error) {
+    entry.error = redact(error.stack || error);
+    proof.primaryFailure ||= entry.error;
+    await checkpoint();
+    throw error;
+  }
+}
+async function cleanup(label, operation) {
+  try { await bounded(operation, 10000, label); }
+  catch (error) { proof.cleanupErrors.push({ label, error: redact(error.stack || error) }); await checkpoint(); }
+}
+async function diagnoseFailure(tables) {
+  await Promise.all(tables.map(async (table) => {
+    const entry = { engine: table.engine, gameId: table.seat.gameId, documentId: table.documentId,
+      url: table.page.url(), closed: table.page.isClosed(), observedAt: new Date().toISOString() };
+    proof.failureDiagnostics.push(entry);
+    try {
+      entry.dom = await bounded(() => table.page.evaluate(() => {
+        const decision = document.querySelector(".chronicle-companion-table .companion-decision"),
+          rectangle = decision?.getBoundingClientRect();
+        return { title: document.title, readyState: document.readyState, visibility: document.visibilityState,
+          bodyText: document.body?.innerText.slice(0, 20000),
+          decisionPresent: Boolean(decision), decisionRectangle: rectangle?.toJSON(),
+          decisionDisplay: decision ? getComputedStyle(decision).display : null,
+          decisionVisibility: decision ? getComputedStyle(decision).visibility : null,
+          projection: typeof window.render_game_to_text === "function" ? JSON.parse(window.render_game_to_text()) : null };
+      }), 6000, "read-only failure DOM probe");
+    } catch (error) { entry.domError = redact(error.stack || error); }
+    try {
+      entry.screenshot = `failure-${table.engine}-group-${table.seat.ordinal}-document-${table.documentId}.png`;
+      await bounded(() => table.page.screenshot({ path: resolve(output, entry.screenshot), fullPage: true }),
+        6000, "read-only failure screenshot");
+    } catch (error) { entry.screenshotError = redact(error.stack || error); }
+  }));
+  await checkpoint();
+}
 await checkpoint();
 const get = async (path) => {
   const response = await fetch(new URL(path, service), {
@@ -84,7 +162,38 @@ const get = async (path) => {
   assert.equal(response.status, 200, `Live bridge GET ${path}`);
   return response.json();
 };
-let allSeats = [];
+let allSeats = [], expectedArtworkNames = {}, cardDefinitions = [];
+const classifiedErrors = new Set(), classifiedFailures = new Set(), witnessedErrors = new Set(), witnessedFailures = new Set();
+async function attestArtwork(tables) {
+  for (const table of tables) {
+    await stage(table.page, "client-script-audit", () => Promise.all([...table.assetTasks]), 20000);
+    const scope = { errors: proof.errors, resourceFailures: proof.resourceFailures,
+      gameId: table.seat.gameId, engine: table.engine, documentId: table.documentId,
+      classifiedErrors, classifiedFailures };
+    replaceEpicArtworkIndexes(scope);
+    const nativeSnapshot = (await stage(table.page, "artwork-native-snapshot", () => readSeat(table.seat), 25000)).snapshot;
+    const witness = await stage(table.page, "same-document-artwork-inspection", () => verifyEpicArtwork(table.page, {
+      errors: proof.errors, resourceFailures: proof.resourceFailures,
+      gameId: table.seat.gameId, engine: table.engine,
+      documentId: table.documentId, expectedNames: expectedArtworkNames,
+      nativeSnapshot, cardDefinitions,
+    }), 35000);
+    const newlyClassified = witness.classifiedErrorIndexes.some((index) => !witnessedErrors.has(index)) ||
+      witness.classifiedFailureIndexes.some((index) => !witnessedFailures.has(index));
+    replaceEpicArtworkIndexes({ ...scope, result: witness });
+    for (const index of witness.classifiedErrorIndexes) witnessedErrors.add(index);
+    for (const index of witness.classifiedFailureIndexes) witnessedFailures.add(index);
+    if (witness.evidence.length && newlyClassified) proof.toleratedArtwork.push({
+      engine: table.engine, gameId: table.seat.gameId, ...witness,
+    });
+  }
+}
+function assertClientErrors() {
+  assert.deepEqual(proof.errors.filter((_, index) => !classifiedErrors.has(index)), [],
+    "No console/page error remains without exact same-render card-artwork fallback evidence.");
+  assert.deepEqual(proof.resourceFailures.filter((_, index) => !classifiedFailures.has(index)), [],
+    "Every failed request must have exact same-render card-artwork fallback evidence.");
+}
 const readSeat = async (seat) => {
     const [snapshot, cursor] = await Promise.all([
       get(`/chronicle/play/games/${seat.gameId}?seat=${seat.id}`),
@@ -123,15 +232,19 @@ const readSeat = async (seat) => {
           `Only the answering seat may change: ${seat.gameId}`,
         );
   };
-const projection = (page) => page.evaluate(() => JSON.parse(window.render_game_to_text())),
-  frames = (page) =>
-    page.evaluate(async () => {
+const projection = (page) => stage(page, "native-text-projection", () => page.evaluate(() => JSON.parse(window.render_game_to_text()))),
+  foreground = (page) => stage(page, "observe-seat-in-foreground", () => page.bringToFront()),
+  frames = async (page) => {
+    await foreground(page);
+    return stage(page, "fonts-and-animation-frames", () => page.evaluate(async () => {
       await document.fonts.ready;
       await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
-    });
+    }));
+  };
 async function pending(page, expected) {
-  await page.locator(".chronicle-companion-table .companion-decision").waitFor();
-  await page.waitForFunction(
+  await foreground(page);
+  await stage(page, "pending-decision-visible", () => page.locator(".chronicle-companion-table .companion-decision").waitFor());
+  await stage(page, "pending-native-resource-render", () => page.waitForFunction(
     ({ resources, remainingActions, phase }) => {
       if (typeof window.render_game_to_text !== "function") return false;
       const rendered = JSON.parse(window.render_game_to_text()),
@@ -142,7 +255,7 @@ async function pending(page, expected) {
         rendered.decision.options.some((choice) => choice.text === "Take 1 resource" && !choice.disabled);
     },
     expected,
-  );
+  ));
   await page.locator(".companion-decision[aria-busy='false']").waitFor();
   assert.equal(await page.locator("iframe").count(), 0, "Chronicle owns the actual table UI.");
   assert.equal(await page.locator(".companion-decision[aria-busy='true']").count(), 0);
@@ -157,37 +270,146 @@ async function pending(page, expected) {
   return rendered;
 }
 async function mobile(page, filename) {
-  await page.setViewportSize({ width: 320, height: 900 });
+  await stage(page, "mobile-viewport", () => page.setViewportSize({ width: 320, height: 900 }));
   await frames(page);
-  const layout = await page.evaluate(() => ({
+  const layout = await stage(page, "mobile-layout", () => page.evaluate(() => ({
     viewport: innerWidth,
     document: document.documentElement.scrollWidth,
     body: document.body.scrollWidth,
     decision: document.querySelector(".companion-decision")?.getBoundingClientRect().toJSON(),
-  }));
+  })));
   assert.ok(layout.document <= layout.viewport + 1, "Actual native table fits 320px without page overflow.");
   assert.ok(layout.decision && layout.decision.left >= -1 && layout.decision.right <= 321,
     "Pending native decision stays inside the mobile viewport.");
-  await page.screenshot({ path: resolve(output, filename), fullPage: true });
+  await stage(page, "mobile-screenshot", () => page.screenshot({ path: resolve(output, filename), fullPage: true }));
   return layout;
 }
-async function runEvent(browser, engine, event) {
-  const contexts = [], tables = [];
+async function drainNativeReads(table, observation, limit = 20000) {
+    // Foreground observation triggers the product's genuine visibility poll.
+    // Let its reads finish before navigating away rather than cancelling them.
+    const waitingAt = Date.now();
+    observation.nativeReadsPendingAtStart = table.nativeReads.size;
+    observation.nativeReadBodiesCompletedAtStart = table.nativeBodiesCompleted;
+    let quietAt;
+    for (;;) {
+      if (table.nativeReads.size) quietAt = undefined;
+      else quietAt ??= Date.now();
+      if (quietAt && Date.now() - quietAt >= 100) break;
+      assert.ok(Date.now() - waitingAt < limit, "Native UI reads must finish before owned navigation or close.");
+      await new Promise((done) => setTimeout(done, 25));
+    }
+    Object.assign(observation, { nativeReadsPendingBeforeNavigation: table.nativeReads.size,
+      nativeReadBodiesCompletedBeforeNavigation: table.nativeBodiesCompleted,
+      nativeReadsSettledAt: new Date().toISOString(), nativeReadQuietMilliseconds: Date.now() - quietAt });
+}
+async function reloadSeat(page, label) {
+  return stage(page, label, async () => {
+    await drainNativeReads(pageTables.get(page), proof.progress);
+    return page.reload();
+  });
+}
+async function runEvent(browser, engine, event, browserProof) {
+  const contexts = [], tables = [], seatBrowsers = [];
   try {
     for (const seat of event.seats) {
-      const context = await browser.newContext({
+      const owner = engine === "webkit"
+        ? await bounded(() => webkit.launch({ headless: webkitHeadless }), 35000, "independent WebKit seat process launch")
+        : browser;
+      if (engine === "webkit") {
+        seatBrowsers.push(owner);
+        browserProof.version ??= owner.version();
+        assert.equal(owner.version(), browserProof.version, "Every real WebKit seat process uses the same engine version.");
+        proof.seatBrowserProcesses.push({ engine, eventId: event.id, gameId: seat.gameId,
+          ordinal: seat.ordinal, version: owner.version(), launchMethod: "playwright.webkit.launch",
+          headless: webkitHeadless, ...(process.platform === "linux" ? { implementation: proof.webkitLaunch.implementation } : {}),
+          independentLaunch: true, startedAt: new Date().toISOString() });
+      }
+      const context = await owner.newContext({
         viewport: { width: 1440, height: 1050 },
         reducedMotion: "reduce",
         serviceWorkers: "block",
       });
       contexts.push(context);
-      const table = { seat, context, page: await context.newPage(), allowance: null, gets: new Set() };
+      if (engine === "webkit") {
+        assert.equal(owner.contexts().length, 1, "Each independent WebKit process owns exactly one seat context.");
+        proof.seatBrowserProcesses.at(-1).isolatedSeatContexts = owner.contexts().length;
+      }
+      const table = { seat, context, page: await context.newPage(), allowance: null, gets: new Set(), engine, documentId: 0, requestDocuments: new WeakMap(), assetTasks: new Set(), nativeReads: new Set(), nativeReadStarts: new WeakMap(), nativeReadStatuses: new WeakMap(), nativeBodiesCompleted: 0 };
       tables.push(table);
+      pageTables.set(table.page, table);
       table.page.setDefaultTimeout(30000);
-      table.page.on("pageerror", (error) => proof.errors.push({ engine, gameId: seat.gameId, kind: "pageerror", message: redact(error.message) }));
+      table.page.on("framenavigated", (frame) => { if (frame === table.page.mainFrame()) table.documentId += 1; });
+      table.page.on("request", (request) => {
+        table.requestDocuments.set(request, table.documentId);
+        const url = new URL(request.url());
+        if (request.method() === "GET" && url.origin === service.origin) {
+          table.nativeReads.add(request);
+          table.nativeReadStarts.set(request, new Date().toISOString());
+        }
+      });
+      table.page.on("requestfinished", (request) => {
+        if (table.nativeReads.delete(request)) {
+          table.nativeBodiesCompleted += 1;
+          proof.nativeReadCompletions.push({ engine, gameId: seat.gameId,
+            documentId: table.requestDocuments.get(request), url: request.url(),
+            startedAt: table.nativeReadStarts.get(request), status: table.nativeReadStatuses.get(request),
+            bodyCompletedAt: new Date().toISOString(), completionEvent: "Playwright requestfinished; response body downloaded" });
+        }
+      });
+      await stage(table.page, "install-artwork-capture", () => installEpicArtworkCapture(table.page));
+      table.page.on("pageerror", (error) => proof.errors.push({ engine, gameId: seat.gameId, documentId: table.documentId, kind: "pageerror", message: redact(error.message) }));
       table.page.on("console", (message) => {
         if (message.type() === "error")
-          proof.errors.push({ engine, gameId: seat.gameId, kind: "console", message: redact(message.text()) });
+          proof.errors.push({ engine, gameId: seat.gameId, documentId: table.documentId, kind: "console", message: redact(message.text()), location: message.location() });
+      });
+      table.page.on("response", (response) => {
+        const url = new URL(response.url()), request = response.request(), documentId = table.requestDocuments.get(request);
+        if (table.nativeReads.has(request)) table.nativeReadStatuses.set(request, response.status());
+        if (response.status() >= 400) proof.resourceFailures.push({
+          engine, gameId: seat.gameId, documentId, url: response.url(), status: response.status(),
+          resourceType: request.resourceType(),
+        });
+        if (url.origin === base.origin && request.resourceType() === "script" && /^\/assets\/[^/]+\.js$/.test(url.pathname)) {
+          const attempt = { engine, gameId: seat.gameId, documentId, url: url.href,
+            scriptResponseStatus: response.status(), startedAt: new Date().toISOString() };
+          proof.clientAssetAttempts.push(attempt);
+          const task = (async () => {
+            assert.equal(response.status(), 200, "Actual built client script loads successfully.");
+            const sourcePath = resolve("dist", url.pathname.slice(1)), expected = await readFile(sourcePath);
+            attempt.builtSha256 = sha(expected);
+            let timer, actualSha256, verificationMethod, fetchedStatus;
+            try {
+              const actual = await Promise.race([response.body(), new Promise((_, reject) => {
+                timer = setTimeout(() => reject(Object.assign(new Error("Script response body audit timeout"), { auditTimeout: true })), 5000);
+              })]);
+              actualSha256 = sha(actual);
+              verificationMethod = "original-script-response-body";
+            } catch (error) {
+              if (!error.auditTimeout) throw error;
+              const fetched = await table.page.evaluate(async (assetUrl) => {
+                const reply = await fetch(assetUrl, { signal: AbortSignal.timeout(10000) });
+                const bytes = await reply.arrayBuffer(), digest = await crypto.subtle.digest("SHA-256", bytes);
+                return { status: reply.status, sha256: [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("") };
+              }, url.href);
+              assert.equal(fetched.status, 200, "Read-only browser GET of the exact loaded script URL succeeds.");
+              actualSha256 = fetched.sha256;
+              fetchedStatus = fetched.status;
+              verificationMethod = "browser-context-get-after-script-response-body-timeout";
+            } finally { clearTimeout(timer); }
+            assert.equal(actualSha256, sha(expected), "Actual served client script matches the current built artifact.");
+            Object.assign(attempt, { verificationMethod, fetchedStatus, fetchedSha256: actualSha256, finishedAt: new Date().toISOString() });
+            proof.clientAssets.push({ engine, gameId: seat.gameId, documentId,
+              url: url.href, sourcePath, scriptResponseStatus: response.status(), verificationMethod,
+              fetchedStatus, fetchedSha256: actualSha256, builtSha256: sha(expected) });
+          })().catch((error) => proof.errors.push({ engine, gameId: seat.gameId, documentId,
+            kind: "client artifact", message: redact(error.message) })).finally(() => table.assetTasks.delete(task));
+          table.assetTasks.add(task);
+        }
+      });
+      table.page.on("requestfailed", (request) => {
+        table.nativeReads.delete(request);
+        proof.resourceFailures.push({ engine, gameId: seat.gameId, documentId: table.requestDocuments.get(request),
+          url: request.url(), resourceType: request.resourceType(), failure: request.failure()?.errorText });
       });
       await context.route("**/*", async (route) => {
         const request = route.request(), url = new URL(request.url()),
@@ -224,23 +446,44 @@ async function runEvent(browser, engine, event) {
         proof.blockedRequests.push({ engine, gameId: seat.gameId, method, path, reason: "unapproved write" });
         return route.abort("blockedbyclient");
       });
-      await table.page.goto(`${base.origin}/${seat.tableHash}`);
+      await stage(table.page, "initial-table-navigation", () => table.page.goto(`${base.origin}/${seat.tableHash}`));
     }
     assert.equal(new Set(contexts).size, 3, "Three isolated browser seat contexts.");
+    if (engine === "webkit") assert.equal(new Set(seatBrowsers).size, 3, "Three independently launched real WebKit browser processes.");
     for (const table of tables) {
       const { seat, page } = table,
         prefix = `${engine}-${event.scenarioId}-group-${seat.ordinal}`,
         before = await readAll(), expected = before.get(seat.id).state,
         pendingProjection = await pending(page, expected);
       await frames(page);
-      await page.screenshot({ path: resolve(output, `${prefix}-pending-desktop.png`), fullPage: true });
+      await stage(page, "pending-desktop-screenshot", () => page.screenshot({ path: resolve(output, `${prefix}-pending-desktop.png`), fullPage: true }));
       const pendingLayout = await mobile(page, `${prefix}-pending-mobile.png`);
-      await page.reload();
+      await attestArtwork(tables);
+      assertClientErrors();
+      await reloadSeat(page, "pending-table-reload");
       assert.equal(new URL(page.url()).hash, seat.tableHash, "Reload preserves the selected game and seat.");
       assert.deepEqual(await pending(page, expected), pendingProjection, "Unanswered native decision survives reload.");
       unchanged(before, await readAll());
+      if (diagnostic) {
+        await stage(page, "existing-desktop-viewport", () => page.setViewportSize({ width: 1440, height: 1050 }));
+        const currentProjection = await pending(page, expected);
+        for (const sibling of tables) await pending(sibling.page, before.get(sibling.seat.id).state);
+        await frames(page);
+        await stage(page, "existing-desktop-screenshot", () => page.screenshot({ path: resolve(output, `${prefix}-existing-desktop.png`), fullPage: true }));
+        await mobile(page, `${prefix}-existing-mobile.png`);
+        await attestArtwork(tables);
+        assertClientErrors();
+        await reloadSeat(page, "existing-answered-table-reload");
+        assert.deepEqual(await pending(page, expected), currentProjection, "Existing answered native state survives reload.");
+        unchanged(before, await readAll());
+        await attestArtwork(tables);
+        assertClientErrors();
+        proof.checks.push({ engine, gameId: seat.gameId, diagnosticOnly: true, nativeWrites: 0, savedStateUnchanged: true });
+        await checkpoint();
+        continue;
+      }
       assert.equal(table.allowance, null);
-      await page.setViewportSize({ width: 1440, height: 1050 });
+      await stage(page, "answered-desktop-viewport", () => page.setViewportSize({ width: 1440, height: 1050 }));
       const current = await projection(page),
         choice = current.decision.options.find((entry) => entry.text === "Take 1 resource" && !entry.disabled),
         button = page.locator(".companion-decision").getByRole("button", { name: /^Take 1 resource\b/ });
@@ -269,15 +512,18 @@ async function runEvent(browser, engine, event) {
       for (const sibling of tables)
         await pending(sibling.page, after.get(sibling.seat.id).state);
       await frames(page);
-      await page.screenshot({ path: resolve(output, `${prefix}-answered-desktop.png`), fullPage: true });
+      await stage(page, "answered-desktop-screenshot", () => page.screenshot({ path: resolve(output, `${prefix}-answered-desktop.png`), fullPage: true }));
       const answeredLayout = await mobile(page, `${prefix}-answered-mobile.png`);
-      await page.reload();
+      await attestArtwork(tables);
+      assertClientErrors();
+      await reloadSeat(page, "answered-table-reload");
       assert.equal(new URL(page.url()).hash, seat.tableHash);
       assert.deepEqual(await pending(page, actual), answeredProjection, "Answered native resource/action state survives reload.");
       unchanged(after, await readAll());
       for (const path of ["/chronicle/play/card-definitions", "/chronicle/play/presentation"])
         assert.ok(table.gets.has(path), `Actual native UI loaded ${path}.`);
-      assert.deepEqual(proof.errors, [], "No console errors or page errors.");
+      await attestArtwork(tables);
+      assertClientErrors();
       assert.deepEqual(proof.blockedRequests, [], "No cross-seat request or extra write was attempted.");
       proof.checks.push({
         engine, eventId: event.id, scenarioId: event.scenarioId, gameId: seat.gameId,
@@ -292,21 +538,47 @@ async function runEvent(browser, engine, event) {
       });
       await checkpoint();
     }
+    await attestArtwork(tables);
+    assertClientErrors();
+  } catch (error) {
+    proof.primaryFailure ||= redact(error.stack || error);
+    proof.failedAtStage = { ...proof.progress };
+    await checkpoint();
+    await diagnoseFailure(tables);
+    throw error;
   } finally {
-    await Promise.all(contexts.map((context) => context.close()));
+    await Promise.all(contexts.map((context, index) => cleanup(`${engine} seat context ${index}`, async () => {
+      if (!proof.primaryFailure) {
+        const observation = { label: "native-read-drain-before-context-close", engine,
+          gameId: tables[index].seat.gameId, startedAt: new Date().toISOString() };
+        proof.stages.push(observation);
+        await drainNativeReads(tables[index], observation, 5000);
+        observation.finishedAt = new Date().toISOString();
+      }
+      await context.close();
+    })));
+    await Promise.all(seatBrowsers.map((owner, index) => cleanup(`independent ${engine} seat browser process ${index}`, async () => {
+      await owner.close();
+      proof.seatBrowserProcesses.find((entry) => entry.gameId === event.seats[index].gameId).closedAt = new Date().toISOString();
+    })));
   }
 }
 try {
   const seedBytes = await readFile(seedPath), seed = JSON.parse(seedBytes),
     manifestBytes = manifestPath ? await readFile(manifestPath) : null,
-    manifest = manifestBytes ? JSON.parse(manifestBytes) : null,
+    manifest = manifestBytes ? await acceptanceManifest(manifestPath) : null,
     status = await get("/chronicle/status");
   proof.seedFileSha256 = sha(seedBytes);
-  proof.manifest = manifest ? { path: manifestPath, sha256: sha(manifestBytes), binarySha256: manifest.binarySha256,
+  proof.manifest = manifest ? { path: manifestPath, sha256: sha(manifestBytes), kind: manifest.kind,
+    ...(manifest.scope ? { scope: manifest.scope, platform: manifest.platform, capabilityCertified: false } : {}), binarySha256: manifest.binarySha256,
     extensionSourceSha256: manifest.extensionSourceSha256, extensions: manifest.extensions } : null;
-  proof.runtime = { version: status.version, binarySha256: status.binarySha256,
+  proof.runtime = { version: status.version,
+    ...(status.runtimeScope ? { scope: status.runtimeScope, platform: status.platform, capabilityCertified: false } : {}), binarySha256: status.binarySha256,
     extensionSourceSha256: status.extensionSourceSha256, extensions: status.extensions };
   proof.runtimeStatusSha256 = digest(status);
+  cardDefinitions = await get("/chronicle/play/card-definitions");
+  expectedArtworkNames = Object.fromEntries(cardDefinitions.flatMap((card) =>
+    [card.cardCode, ...(card.alternateCardCodes || [])].map((code) => [String(code).replace(/^c(?=\d)/, ""), card.name.title])));
   assert.equal(seed.mode, "table-seed");
   assert.equal(seed.prepared, true, "Only a successfully prepared fresh table seed may be used.");
   assert.deepEqual(seed.debugSeeds, [], "UI setup uses legitimate native setup answers.");
@@ -315,7 +587,6 @@ try {
   assert.equal(status.binarySha256, seed.runtime.binarySha256);
   assert.equal(status.extensionSourceSha256, seed.runtime.extensionSourceSha256);
   if (manifest) {
-    assert.equal(manifest.kind, "chronicle-derived");
     assert.equal(status.binarySha256, manifest.binarySha256);
     assert.equal(status.extensionSourceSha256, manifest.extensionSourceSha256);
   }
@@ -345,42 +616,52 @@ try {
   for (const seat of allSeats) {
     const bytes = await readFile(seat.snapshotPath), saved = JSON.parse(bytes), live = await readSeat(seat);
     assert.equal(digest(saved.game), seat.snapshotSha256, "Seed snapshot has not been altered.");
-    assert.equal(live.state.gameSha256, seat.snapshotSha256, "Live seed is still fresh before any browser action.");
+    if (!diagnostic) assert.equal(live.state.gameSha256, seat.snapshotSha256, "Live seed is still fresh before any browser action.");
     for (const key of ["playerId", "investigatorId", "phase", "scenarioSteps", "resources", "remainingActions"])
-      assert.equal(live.state[key], seat.baseline[key], `Seed baseline ${key}`);
+      if (!diagnostic) assert.equal(live.state[key], seat.baseline[key], `Seed baseline ${key}`);
     proof.seedSnapshots.push({ gameId: seat.gameId, seatId: seat.id, path: seat.snapshotPath,
       fileSha256: sha(bytes), gameSha256: seat.snapshotSha256 });
   }
   await checkpoint();
-  for (const [engine, launcher] of [["chromium", chromium], ["webkit", webkit]]) {
+  for (const [engine, launcher] of diagnostic ? [["webkit", webkit]] : [["chromium", chromium], ["webkit", webkit]]) {
     const nativeBaseline = [...(await readAll()).values()].map((entry) => entry.state);
-    const browser = await launcher.launch({ headless: true });
-    const browserProof = { engine, version: browser.version(), nativeBaseline };
+    const browser = engine === "webkit" ? null : await launcher.launch({ headless: true });
+    const browserProof = { engine, version: browser?.version() ?? null, nativeBaseline,
+      processTopology: engine === "webkit" ? "one independently launched browser per seat" : "one browser with three isolated seat contexts" };
     proof.browsers.push(browserProof);
     try {
-      for (const event of seed.events) await runEvent(browser, engine, event);
+      for (const event of diagnostic ? seed.events.filter((event) => event.scenarioId === "70001") : seed.events) await runEvent(browser, engine, event, browserProof);
       browserProof.nativeFinal = [...(await readAll()).values()].map((entry) => entry.state);
       for (const before of nativeBaseline) {
         const after = browserProof.nativeFinal.find((entry) => entry.seatId === before.seatId);
-        assert.equal(after.resources, before.resources + 1);
-        assert.equal(after.remainingActions, before.remainingActions - 1);
+        assert.equal(after.resources, before.resources + (diagnostic ? 0 : 1));
+        assert.equal(after.remainingActions, before.remainingActions - (diagnostic ? 0 : 1));
       }
       await checkpoint();
     } finally {
-      await browser.close();
+      if (browser) await cleanup(`${engine} browser process`, () => browser.close());
     }
   }
-  assert.equal(proof.checks.length, 12);
-  assert.equal(proof.writes.length, 12);
-  assert.deepEqual(proof.errors, []);
+  assert.equal(proof.checks.length, diagnostic ? 3 : 12);
+  assert.equal(proof.writes.length, diagnostic ? 0 : 12);
+  assert.equal(proof.seatBrowserProcesses.length, diagnostic ? 3 : 6);
+  assert.ok(proof.seatBrowserProcesses.every((entry) => entry.independentLaunch && entry.isolatedSeatContexts === 1 && entry.closedAt),
+    "Every independently launched real WebKit seat process owns one context and closes cleanly.");
+  assert.equal(new Set(proof.clientAssets.map((asset) => `${asset.engine}/${asset.gameId}`)).size, diagnostic ? 3 : 12,
+    "All twelve actual browser contexts served the current built client artifact.");
+  assertClientErrors();
   assert.deepEqual(proof.blockedRequests, []);
+  assert.deepEqual(proof.cleanupErrors, []);
   proof.finalSeats = [...(await readAll()).values()].map((entry) => entry.state);
   for (const seat of allSeats) {
     const final = proof.finalSeats.find((entry) => entry.seatId === seat.id);
-    assert.equal(final.resources, seat.baseline.resources + 2);
-    assert.equal(final.remainingActions, seat.baseline.remainingActions - 2);
+    if (!diagnostic) {
+      assert.equal(final.resources, seat.baseline.resources + 2);
+      assert.equal(final.remainingActions, seat.baseline.remainingActions - 2);
+    }
   }
-  proof.passed = true;
+  if (diagnostic) proof.diagnosticPassed = true;
+  else proof.passed = true;
   proof.finishedAt = new Date().toISOString();
   await checkpoint();
   console.log(`Epic Chronicle live table checks passed: ${proof.checks.length} seat/browser checks.`);

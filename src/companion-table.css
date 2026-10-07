@@ -43,6 +43,20 @@
   object-fit: cover;
   object-position: 22% 30%;
 }
+.chronicle-companion-table .companion-portrait,
+.chronicle-companion-table .companion-portrait-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+.chronicle-companion-table .companion-portrait-fallback {
+  background: #273a32;
+  color: #eadcba;
+  font:
+    600 1.2rem Georgia,
+    serif;
+}
 .chronicle-companion-table .phase-track > div {
   display: flex;
   align-items: center;

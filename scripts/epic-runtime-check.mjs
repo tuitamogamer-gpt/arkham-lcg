@@ -10,11 +10,12 @@ import { randomUUID, createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdir, readFile, writeFile, access, open } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, dirname, sep } from "node:path";
+import { acceptanceManifest } from "./rules-qa-runtime-identity.mjs";
 
 if (process.argv.includes("--help")) {
   console.log(
-    "After full native installation: EPIC_QA_CONFIRMED=1 node --import tsx scripts/epic-runtime-check.mjs\n--prepare-table creates two fresh ready events and snapshot/seat baselines for browser QA; it does not run full acceptance checks.\nOptional: ARKHAM_RULES_URL, QA_OUT, ARKHAM_RULES_PSQL, ARKHAM_RULES_PG_PORT. Provide ARKHAM_RULES_QA_ENGINE_LOG (or ARKHAM_RULES_DATA_DIR) when native errors redact their reason. Creates new QA events only.",
+    "After full native installation: EPIC_QA_CONFIRMED=1 node --import tsx scripts/epic-runtime-check.mjs\n--prepare-client-setup creates two fresh events and six saved decks/seats, leaving all native ChooseDeck/setup questions unanswered and Ready/timers untouched for actual client setup proof.\n--prepare-table creates two fresh ready events and snapshot/seat baselines for browser QA; it does not run full acceptance checks.\n--prepare-labyrinth-hard checks one fresh Hard Labyrinth event, all three native setup paths and exact printed chaos bags; it does not run full acceptance checks.\n--resume-legacy-labyrinth with EPIC_LEGACY_REPORT resumes the retained failed private QA event in the same isolated data directory using its real saved seats/decks; no SQL state edits or full acceptance checks.\n--machinations-only runs the independent real Machinations action checks on fresh events; its one-event report cannot qualify as full two-Epic acceptance.\nOptional: ARKHAM_RULES_URL, QA_OUT, ARKHAM_RULES_PSQL, ARKHAM_RULES_PG_PORT. Provide ARKHAM_RULES_QA_ENGINE_LOG (or ARKHAM_RULES_DATA_DIR) when native errors redact their reason. Creates new QA events only.",
   );
   process.exit(0);
 }
@@ -30,9 +31,35 @@ assert.ok(
   "QA is confined to the local rules service.",
 );
 const prepareTable = process.argv.includes("--prepare-table");
+const prepareHard = process.argv.includes("--prepare-labyrinth-hard");
+const resumeLegacy = process.argv.includes("--resume-legacy-labyrinth");
+const machinationsOnly = process.argv.includes("--machinations-only");
+const prepareClient = process.argv.includes("--prepare-client-setup");
+assert.ok(
+  [
+    prepareTable,
+    prepareHard,
+    resumeLegacy,
+    machinationsOnly,
+    prepareClient,
+  ].filter(Boolean).length <= 1,
+  "Choose one preparation mode.",
+);
+const preparation =
+  prepareTable || prepareHard || resumeLegacy || prepareClient;
 const output = resolve(
   process.env.QA_OUT ||
-    (prepareTable ? "output/epic-table-seed" : "output/epic-runtime"),
+    (prepareClient
+      ? "output/epic-client-setup-seed"
+      : machinationsOnly
+        ? "output/epic-machinations-diagnostic"
+        : resumeLegacy
+          ? "output/epic-legacy-labyrinth"
+          : prepareHard
+            ? "output/epic-labyrinth-hard"
+            : prepareTable
+              ? "output/epic-table-seed"
+              : "output/epic-runtime"),
 );
 const engineLog =
   process.env.ARKHAM_RULES_QA_ENGINE_LOG ||
@@ -47,13 +74,28 @@ const ownedGames = new Set(),
   secrets = new Map();
 const proof = {
   startedAt: new Date().toISOString(),
-  ...(prepareTable
+  ...(preparation
     ? {
-        mode: "table-seed",
+        mode: prepareClient
+          ? "client-setup-seed"
+          : resumeLegacy
+            ? "legacy-labyrinth-resume"
+            : prepareHard
+              ? "hard-labyrinth-setup"
+              : "table-seed",
         prepared: false,
         acceptance: "full acceptance checks not run",
       }
-    : { passed: false }),
+    : {
+        passed: false,
+        ...(machinationsOnly
+          ? {
+              mode: "machinations-only",
+              acceptance:
+                "Machinations only; full two-event acceptance not run",
+            }
+          : {}),
+      }),
   events: [],
   checks: [],
   setupAnswers: [],
@@ -68,10 +110,20 @@ const values = (value) =>
     : Object.values(value || {});
 const pairs = (value) =>
   Array.isArray(value) ? value : Object.entries(value || {});
+const structuralKey = (value) =>
+  JSON.stringify(value, (_, nested) =>
+    nested && typeof nested === "object" && !Array.isArray(nested)
+      ? Object.fromEntries(
+          Object.keys(nested)
+            .sort()
+            .map((key) => [key, nested[key]]),
+        )
+      : nested,
+  );
 const mapGet = (value, key) =>
   pairs(value).find(([k]) =>
     typeof key === "object" && key !== null
-      ? JSON.stringify(k) === JSON.stringify(key)
+      ? structuralKey(k) === structuralKey(key)
       : String(k) === String(key),
   )?.[1];
 const unbox = (value) =>
@@ -79,7 +131,9 @@ const unbox = (value) =>
     ? value.contents
     : value;
 const code = (value) =>
-  protocol.companionCatalogCode(String(unbox(value)?.cardCode || ""));
+  protocol.companionCatalogCode(
+    String(unbox(value)?.cardCode || unbox(value)?.art || ""),
+  );
 const tokenCount = (entity, key) => Number(mapGet(entity?.tokens, key) || 0);
 const own = (snapshot) => values(snapshot.game.investigators)[0];
 const scenario = (snapshot) =>
@@ -297,7 +351,7 @@ async function logSize() {
     await file.close();
   }
 }
-async function loggedForeignUndo(offset) {
+async function loggedReason(offset, reason = foreignUndoMessage) {
   if (!engineLog || offset === undefined) return false;
   for (let attempt = 0; attempt < 20; attempt++) {
     const file = await open(engineLog, "r");
@@ -309,7 +363,7 @@ async function loggedForeignUndo(offset) {
       );
       const buffer = Buffer.alloc(length);
       await file.read(buffer, 0, length, offset);
-      if (buffer.toString("utf8").includes(foreignUndoMessage)) return true;
+      if (buffer.toString("utf8").includes(reason)) return true;
     } finally {
       await file.close();
     }
@@ -410,7 +464,7 @@ async function foreignUndoChecks(event, participant, origin) {
       foreignUndoMessage,
     );
     assert.ok(
-      explicitReason || (await loggedForeignUndo(offset)),
+      explicitReason || (await loggedReason(offset)),
       "Require the foreign-boundary reason in the response or fresh QA engine log; configure ARKHAM_RULES_QA_ENGINE_LOG for redacted native errors.",
     );
     proof.checks.push({
@@ -490,6 +544,60 @@ async function expireTimer(event) {
     organizer,
   );
 }
+async function satisfyNativeDoomThreshold(seat, includeImmediateCheck) {
+  const current = await snapshot(seat),
+    question = model(current),
+    selected = question?.choices.find(
+      (choice) =>
+        choice.raw?.tag === "Label" &&
+        choice.raw.label ===
+          "$standalone.theLabyrinthsOfLunacy.label.satisfyDoomThreshold",
+    ),
+    agenda = values(current.game.agendas)[0];
+  assert.equal(question?.tag, "ChooseOne");
+  assert.ok(
+    selected,
+    "Answer the real native Mythos doom confirmation before expecting an agenda advance.",
+  );
+  assert.deepEqual(agenda.doomThreshold, { tag: "Static", contents: 6 });
+  assert.deepEqual(selected.raw.messages, [
+    {
+      tag: "TokenMessage",
+      contents: {
+        tag: "PlaceTokens_",
+        contents: [
+          { tag: "ScenarioSource" },
+          { tag: "AgendaTarget", contents: agenda.id },
+          "Doom",
+          6,
+        ],
+      },
+    },
+    ...(includeImmediateCheck
+      ? [
+          {
+            tag: "ForTarget",
+            contents: [
+              { tag: "AgendaTarget", contents: agenda.id },
+              { tag: "AdvanceAgendaIfThresholdSatisfied" },
+            ],
+          },
+        ]
+      : []),
+  ]);
+  proof.setupAnswers.push({
+    gameId: seat.gameId,
+    category: "timer-native-doom-confirmation",
+    tag: question.tag,
+    answerIndex: selected.answerIndex,
+    label: selected.label,
+    messages: selected.raw.messages,
+  });
+  await answer(
+    seat,
+    protocol.buildChoiceAnswer(question, selected.answerIndex),
+  );
+}
 let context, allCards;
 function model(current) {
   const normalized = { ...current.game, scenario: scenario(current) };
@@ -510,7 +618,12 @@ async function choose(seat, predicate, explanation) {
   );
   return snapshot(seat);
 }
-async function settle(seat, category = "setup") {
+const setupComplete = (current) =>
+  current.game.gameState?.tag === "IsActive" &&
+  current.game.phase === "InvestigationPhase" &&
+  current.game.inSetup === false &&
+  scenario(current)?.started === true;
+async function settle(seat, category = "setup", stopAtReady = false) {
   for (let n = 0; n < 120; n++) {
     const current = await snapshot(seat),
       question = model(current);
@@ -518,6 +631,7 @@ async function settle(seat, category = "setup") {
       question,
       `${seat.name}: native question absent during ${category}.`,
     );
+    if (stopAtReady && setupComplete(current)) return current;
     if (
       question.isPlayerWindow ||
       question.choices.some((v) => /Waiting/i.test(v.label))
@@ -593,23 +707,124 @@ function deck(name) {
     legal.length >= 15,
     "Core fixture has 15 distinct legal Roland cards.",
   );
+  const flashlight = legal.find((card) => card.code === "01087");
+  assert.ok(
+    flashlight,
+    "The real Roland deck contains two native Flashlights for the attachment transport fixture.",
+  );
+  const selected = [
+    flashlight,
+    ...legal.filter((card) => card !== flashlight),
+  ].slice(0, 15);
   return {
     name,
     investigator_code: "01001",
     slots: {
-      ...Object.fromEntries(legal.slice(0, 15).map((c) => [c.code, 2])),
+      ...Object.fromEntries(selected.map((c) => [c.code, 2])),
       "01006": 1,
       "01007": 1,
       "01096": 1,
     },
   };
 }
-async function createEvent(scenarioId) {
-  const name = `Chronicle Epic ${prepareTable ? "table" : "native"} QA ${scenarioId} ${new Date().toISOString()}`;
+async function loadLegacyLabyrinth() {
+  assert.ok(
+    process.env.ARKHAM_RULES_QA_MANIFEST,
+    "Legacy resumption requires the verified private Linux QA manifest.",
+  );
+  assert.ok(
+    process.env.EPIC_LEGACY_REPORT && process.env.ARKHAM_RULES_DATA_DIR,
+    "Provide the original failed private QA report and its data directory.",
+  );
+  const sourceReport = resolve(process.env.EPIC_LEGACY_REPORT);
+  assert.ok(
+    sourceReport.startsWith(
+      dirname(resolve(process.env.ARKHAM_RULES_DATA_DIR)) + sep,
+    ),
+    "Resume only the report belonging to this isolated data directory.",
+  );
+  assert.notEqual(
+    sourceReport,
+    resolve(output, "report.json"),
+    "Preserve the original failure report.",
+  );
+  const bytes = await readFile(sourceReport);
+  const previous = JSON.parse(bytes);
+  assert.equal(previous.passed, false);
+  assert.equal(previous.candidate?.kind, "chronicle-linux-native-qa");
+  assert.equal(previous.candidate?.scope, "native-acceptance");
+  assert.equal(previous.events.length, 1);
+  const recorded = previous.events[0];
+  assert.equal(recorded.scenarioId, "70001");
+  assert.match(recorded.name, /^Chronicle Epic native QA 70001 /);
+  assert.equal(previous.setupAnswers[0]?.answerTag, "DeckAnswer");
+  const event = await request(`/chronicle/epic/events/${recorded.id}`);
+  assert.equal(event.id, recorded.id);
+  assert.equal(event.name, recorded.name);
+  event.scenarioId = "70001";
+  event.difficulty = "Standard";
+  event.seats = event.localSeats.sort((a, b) => a.ordinal - b.ordinal);
+  assert.deepEqual(
+    event.seats.map(({ gameId, ordinal }) => ({ gameId, ordinal })),
+    recorded.games,
+  );
+  assert.deepEqual(
+    event.seats.map((seat) => seat.ordinal),
+    [0, 1, 2],
+  );
+  const storedScenarioId = await sql(
+    `SELECT scenario_id FROM public.arkham_epic_events WHERE id='${event.id}'`,
+  );
+  assert.equal(
+    storedScenarioId,
+    '"70001"',
+    "Legacy acceptance must use the untouched original quoted scenario row.",
+  );
+  const first = await snapshot(event.seats[0]);
+  const failureSnapshot = JSON.parse(
+    await readFile(
+      resolve(
+        dirname(sourceReport),
+        "..",
+        "labyrinth-initial-failure-snapshot.json",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(
+    digest(first.game),
+    digest(failureSnapshot.game),
+    "The retained failed game remains byte-equivalent before the real retry.",
+  );
+  assert.equal(model(first).kind, "deck");
+  for (const seat of event.seats) {
+    assert.ok(
+      uuid.test(seat.deckId),
+      "Retained native seat owns its actual saved deck.",
+    );
+    ownedGames.add(seat.gameId);
+  }
+  ownedEvents.add(event.id);
+  proof.sourceReport = sourceReport;
+  proof.sourceReportSha256 = createHash("sha256").update(bytes).digest("hex");
+  proof.previousRuntime = previous.runtime;
+  proof.events.push({ ...recorded, difficulty: "Standard" });
+  proof.checks.push({
+    eventId: event.id,
+    nativeStoredScenarioId: storedScenarioId,
+    nativeStoredScenarioIdLength: storedScenarioId.length,
+    untouchedFailureSnapshot: true,
+    legacyQuotedRowResumed: true,
+  });
+  await checkpoint();
+  return event;
+}
+async function createEvent(scenarioId, difficulty = "Standard", finish = true) {
+  const name = `Chronicle Epic ${prepareHard ? "Hard setup" : prepareTable ? "table" : "native"} QA ${scenarioId} ${new Date().toISOString()}`;
   const event = await request("/chronicle/epic/events", {
     name,
     scenarioId,
-    difficulty: "Standard",
+    difficulty,
     groups: groups.map((group, ordinal) => ({
       name: `${name} ${scenarioId === "70001" ? group : eras[ordinal]}`,
       playerCount: 1,
@@ -618,6 +833,20 @@ async function createEvent(scenarioId) {
   assert.ok(uuid.test(event.id));
   ownedEvents.add(event.id);
   event.scenarioId = scenarioId;
+  event.difficulty = difficulty;
+  const storedScenarioId = await sql(
+    `SELECT scenario_id FROM public.arkham_epic_events WHERE id='${event.id}'`,
+  );
+  assert.equal(
+    storedScenarioId,
+    scenarioId,
+    "New native events must store the canonical raw scenario code.",
+  );
+  proof.checks.push({
+    eventId: event.id,
+    nativeStoredScenarioId: storedScenarioId,
+    nativeStoredScenarioIdLength: storedScenarioId.length,
+  });
   event.seats = event.localSeats.sort((a, b) => a.ordinal - b.ordinal);
   assert.deepEqual(
     event.seats.map((s) => s.ordinal),
@@ -630,6 +859,7 @@ async function createEvent(scenarioId) {
   proof.events.push({
     id: event.id,
     scenarioId,
+    difficulty,
     name,
     games: event.seats.map(({ gameId, ordinal }) => ({ gameId, ordinal })),
   });
@@ -642,16 +872,36 @@ async function createEvent(scenarioId) {
     });
     seat.deckId = prepared.deckId;
   }
+  return finish ? finishEventSetup(event) : event;
+}
+async function finishEventSetup(event) {
+  const { scenarioId, difficulty } = event;
   const ready = new Set();
   for (let round = 0; round < 20 && ready.size < 3; round++)
     for (const seat of event.seats) {
       if (ready.has(seat.id)) continue;
-      const current = await settle(seat);
-      if (
-        model(current)?.isPlayerWindow &&
-        current.game.phase === "InvestigationPhase"
-      ) {
+      const current = await settle(seat, "setup", true);
+      if (setupComplete(current)) {
+        const checkpointQuestion = current.game.question;
         await native(seat, `events/${event.id}/ready`, {}, "POST");
+        const afterReady = await snapshot(seat);
+        assert.deepEqual(
+          afterReady.game.question,
+          checkpointQuestion,
+          "Native readiness preserves the actual pending setup/optional window.",
+        );
+        proof.checks.push({
+          eventId: event.id,
+          gameId: seat.gameId,
+          nativeReadyCheckpoint: {
+            gameState: current.game.gameState.tag,
+            phase: current.game.phase,
+            inSetup: current.game.inSetup,
+            scenarioStarted: scenario(current).started,
+            pendingDecisionTag: model(current).tag,
+          },
+          pendingQuestionPreservedByReady: true,
+        });
         ready.add(seat.id);
       } else {
         const waiting = model(current)?.choices.find((v) =>
@@ -673,6 +923,7 @@ async function createEvent(scenarioId) {
   assert.ok(
     Number(dashboard.sharedState.sharedCounters["timer-started-at"]) > 0,
   );
+  await refreshPlayerWindows(event);
   for (const seat of event.seats) {
     const current = await snapshot(seat);
     assert.equal(
@@ -700,6 +951,67 @@ async function createEvent(scenarioId) {
           .length,
         1,
       );
+    } else {
+      // The printed standalone bag has sixteen base tokens, then each group
+      // adds exactly two of its own symbol during actual native Epic setup.
+      const expected = (
+        difficulty === "Hard"
+          ? [
+              "PlusOne",
+              "Zero",
+              "MinusOne",
+              "MinusOne",
+              "MinusOne",
+              "MinusTwo",
+              "MinusTwo",
+              "MinusTwo",
+              "MinusThree",
+              "MinusFour",
+              "MinusFive",
+              "MinusSix",
+              "Skull",
+              "Skull",
+              "AutoFail",
+              "ElderSign",
+            ]
+          : [
+              "PlusOne",
+              "Zero",
+              "Zero",
+              "Zero",
+              "MinusOne",
+              "MinusOne",
+              "MinusOne",
+              "MinusTwo",
+              "MinusTwo",
+              "MinusThree",
+              "MinusFour",
+              "MinusFive",
+              "Skull",
+              "Skull",
+              "AutoFail",
+              "ElderSign",
+            ]
+      )
+        .concat(
+          Array(2).fill(["ElderThing", "Tablet", "Cultist"][seat.ordinal]),
+        )
+        .sort();
+      const actual = scenario(current)
+        .chaosBag.chaosTokens.map((token) => token.chaosTokenFace)
+        .sort();
+      assert.deepEqual(
+        actual,
+        expected,
+        `${difficulty} ${groups[seat.ordinal]} has its exact printed Epic chaos bag.`,
+      );
+      proof.checks.push({
+        eventId: event.id,
+        gameId: seat.gameId,
+        difficulty,
+        group: groups[seat.ordinal],
+        printedChaosBag: actual,
+      });
     }
   }
   proof.checks.push({
@@ -709,11 +1021,34 @@ async function createEvent(scenarioId) {
     duplicateInvestigatorAllowed: true,
     timerStarted: true,
   });
-  if (!prepareTable) await wrongSeatChecks(event);
+  if (!preparation) await wrongSeatChecks(event);
   return event;
 }
-async function prepareTableEvent(scenarioId) {
-  const event = await createEvent(scenarioId);
+async function redeemEvent() {
+  // Native setup randomly chooses one of three printed machinations. Keep the
+  // genuine setup and record unused fresh branches; never replace its choice.
+  for (let attempt = 0; attempt < 18; attempt++) {
+    const event = await createEvent("87001");
+    const selected = protocol.companionCatalogCode(
+      (await coordinator(event)).machinationsMachination || "",
+    );
+    if (selected === "87034") return event;
+    proof.branchAttempts ??= [];
+    proof.branchAttempts.push({
+      eventId: event.id,
+      machination: selected,
+      games: event.seats.map(({ gameId, ordinal }) => ({ gameId, ordinal })),
+      reason:
+        "Actual randomized native setup chose another printed branch; retained untouched after setup.",
+    });
+    proof.events = proof.events.filter((entry) => entry.id !== event.id);
+    await checkpoint();
+  }
+  throw new Error(
+    "Native random setup did not select Redeem a Former Colleague within the bounded fresh-event attempts.",
+  );
+}
+async function refreshPlayerWindows(event) {
   // The first group can still be holding its legitimate setup-wait question
   // when the third group becomes ready. Refresh only documented native setup
   // checkpoints; leave every table at a real, unspent player action window.
@@ -748,6 +1083,19 @@ async function prepareTableEvent(scenarioId) {
     }
     if (ready === 3) break;
   }
+  for (const seat of event.seats) {
+    const current = await snapshot(seat);
+    assert.equal(current.game.phase, "InvestigationPhase");
+    assert.equal(
+      model(current)?.isPlayerWindow,
+      true,
+      "Fresh native setup must release all three real player windows.",
+    );
+  }
+}
+async function prepareTableEvent(scenarioId, difficulty = "Standard") {
+  const event = await createEvent(scenarioId, difficulty);
+  await refreshPlayerWindows(event);
   const saved = proof.events.find((entry) => entry.id === event.id);
   saved.seats = [];
   for (const seat of event.seats) {
@@ -799,6 +1147,71 @@ async function prepareTableEvent(scenarioId) {
       },
     });
   }
+  await checkpoint();
+}
+async function prepareClientSetupEvent(scenarioId) {
+  const event = await createEvent(scenarioId, "Standard", false);
+  const saved = proof.events.find((entry) => entry.id === event.id);
+  saved.seats = [];
+  const dashboard = await request(`/chronicle/epic/events/${event.id}`);
+  assert.equal(
+    Number(dashboard.sharedState.sharedCounters["groups-ready-mask"] || 0),
+    0,
+  );
+  assert.equal(
+    Number(dashboard.sharedState.sharedCounters["timer-started-at"] || 0),
+    0,
+  );
+  for (const seat of event.seats) {
+    const current = await snapshot(seat);
+    const question = model(current);
+    assert.equal(
+      question.kind,
+      "deck",
+      "Client seed retains the genuine first ChooseDeck question.",
+    );
+    assert.equal(current.game.inSetup, true);
+    const snapshotPath = resolve(
+      output,
+      `client-setup-${scenarioId}-group-${seat.ordinal}.json`,
+    );
+    await writeFile(snapshotPath, JSON.stringify(current, null, 2), {
+      mode: 0o600,
+    });
+    saved.seats.push({
+      id: seat.id,
+      gameId: seat.gameId,
+      ordinal: seat.ordinal,
+      seatIndex: seat.seatIndex,
+      name: seat.name,
+      deckId: seat.deckId,
+      snapshotPath,
+      snapshotSha256: digest(current.game),
+      tableHash: `#${new URLSearchParams({ investigation: seat.gameId, seat: seat.id })}`,
+      baseline: {
+        playerId: current.playerId,
+        role: (scenarioId === "70001" ? groups : eras)[seat.ordinal],
+        phase: current.game.phase,
+        gameState: current.game.gameState,
+        decisionTag: question.tag,
+      },
+    });
+  }
+  assert.equal(
+    proof.setupAnswers.length,
+    0,
+    "No native setup answer was sent by client seed preparation.",
+  );
+  assert.equal(proof.debugSeeds.length, 0);
+  proof.checks.push({
+    eventId: event.id,
+    clientSetupUntouched: true,
+    readyMask: 0,
+    timerStartedAt: 0,
+    nativeDeckAnswers: 0,
+    nativeSetupAnswers: 0,
+    nativeReadyCalls: 0,
+  });
   await checkpoint();
 }
 async function advanceReceipt(seat) {
@@ -956,8 +1369,11 @@ async function labyrinthChecks(event) {
   for (const [index, seat] of event.seats.entries()) {
     await seed(
       seat,
-      { tag: "EndRoundWindow" },
-      "Reach the real native round-end gate without playing all remaining actions and upkeep.",
+      {
+        tag: "Run",
+        contents: [{ tag: "EndRoundWindow" }, { tag: "EndRound" }],
+      },
+      "Queue the exact native Upkeep round-end pair to exercise arrival, actual trigger decisions and finish release; bypass playing remaining actions, Enemy phase and Upkeep prerequisites only.",
     );
     const state = await coordinator(event),
       barrier = mapGet(state.eventBarriers, {
@@ -1023,22 +1439,388 @@ async function labyrinthChecks(event) {
     { tag: "Begin", contents: "MythosPhase" },
     "Start the next native Mythos to prove deferred Labyrinth timer advancement enters the real stage barrier.",
   );
+  await satisfyNativeDoomThreshold(a, true);
+  const stageBarrier = mapGet((await coordinator(event)).eventBarriers, {
+    tag: "StageBarrier",
+    contents: 1,
+  });
   assert.ok(
-    mapGet((await coordinator(event)).eventBarriers, {
-      tag: "StageBarrier",
-      contents: 1,
-    }),
+    stageBarrier,
     "Deferred timer advancement is held at the real three-group stage gate.",
+  );
+  assert.deepEqual(stageBarrier.barrierArrived, ["GroupA"]);
+  assert.equal(stageBarrier.barrierOpened, false);
+  assert.equal(stageBarrier.barrierReleased, false);
+  assert.ok(
+    model(await snapshot(a)).choices.some((choice) =>
+      /Waiting/i.test(choice.label),
+    ),
+    "The source waits for the other groups after its real native agenda threshold check.",
   );
   proof.checks.push({
     eventId: event.id,
     printedTimeLimitMinutes: 60,
     timeoutDefersUntilMythos: true,
     nativeStageBarrier: true,
+    nativeDoomConfirmationAnswered: true,
+    stageBarrierArrived: stageBarrier.barrierArrived,
+    stageBarrierOpened: stageBarrier.barrierOpened,
   });
+  await satisfyNativeDoomThreshold(b, false);
+  const twoArrivals = mapGet((await coordinator(event)).eventBarriers, {
+    tag: "StageBarrier",
+    contents: 1,
+  });
+  assert.deepEqual(twoArrivals.barrierArrived, ["GroupA", "GroupB"]);
+  assert.equal(twoArrivals.barrierOpened, false);
+  await satisfyNativeDoomThreshold(event.seats[2], false);
+  const releasedStage = mapGet((await coordinator(event)).eventBarriers, {
+    tag: "StageBarrier",
+    contents: 1,
+  });
+  assert.deepEqual(releasedStage.barrierArrived, groups);
+  assert.deepEqual(releasedStage.barrierFinished, groups);
+  assert.equal(releasedStage.barrierOpened, true);
+  assert.equal(releasedStage.barrierReleased, true);
+  const physicalAgendas = [];
+  for (const seat of event.seats) {
+    const saved = await snapshot(seat),
+      actualAgenda = values(saved.game.agendas)[0],
+      nativeQuestion = model(saved),
+      localBarrier = mapGet(meta(saved).epicLabyrinthBarriers, {
+        tag: "StageBarrier",
+        contents: 1,
+      });
+    assert.equal(actualAgenda.id, "c70002");
+    assert.equal(actualAgenda.flipped, true);
+    assert.deepEqual(actualAgenda.sequence, {
+      agendaSequenceSide: "B",
+      agendaSequenceStep: 1,
+    });
+    assert.equal(localBarrier.barrierReleased, true);
+    assert.equal(nativeQuestion.tag, "ChooseOne");
+    assert.equal(nativeQuestion.choices.length, 1);
+    assert.deepEqual(nativeQuestion.choices[0].raw, {
+      tag: "TargetLabel",
+      target: { tag: "AgendaTarget", contents: actualAgenda.id },
+      messages: [
+        {
+          tag: "AdvanceAgendaBy",
+          contents: [actualAgenda.id, "AgendaAdvancedWithDoom"],
+        },
+      ],
+    });
+    const savedQueue = JSON.parse(
+      await sql(
+        `SELECT s.choice->'choiceMessages' FROM arkham_games g JOIN arkham_steps s ON s.arkham_game_id=g.id AND s.step=g.step WHERE g.id='${seat.gameId}'::uuid`,
+      ),
+    );
+    assert.ok(
+      !savedQueue.some(
+        (message) =>
+          message.tag === "ScenarioSpecific" &&
+          message.contents?.[0] === "epicLabyrinth.delivery" &&
+          message.contents?.[1]?.envelopeBody?.tag === "ReleaseBarrier" &&
+          structuralKey(message.contents[1].envelopeBody.contents[0]) ===
+            structuralKey({ tag: "StageBarrier", contents: 1 }),
+      ),
+      "The real Stage release was consumed before the unrelated native Mythos tail.",
+    );
+    physicalAgendas.push({
+      gameId: seat.gameId,
+      cardId: actualAgenda.cardId,
+      agendaId: actualAgenda.id,
+      sequence: actualAgenda.sequence,
+      flipped: actualAgenda.flipped,
+      barrierReleased: localBarrier.barrierReleased,
+      nativeConfirmation: nativeQuestion.choices[0].raw,
+      savedQueueSha256: digest(savedQueue),
+    });
+  }
+  proof.checks.push({
+    eventId: event.id,
+    nativeStageReleased: true,
+    allThreeNativeAgendasFlipped: true,
+    pendingPrintedConfirmationsPreserved: true,
+    actTwoPrerequisitesPlayed: false,
+    physicalAgendas,
+  });
+}
+async function edwinFlags(event, expectedEra) {
+  const authoritative = await coordinator(event);
+  for (const era of eras) {
+    const progress = mapGet(authoritative.machinationsEras, era);
+    assert.equal(
+      progress.eraEdwinEnemy,
+      era === expectedEra,
+      "Authoritative physical Edwin ownership must be current without a clue operation.",
+    );
+    assert.equal(progress.eraEdwinAsset, false);
+  }
+  for (const seat of event.seats) {
+    const replica = meta(await snapshot(seat)).epicMachinationsReplica;
+    for (const era of eras) {
+      assert.equal(
+        mapGet(replica.eraProgress, era).eraEdwinEnemy,
+        era === expectedEra,
+        "Every saved native replica must immediately reflect the physical owner.",
+      );
+      assert.equal(mapGet(replica.eraProgress, era).eraEdwinAsset, false);
+    }
+  }
+}
+async function printedEdwinChecks(event) {
+  const [past, present] = event.seats;
+  await refreshPlayerWindows(event);
+  assert.equal(
+    protocol.companionCatalogCode(
+      (await coordinator(event)).machinationsMachination,
+    ),
+    "87034",
+  );
+  await edwinFlags(event, "PresentEra");
+  const rival = (saved) =>
+    values(saved.game.enemies).filter((enemy) =>
+      ["87037", "87037a"].includes(code(enemy)),
+    );
+  const actor = await snapshot(past),
+    donor = await snapshot(present);
+  assert.equal(
+    rival(actor).length,
+    0,
+    "Remote era starts with no physical Edwin.",
+  );
+  assert.equal(
+    rival(donor).length,
+    1,
+    "Actual Redeem setup places the single physical Edwin in the Present.",
+  );
+  const edwin = rival(donor)[0];
+  const printedBring = (choice) =>
+    !choice.disabled &&
+    choice.raw.ability?.index === 1 &&
+    code({ cardCode: choice.raw.ability?.cardCode }) === "87034";
+  assert.ok(
+    model(actor).choices.some(printedBring),
+    "The remote printed double action must be offered immediately after setup, before any clue/progress operation.",
+  );
+
+  // Add only documented native fixtures to this new QA game. These are real
+  // cards from its validated deck; paying/playing their prerequisites is not
+  // claimed by this acceptance check.
+  const flashes = values(donor.game.cards).filter(
+    (card) => code(card) === "01087" && unbox(card).owner === own(donor).id,
+  );
+  assert.equal(
+    flashes.length,
+    2,
+    "The source native deck has two distinct actual Flashlight cards.",
+  );
+  const attachments = [];
+  for (const [index, card] of flashes.entries()) {
+    await seed(
+      present,
+      {
+        tag: "PutCardIntoPlay",
+        contents: [own(donor).id, card, null, { tag: "NoPayment" }, []],
+      },
+      "Put one actual validated-deck Flashlight into play solely for the physical recursive attachment fixture; bypass its printed cost.",
+    );
+    const saved = await snapshot(present);
+    const asset = values(saved.game.assets).find(
+      (entity) => entity.cardId === unbox(card).id,
+    );
+    assert.ok(asset, "The real engine creates the matching actual-card asset.");
+    attachments.push(asset.id);
+    await seed(
+      present,
+      {
+        tag: "PlaceAsset",
+        contents: [
+          asset.id,
+          index === 0
+            ? { tag: "AttachedToEnemy", contents: edwin.id }
+            : { tag: "AttachedToAsset", contents: [attachments[0], null] },
+        ],
+      },
+      "Attach the actual source-owned player card to Edwin or to the first attachment through native placement.",
+    );
+  }
+  await seed(
+    present,
+    {
+      tag: "PlaceTokens",
+      contents: [
+        { tag: "GameSource" },
+        { tag: "EnemyTarget", contents: edwin.id },
+        "Target",
+        2,
+      ],
+    },
+    "Give the physical Edwin two non-resolution fixture tokens to verify exact transfer identity and counters.",
+  );
+  await seed(
+    present,
+    {
+      tag: "PlaceTokens",
+      contents: [
+        { tag: "GameSource" },
+        { tag: "AssetTarget", contents: attachments[0] },
+        "Damage",
+        1,
+      ],
+    },
+    "Mark one native attachment to verify its exact physical state survives the cross-era transaction.",
+  );
+  await seed(
+    present,
+    {
+      tag: "Exhaust",
+      contents: {
+        exhaustionSource: { tag: "GameSource" },
+        exhaustionTarget: { tag: "EnemyTarget", contents: edwin.id },
+        exhaustionThen: [],
+      },
+    },
+    "Exhaust the actual QA Edwin; his printed bring action must ready the same entity.",
+  );
+  const before = await snapshot(present),
+    beforePast = await snapshot(past);
+  const physical = rival(before)[0];
+  const graph = attachments.map((id) =>
+    values(before.game.assets).find((asset) => asset.id === id),
+  );
+  const question = before.game.question;
+  const cardIdentities = flashes.map((card) => unbox(card).id);
+  async function assertMoved() {
+    const source = await snapshot(present),
+      destination = await snapshot(past);
+    assert.equal(rival(source).length, 0);
+    assert.equal(rival(destination).length, 1);
+    const moved = rival(destination)[0];
+    assert.equal(moved.id, physical.id);
+    assert.equal(moved.cardId, physical.cardId);
+    assert.deepEqual(moved.tokens, physical.tokens);
+    assert.equal(moved.exhausted, false);
+    assert.deepEqual(moved.placement, {
+      tag: "AtLocation",
+      contents: own(destination).placement.contents,
+    });
+    for (const original of graph) {
+      assert.equal(
+        values(source.game.assets).some((asset) => asset.id === original.id),
+        false,
+      );
+      assert.deepEqual(
+        values(destination.game.assets).find(
+          (asset) => asset.id === original.id,
+        ),
+        original,
+        "Recursive source-owned attachment retains exact ID/card/tokens/placement/controller.",
+      );
+    }
+    for (const id of cardIdentities) {
+      assert.equal(
+        unbox(mapGet(destination.game.cards, id)).owner,
+        own(before).id,
+        "Player attachment keeps its original investigator owner.",
+      );
+      assert.equal(
+        mapGet(meta(destination).epicLabyrinthOwners, id),
+        "GroupB",
+        "Equal printed investigator IDs in different eras cannot replace the original Present owner group.",
+      );
+    }
+    assert.deepEqual(
+      source.game.question,
+      question,
+      "Physical transport preserves the donor's pending native player decision.",
+    );
+    await edwinFlags(event, "PastEra");
+    return destination;
+  }
+  await choose(
+    past,
+    printedBring,
+    "Use the actual remote Redeem a Former Colleague printed double action.",
+  );
+  const moved = await assertMoved();
+  assert.equal(
+    own(moved).remainingActions,
+    own(beforePast).remainingActions - 2,
+    "Native printed movement spends two real actions.",
+  );
+  await foreignUndoChecks(event, present, past);
+  await undo(past);
+  const restored = await snapshot(present),
+    restoredPast = await snapshot(past);
+  assert.deepEqual(
+    rival(restored)[0],
+    physical,
+    "Origin undo restores the exact original exhausted physical Edwin.",
+  );
+  for (const original of graph)
+    assert.deepEqual(
+      values(restored.game.assets).find((asset) => asset.id === original.id),
+      original,
+    );
+  assert.equal(rival(restoredPast).length, 0);
+  assert.equal(
+    own(restoredPast).remainingActions,
+    own(beforePast).remainingActions,
+  );
+  await edwinFlags(event, "PresentEra");
+
+  await choose(
+    past,
+    printedBring,
+    "Repeat the real printed action after a successful coupled origin undo.",
+  );
+  await assertMoved();
+  await choose(
+    present,
+    (choice) => choice.label === "Take 1 resource" && !choice.disabled,
+    "Continue the donor's preserved real player decision after the shared movement.",
+  );
+  const fingerprint = await mutationFingerprint(event),
+    offset = await logSize();
+  const refused = await http(seatPath(past, "/undo"), {});
+  const reason =
+    "Cannot undo this timeline effect after another group has continued";
+  assert.ok([400, 500].includes(refused.status));
+  assert.ok(
+    JSON.stringify(refused.data).includes(reason) ||
+      (await loggedReason(offset, reason)),
+    "A continued participant must reject the coupled origin undo for the native continuation reason.",
+  );
+  assert.deepEqual(
+    await mutationFingerprint(event),
+    fingerprint,
+    "Rejected continued-participant undo leaves all physical groups, histories, ledger and journal exactly unchanged.",
+  );
+  proof.checks.push({
+    eventId: event.id,
+    nativeRedeemSetup: true,
+    printedRemoteBringBeforeClueOperations: true,
+    actualEdwinId: physical.id,
+    actualEdwinCardId: physical.cardId,
+    recursiveAttachmentIds: attachments,
+    exactPhysicalIdentityTokensAndOriginalOwners: true,
+    movedEdwinReadied: true,
+    printedActionCost: 2,
+    immediateAllEraReplicaOwnership: true,
+    donorDecisionPreserved: true,
+    coupledOriginUndo: true,
+    continuedParticipantUndoRejected: true,
+    continuedParticipantHttpStatus: refused.status,
+    rejectedUndoBeforeSha256: digest(fingerprint),
+    rejectedUndoAfterSha256: digest(await mutationFingerprint(event)),
+  });
+  await checkpoint();
 }
 async function machinationsChecks(event) {
   const [past, present] = event.seats;
+  await printedEdwinChecks(event);
   let current = await snapshot(past),
     iid = own(current).id;
   await seed(
@@ -1072,8 +1854,8 @@ async function machinationsChecks(event) {
       .eraTindalosClues,
     1,
   );
-  // Alter physical clue state independently: take must refresh its authoritative
-  // native pool rather than debit a stale replicated count.
+  // Change the actual physical pool through a native transaction. The replica
+  // must immediately publish its new count, and pickup must debit it once.
   await seed(
     past,
     {
@@ -1085,7 +1867,13 @@ async function machinationsChecks(event) {
         1,
       ],
     },
-    "Make the native pool newer than the saved replica to test authoritative refresh before taking a clue.",
+    "Increase the actual native pool to test immediate authoritative publication and exactly-once cross-era pickup.",
+  );
+  assert.equal(
+    mapGet((await coordinator(event)).machinationsEras, "PastEra")
+      .eraTindalosClues,
+    2,
+    "Every native transaction publishes the current physical clue pool before another era acts.",
   );
   const originQuestion = (await snapshot(past)).game.question;
   await choose(
@@ -1128,8 +1916,8 @@ async function machinationsChecks(event) {
   assert.equal(
     mapGet((await coordinator(event)).machinationsEras, "PastEra")
       .eraTindalosClues,
-    1,
-    "Undo restores the exact prior ledger; the next transaction refreshes native state again.",
+    2,
+    "Undo restores the exact prior authoritative native pool and ledger.",
   );
   proof.checks.push({
     eventId: event.id,
@@ -1146,9 +1934,10 @@ async function machinationsChecks(event) {
       (c) => code(c) === "87043",
     );
     if (!card) {
-      const template = (scenario(saved).setAsideCards || []).find(
-        (c) => c.tag === "EncounterCard",
-      );
+      const template =
+        (scenario(saved).setAsideCards || []).find(
+          (c) => c.tag === "EncounterCard",
+        ) || values(saved.game.cards).find((c) => c.tag === "EncounterCard");
       assert.ok(
         template,
         "The native scenario supplies a valid encounter-card wire template.",
@@ -1227,25 +2016,91 @@ async function machinationsChecks(event) {
     threePhysicalDamageMapsAgree: true,
     damageReplayIdempotent: true,
   });
+  const beforeExpiry = await Promise.all(event.seats.map(snapshot));
   await expireTimer(event);
   const ended = await coordinator(event);
-  assert.ok(
-    [2, 3, 4].includes(ended.machinationsResolution),
-    "Printed immediate failure resolution committed.",
+  assert.equal(
+    ended.machinationsResolution,
+    3,
+    "The actual Envious Rival world chooses printed Resolution 3 on expiry.",
   );
-  for (const seat of event.seats) {
+  const endings = [];
+  for (const [index, seat] of event.seats.entries()) {
     const saved = await snapshot(seat),
-      question = model(saved);
-    assert.ok(
-      !question?.isPlayerWindow,
-      "Expiry interrupts the normal action decision.",
+      question = model(saved),
+      original = own(beforeExpiry[index]),
+      investigator = own(saved);
+    assert.deepEqual(
+      Object.keys(saved.game.investigators),
+      Object.keys(beforeExpiry[index].game.investigators),
+      "Printed defeat retains the actual local investigator roster at the resolution checkpoint.",
     );
+    assert.equal(investigator.id, original.id);
+    assert.equal(investigator.cardCode, original.cardCode);
+    assert.equal(investigator.playerId, original.playerId);
+    assert.equal(investigator.defeated, true);
+    assert.equal(investigator.eliminated, true);
+    assert.equal(investigator.mentalTrauma, original.mentalTrauma + 1);
+    assert.equal(investigator.physicalTrauma, original.physicalTrauma);
+    assert.equal(meta(saved).epicMachinationsReplica.globalResolution, 3);
+    assert.equal(scenario(saved).inResolution, true);
+    assert.equal(
+      question?.tag,
+      "Read",
+      "Expiry presents the real printed resolution prose immediately.",
+    );
+    assert.ok(JSON.stringify(question.raw).includes("resolution3"));
     assert.ok(
       !JSON.stringify(saved.game.question).includes("AdvanceAgenda"),
       "No agenda flip confirmation delays immediate timeout.",
     );
+    assert.equal(question.choices.length, 1);
+    const continuation = question.choices[0];
+    assert.ok(/continue/i.test(continuation.label));
+    proof.setupAnswers.push({
+      gameId: seat.gameId,
+      category: "printed-timeout-resolution",
+      tag: question.tag,
+      answerIndex: continuation.answerIndex,
+      label: continuation.label,
+    });
+    await answer(
+      seat,
+      protocol.buildChoiceAnswer(question, continuation.answerIndex),
+    );
+    const completed = await snapshot(seat);
+    assert.equal(
+      completed.game.gameState?.tag,
+      "IsOver",
+      "The legitimate printed Continue reaches the actual native game ending.",
+    );
+    assert.equal(Object.keys(completed.game.question || {}).length, 0);
+    const completedInvestigator = own(completed);
+    assert.equal(completedInvestigator.id, original.id);
+    assert.equal(completedInvestigator.playerId, original.playerId);
+    assert.equal(completedInvestigator.cardCode, original.cardCode);
+    assert.equal(
+      completedInvestigator.drivenInsane,
+      true,
+      "The real printed Resolution 3 applies its insanity consequence after Continue.",
+    );
+    endings.push({
+      gameId: seat.gameId,
+      investigatorId: investigator.id,
+      playerId: investigator.playerId,
+      defeated: investigator.defeated,
+      eliminated: investigator.eliminated,
+      mentalTraumaBefore: original.mentalTrauma,
+      mentalTraumaAtResolution: investigator.mentalTrauma,
+      printedResolution: 3,
+      resolutionQuestionSha256: digest(question.raw),
+      completedNativeGameState: completed.game.gameState,
+      completedInvestigatorDrivenInsane: completedInvestigator.drivenInsane,
+      completedSnapshotSha256: digest(completed.game),
+    });
   }
-  const finalBefore = ended.machinationsRevision;
+  const finalBefore = (await coordinator(event)).machinationsRevision,
+    replayBefore = await mutationFingerprint(event);
   const expiryReplay = await http(
     `/api/v1/arkham/events/${event.id}/time-up`,
     {},
@@ -1261,12 +2116,24 @@ async function machinationsChecks(event) {
     finalBefore,
     "Repeated event expiry does not apply a second ending.",
   );
+  assert.deepEqual(
+    await mutationFingerprint(event),
+    replayBefore,
+    "Repeated expiry preserves all three completed native games, histories, coordinator and journal.",
+  );
   proof.checks.push({
     eventId: event.id,
     immediateTimeExpiry: true,
     resolution: ended.machinationsResolution,
     noAgendaConfirmation: true,
     expiryIdempotent: true,
+    nativePrintedResolutionProse: true,
+    retainedDefeatedRosterAtResolution: true,
+    exactlyOneAddedMentalTrauma: true,
+    legitimateContinueEndsAllThreeNativeGames: true,
+    endings,
+    expiryReplayBeforeSha256: digest(replayBefore),
+    expiryReplayAfterSha256: digest(await mutationFingerprint(event)),
   });
 }
 
@@ -1284,7 +2151,35 @@ try {
     binarySha256: status.binarySha256,
     extensionSourceSha256: status.extensionSourceSha256,
     extensions: status.extensions,
+    ...(status.runtimeScope
+      ? {
+          scope: status.runtimeScope,
+          platform: status.platform,
+          capabilityCertified: false,
+        }
+      : {}),
   };
+  if (process.env.ARKHAM_RULES_QA_MANIFEST) {
+    const candidate = await acceptanceManifest(
+      resolve(process.env.ARKHAM_RULES_QA_MANIFEST),
+    );
+    assert.equal(status.binarySha256, candidate.binarySha256);
+    assert.equal(status.extensionSourceSha256, candidate.extensionSourceSha256);
+    assert.deepEqual(
+      [...status.extensions].sort(),
+      [...candidate.extensions].sort(),
+    );
+    proof.candidate = {
+      kind: candidate.kind,
+      ...(candidate.scope
+        ? {
+            scope: candidate.scope,
+            platform: candidate.platform,
+            capabilityCertified: false,
+          }
+        : {}),
+    };
+  }
   secrets.set("organizer", (await request("/chronicle/session")).token);
   const presentation = await request("/chronicle/play/presentation");
   const manifest = JSON.parse(
@@ -1305,10 +2200,11 @@ try {
     campaignSettings: (id) => presentation.campaignSettings[id],
     sideStories: presentation.sideStories,
   };
+  const legacyEvent = resumeLegacy ? await loadLegacyLabyrinth() : undefined;
   const existingList = await request("/chronicle/play/games");
   const prior = [];
   for (const listed of values(existingList))
-    if (uuid.test(listed?.id)) {
+    if (uuid.test(listed?.id) && !ownedGames.has(listed.id)) {
       const saved = await request(`/chronicle/play/games/${listed.id}`);
       prior.push({
         gameId: listed.id,
@@ -1319,13 +2215,23 @@ try {
     }
   proof.existingGamesReadOnly = prior.map((p) => p.gameId);
   await checkpoint();
-  if (prepareTable) {
+  if (prepareClient) {
+    await prepareClientSetupEvent("70001");
+    await prepareClientSetupEvent("87001");
+  } else if (resumeLegacy) {
+    await finishEventSetup(legacyEvent);
+    await refreshPlayerWindows(legacyEvent);
+  } else if (prepareHard) {
+    await prepareTableEvent("70001", "Hard");
+  } else if (prepareTable) {
     await prepareTableEvent("70001");
     await prepareTableEvent("87001");
+  } else if (machinationsOnly) {
+    await machinationsChecks(await redeemEvent());
   } else {
     await labyrinthChecks(await createEvent("70001"));
     await checkpoint();
-    await machinationsChecks(await createEvent("87001"));
+    await machinationsChecks(await redeemEvent());
   }
   for (const p of prior) {
     const saved = await request(`/chronicle/play/games/${p.gameId}`);
@@ -1335,14 +2241,14 @@ try {
       `Pre-existing game ${p.gameId} remains unchanged.`,
     );
   }
-  if (prepareTable) proof.prepared = true;
+  if (preparation) proof.prepared = true;
   else proof.passed = true;
   proof.finishedAt = new Date().toISOString();
   await checkpoint();
   console.log(
-    prepareTable
-      ? `Epic native table seed prepared: ${proof.events.length} new events with three ready seats each. Full acceptance checks not run. Report: ${resolve(output, "report.json")}`
-      : `Epic native API proof passed: ${proof.events.length} new events, ${proof.checks.length} check groups. Report: ${resolve(output, "report.json")}`,
+    preparation
+      ? `Epic native ${prepareClient ? "untouched client setup seed" : resumeLegacy ? "legacy Labyrinth resumption" : prepareHard ? "Hard Labyrinth setup" : "table seed"} prepared: ${proof.events.length} ${resumeLegacy ? "retained" : "new"} events with three ${prepareClient ? "unanswered ChooseDeck" : "ready"} seats each. Full acceptance checks not run. Report: ${resolve(output, "report.json")}`
+      : `${machinationsOnly ? "Machinations scoped" : "Epic"} native API proof passed: ${proof.events.length} new events, ${proof.checks.length} check groups. Report: ${resolve(output, "report.json")}`,
   );
 } catch (error) {
   proof.error = redact(error.stack || error.message);

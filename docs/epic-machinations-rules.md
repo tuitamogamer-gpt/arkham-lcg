@@ -70,21 +70,25 @@ investigator code.
 
 ## Verification status
 
-Twenty-one original coordinator Hspec cases cover group sizing, repeated
-investigator codes, shared setup, announcement ownership, independent progress,
-paired clue effects, shared health, legal location targets, local/global story
-completion, resolution branches and persisted receipts. On 7 October 2026 these
-real suites compiled and executed on Linux with GHC 9.14.1: **21 Machinations +
-30 Labyrinth examples, zero failures**. The separate
-`output/rules-server/rules-coordinator-tests.json` records the actual compiled
-source, driver and binary hashes with `scope: coordinator-only`. The full Epic
-native entities/server graph still requires aggregate compilation and live
-three-group validation; this focused result does not unlock a runtime.
+On 7 October 2026 the complete native engine/API graph compiled and both actual
+binaries linked on Linux with GHC 9.14.1. The sanitized full suite passes
+**194 examples, zero failures**: 75 Machinations, 73 Labyrinth, 42 Barkham and
+four shared public-statistics cases. The earlier 51-example coordinator-only
+proof remains historical evidence; it is no longer the aggregate's test limit.
 
-The continuation adds three authored entity regressions for Rival removal and
-native JSON reload, Colleague removal, and Uneasy Alliance's plot completion
-boundary. The existing redemption and coordinator cases also assert live-face
-progress and unfinished shared selection; the executed coordinator regression
-rejects empty native progress until both chosen stories complete. The three
-entity regressions and live placement projection remain pending full native
-compilation and execution. See [continuation evidence and exact scope](import-continuation-linux-2026-10-07.md).
+Executed native cases include Rival/Colleague removal and JSON reload,
+recursive attachment transport, printed costs, original-owner returns,
+foreign undo boundaries, local/global story completion and Uneasy Alliance's
+plot completion. Fresh Edwin progress now derives from actual locked games
+before action criteria and after physical effects, without an unrelated clue
+operation. Deferred completed story faces count until their physical removal.
+
+Actual-loop tests exercise common setup waiting and announcements. The shared
+dispatcher seam binds the transformed message so both Epic gates reach the
+original native runners. Canonical scenario IDs and exact legacy quoted IDs
+reach the locked event adapter.
+
+Actual API, restart and browser evidence is separate from the native test proof.
+See [aggregate evidence and exact scope](import-native-aggregate-linux-2026-10-07.md).
+The Linux private runtime creates no signed macOS package or ordinary production
+capability manifest; distribution installation remains a separate step.
