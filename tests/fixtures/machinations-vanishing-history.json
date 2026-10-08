@@ -1,0 +1,213 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-public-vanishing-history",
+    "snapshotSha256": "072442c8cf0516ecd14618915fe0bcc6aa996f5f2d8c6e4838c7979585f0f077",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+    "game": {
+      "id": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+      "scenarioSteps": 104,
+      "inSetup": false,
+      "phase": "MythosPhase",
+      "question": {
+        "6c254742-8fbe-444b-bf86-703f3de131ed": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "Label",
+              "label": "$standalone.machinationsThroughTime.label.vanishingHistory.discardItem",
+              "messages": [
+                {
+                  "tag": "Ask",
+                  "contents": [
+                    "6c254742-8fbe-444b-bf86-703f3de131ed",
+                    {
+                      "tag": "ChooseOne",
+                      "choices": [
+                        {
+                          "tag": "TargetLabel",
+                          "target": {
+                            "tag": "AssetTarget",
+                            "contents": "646735e0-cb77-4cf3-8d7a-6a73517caec6"
+                          },
+                          "messages": [
+                            {
+                              "tag": "Discard",
+                              "contents": [
+                                "c01001",
+                                {
+                                  "tag": "TreacherySource",
+                                  "contents": "1d9482e7-424b-47ac-bfad-828861d5bfc1"
+                                },
+                                {
+                                  "tag": "AssetTarget",
+                                  "contents": "646735e0-cb77-4cf3-8d7a-6a73517caec6"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "TargetLabel",
+                          "target": {
+                            "tag": "AssetTarget",
+                            "contents": "cd7c2c5b-9b53-4d10-8378-459bed40b9a2"
+                          },
+                          "messages": [
+                            {
+                              "tag": "Discard",
+                              "contents": [
+                                "c01001",
+                                {
+                                  "tag": "TreacherySource",
+                                  "contents": "1d9482e7-424b-47ac-bfad-828861d5bfc1"
+                                },
+                                {
+                                  "tag": "AssetTarget",
+                                  "contents": "cd7c2c5b-9b53-4d10-8378-459bed40b9a2"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "Label",
+              "label": "$standalone.machinationsThroughTime.label.vanishingHistory.discardCards",
+              "messages": [
+                {
+                  "tag": "DiscardFromHand",
+                  "contents": {
+                    "discardAmount": 3,
+                    "discardBatchCards": [],
+                    "discardDestination": "ToDiscardPile",
+                    "discardFilter": {
+                      "tag": "NonWeakness"
+                    },
+                    "discardInvestigator": "c01001",
+                    "discardSource": {
+                      "contents": "1d9482e7-424b-47ac-bfad-828861d5bfc1",
+                      "tag": "TreacherySource"
+                    },
+                    "discardStrategy": "DiscardChoose",
+                    "discardTarget": null,
+                    "discardThen": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+          "placement": {
+            "contents": "3e78d8ad-4e08-4be6-b2a3-7d625ff24265",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 3,
+          "tokens": [
+            ["Clue", 1],
+            ["Damage", 1],
+            ["Resource", 2]
+          ]
+        }
+      },
+      "locations": {
+        "3e78d8ad-4e08-4be6-b2a3-7d625ff24265": {
+          "id": "3e78d8ad-4e08-4be6-b2a3-7d625ff24265",
+          "cardCode": "c87018",
+          "revealed": true,
+          "tokens": [["Clue", 1]]
+        }
+      },
+      "assets": {
+        "646735e0-cb77-4cf3-8d7a-6a73517caec6": {
+          "id": "646735e0-cb77-4cf3-8d7a-6a73517caec6",
+          "cardCode": "c01006",
+          "placement": {
+            "contents": "c01001",
+            "tag": "InPlayArea"
+          },
+          "tokens": [["Ammo", 4]],
+          "controller": "c01001"
+        },
+        "cd7c2c5b-9b53-4d10-8378-459bed40b9a2": {
+          "id": "cd7c2c5b-9b53-4d10-8378-459bed40b9a2",
+          "cardCode": "c01020",
+          "placement": {
+            "contents": "c01001",
+            "tag": "InPlayArea"
+          },
+          "tokens": [],
+          "controller": "c01001"
+        }
+      },
+      "enemies": {},
+      "stories": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "id": "87001",
+        "log": []
+      }
+    }
+  },
+  "memory": {
+    "group": "Present",
+    "gameId": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+    "actorId": "c01001",
+    "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+    "lastAbility": {
+      "cardCode": "87035",
+      "index": 3,
+      "source": {
+        "tag": "StorySource",
+        "contents": "c87035"
+      },
+      "witness": {
+        "gameId": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+        "actorId": "c01001",
+        "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+        "questionVersion": 101,
+        "questionTag": "WindowChooseOne",
+        "answerIndex": 0,
+        "label": "c87035: Forced ability"
+      }
+    },
+    "lastCardPlayed": "01020",
+    "locationVisits": {
+      "17a09686-5358-47d8-9064-eed1afdd06db": 1,
+      "3e78d8ad-4e08-4be6-b2a3-7d625ff24265": 1
+    }
+  },
+  "cards": [
+    {
+      "code": "01006",
+      "type_code": "asset",
+      "subtype_code": null,
+      "traits": "Item. Weapon. Firearm.",
+      "encounter_code": null
+    },
+    {
+      "code": "01020",
+      "type_code": "asset",
+      "subtype_code": null,
+      "traits": "Item. Weapon. Melee.",
+      "encounter_code": null
+    }
+  ],
+  "expected": {
+    "answerIndex": 0
+  }
+}

@@ -69,7 +69,8 @@
     },
     {
       "id": "11",
-      "name": "The Drowned City"
+      "name": "The Drowned City",
+      "beta": true
     },
     {
       "id": "12",
@@ -77,11 +78,13 @@
     },
     {
       "id": "13",
-      "name": "Children of Blood"
+      "name": "Children of Blood",
+      "alpha": true
     },
     {
       "id": "83",
-      "name": "Guardians of the Abyss"
+      "name": "Guardians of the Abyss",
+      "beta": true
     }
   ],
   "scenarios": [
@@ -698,51 +701,61 @@
     {
       "id": "11501",
       "name": "One Last Job",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11517",
       "name": "The Western Wall",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11536",
       "name": "The Drowned Quarter",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11553",
       "name": "The Apiary",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11587",
       "name": "The Grand Vault",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11612",
       "name": "Court of the Ancients",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11639",
       "name": "Obsidian Canyons",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11673",
       "name": "Sepulchre of the Sleeper",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11682",
       "name": "The Doom of Arkham Part I",
+      "beta": true,
       "campaign": "11"
     },
     {
       "id": "11688a",
       "name": "The Doom of Arkham Part II",
+      "beta": true,
       "campaign": "11"
     },
     {
@@ -763,16 +776,19 @@
     {
       "id": "13001",
       "name": "River of Blood",
+      "alpha": true,
       "campaign": "13"
     },
     {
       "id": "13031",
       "name": "New Horizons",
+      "alpha": true,
       "campaign": "13"
     },
     {
       "id": "13068",
       "name": "Blood Money",
+      "alpha": true,
       "campaign": "13"
     },
     {
@@ -794,6 +810,7 @@
     {
       "id": "70001",
       "name": "The Labyrinths of Lunacy",
+      "beta": true,
       "standaloneDifficulties": [
         "Standard",
         "Hard"
@@ -803,6 +820,7 @@
       "id": "70001",
       "name": "The Labyrinths of Lunacy · mini campaign",
       "variant": "mini",
+      "beta": true,
       "standaloneDifficulties": [
         "Standard",
         "Hard"
@@ -811,6 +829,7 @@
     {
       "id": "83001",
       "name": "The Eternal Slumber",
+      "beta": true,
       "campaign": "83",
       "standaloneDifficulties": [
         "Standard",
@@ -820,6 +839,7 @@
     {
       "id": "83016",
       "name": "The Night's Usurper",
+      "beta": true,
       "campaign": "83",
       "standaloneDifficulties": [
         "Standard",
@@ -854,6 +874,7 @@
     {
       "id": "86001",
       "name": "War of the Outer Gods",
+      "beta": true,
       "standaloneDifficulties": [
         "Easy",
         "Standard",
@@ -864,6 +885,7 @@
     {
       "id": "87001",
       "name": "Machinations Through Time",
+      "beta": true,
       "standaloneDifficulties": [
         "Easy",
         "Standard",

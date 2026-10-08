@@ -1,0 +1,320 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-public-combat-result",
+    "snapshotSha256": "b48debc11655d98f09aa8fa52b989bdf82d4a3b222e52912c392ad3f1b649bfb",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+    "game": {
+      "id": "59661314-cebd-445b-ae32-22675c2f4785",
+      "scenarioSteps": 72,
+      "inSetup": false,
+      "phase": "InvestigationPhase",
+      "question": {
+        "6b943836-845a-473a-81df-2d5ff6738090": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "Label",
+              "label": "Damage Ghastly Satyr",
+              "messages": [
+                {
+                  "tag": "UpdateHistory",
+                  "contents": [
+                    "c01001",
+                    {
+                      "field": "HistorySuccessfulAttacks",
+                      "value": 1
+                    }
+                  ]
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "Successful_",
+                    "contents": [
+                      [
+                        "Fight",
+                        {
+                          "tag": "EnemyTarget",
+                          "contents": "969e39fa-5fbb-439f-a110-1c0fc6c897fe"
+                        }
+                      ],
+                      "c01001",
+                      {
+                        "tag": "AbilitySource",
+                        "contents": [
+                          {
+                            "tag": "AssetSource",
+                            "contents": "fc492bd1-52a3-497a-ad5c-99bc1d042f7c"
+                          },
+                          1
+                        ]
+                      },
+                      {
+                        "tag": "EnemyTarget",
+                        "contents": "969e39fa-5fbb-439f-a110-1c0fc6c897fe"
+                      },
+                      3
+                    ]
+                  }
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "SkillTestResultOptions_",
+                    "contents": [
+                      {
+                        "option": {
+                          "tag": "Label",
+                          "label": "$name __name=s:\"01091\" name=s:\"Overpower\"",
+                          "messages": [
+                            {
+                              "tag": "DrawCards",
+                              "contents": [
+                                "c01001",
+                                {
+                                  "cardDrawSource": {
+                                    "tag": "SkillSource",
+                                    "contents": "99bce1ac-ac3c-44fa-ba1a-f7d8da52b20a"
+                                  },
+                                  "cardDrawDeck": {
+                                    "tag": "InvestigatorDeck",
+                                    "contents": "c01001"
+                                  },
+                                  "cardDrawAmount": 1,
+                                  "cardDrawState": {
+                                    "tag": "UnresolvedCardDraw"
+                                  },
+                                  "cardDrawTarget": null,
+                                  "cardDrawAction": false,
+                                  "cardDrawKind": "StandardCardDraw",
+                                  "cardDrawPosition": "DrawFromTop",
+                                  "cardDrawRules": [],
+                                  "cardDrawAndThen": null,
+                                  "cardDrawAlreadyDrawn": [],
+                                  "cardDrawDiscard": null
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "kind": "AdditionalOptionKind",
+                        "criteria": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tag": "Label",
+              "label": "$name __name=s:\"01091\" name=s:\"Overpower\"",
+              "messages": [
+                {
+                  "tag": "DrawCards",
+                  "contents": [
+                    "c01001",
+                    {
+                      "cardDrawSource": {
+                        "tag": "SkillSource",
+                        "contents": "99bce1ac-ac3c-44fa-ba1a-f7d8da52b20a"
+                      },
+                      "cardDrawDeck": {
+                        "tag": "InvestigatorDeck",
+                        "contents": "c01001"
+                      },
+                      "cardDrawAmount": 1,
+                      "cardDrawState": {
+                        "tag": "UnresolvedCardDraw"
+                      },
+                      "cardDrawTarget": null,
+                      "cardDrawAction": false,
+                      "cardDrawKind": "StandardCardDraw",
+                      "cardDrawPosition": "DrawFromTop",
+                      "cardDrawRules": [],
+                      "cardDrawAndThen": null,
+                      "cardDrawAlreadyDrawn": [],
+                      "cardDrawDiscard": null
+                    }
+                  ]
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "SkillTestResultOptions_",
+                    "contents": [
+                      {
+                        "option": {
+                          "tag": "Label",
+                          "label": "Damage Ghastly Satyr",
+                          "messages": [
+                            {
+                              "tag": "UpdateHistory",
+                              "contents": [
+                                "c01001",
+                                {
+                                  "field": "HistorySuccessfulAttacks",
+                                  "value": 1
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "SkillTestMessage",
+                              "contents": {
+                                "tag": "Successful_",
+                                "contents": [
+                                  [
+                                    "Fight",
+                                    {
+                                      "tag": "EnemyTarget",
+                                      "contents": "969e39fa-5fbb-439f-a110-1c0fc6c897fe"
+                                    }
+                                  ],
+                                  "c01001",
+                                  {
+                                    "tag": "AbilitySource",
+                                    "contents": [
+                                      {
+                                        "tag": "AssetSource",
+                                        "contents": "fc492bd1-52a3-497a-ad5c-99bc1d042f7c"
+                                      },
+                                      1
+                                    ]
+                                  },
+                                  {
+                                    "tag": "EnemyTarget",
+                                    "contents": "969e39fa-5fbb-439f-a110-1c0fc6c897fe"
+                                  },
+                                  3
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "kind": "OriginalOptionKind",
+                        "criteria": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "skillTest": {
+        "id": "0923f42a-0b56-4e8d-8647-b61e2743ff2c",
+        "investigator": "c01001",
+        "action": "Fight",
+        "source": {
+          "contents": [
+            {
+              "contents": "fc492bd1-52a3-497a-ad5c-99bc1d042f7c",
+              "tag": "AssetSource"
+            },
+            1
+          ],
+          "tag": "AbilitySource"
+        },
+        "target": {
+          "contents": "969e39fa-5fbb-439f-a110-1c0fc6c897fe",
+          "tag": "EnemyTarget"
+        },
+        "step": "ApplySkillTestResultsStep",
+        "result": {
+          "contents": ["NonAutomatic", 3],
+          "tag": "SucceededBy"
+        }
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+          "placement": {
+            "contents": "ef12072b-a69c-4ad7-9c7e-2dd066e5b664",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 2,
+          "tokens": [
+            ["Clue", 1],
+            ["Damage", 2],
+            ["Resource", 1]
+          ],
+          "engagedEnemies": ["969e39fa-5fbb-439f-a110-1c0fc6c897fe"]
+        }
+      },
+      "locations": {
+        "ef12072b-a69c-4ad7-9c7e-2dd066e5b664": {
+          "id": "ef12072b-a69c-4ad7-9c7e-2dd066e5b664",
+          "cardCode": "c87010",
+          "revealed": true,
+          "tokens": [["Clue", 1]]
+        }
+      },
+      "assets": {
+        "fc492bd1-52a3-497a-ad5c-99bc1d042f7c": {
+          "id": "fc492bd1-52a3-497a-ad5c-99bc1d042f7c",
+          "cardCode": "c01020",
+          "placement": {
+            "contents": "c01001",
+            "tag": "InPlayArea"
+          },
+          "controller": "c01001"
+        }
+      },
+      "enemies": {
+        "969e39fa-5fbb-439f-a110-1c0fc6c897fe": {
+          "id": "969e39fa-5fbb-439f-a110-1c0fc6c897fe",
+          "cardCode": "c87044",
+          "placement": {
+            "contents": "c01001",
+            "tag": "InThreatArea"
+          },
+          "exhausted": false,
+          "tokens": []
+        }
+      },
+      "stories": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "id": "87001",
+        "log": []
+      }
+    }
+  },
+  "memory": {
+    "group": "Past",
+    "gameId": "59661314-cebd-445b-ae32-22675c2f4785",
+    "actorId": "c01001",
+    "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+    "lastAbility": {
+      "cardCode": "01020",
+      "index": 1,
+      "source": {
+        "tag": "AssetSource",
+        "contents": "fc492bd1-52a3-497a-ad5c-99bc1d042f7c"
+      },
+      "witness": {
+        "gameId": "59661314-cebd-445b-ae32-22675c2f4785",
+        "actorId": "c01001",
+        "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+        "questionVersion": 67,
+        "questionTag": "PlayerWindowChooseOne",
+        "answerIndex": 11,
+        "label": "Machete: Fight"
+      }
+    },
+    "locationVisits": {
+      "a4bfa47d-c8ce-492d-9cce-445175b299bc": 1,
+      "ef12072b-a69c-4ad7-9c7e-2dd066e5b664": 1
+    },
+    "lastCardPlayed": "01030"
+  },
+  "expected": {
+    "answerIndex": 0
+  }
+}

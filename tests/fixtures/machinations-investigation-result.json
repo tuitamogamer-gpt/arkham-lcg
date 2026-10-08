@@ -1,0 +1,291 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-public-result-wire",
+    "snapshotSha256": "0f82a3fca157d2f3b95565e49199926e4243963c860fd9b4c821e6c8faada963",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+    "game": {
+      "id": "59661314-cebd-445b-ae32-22675c2f4785",
+      "scenarioSteps": 25,
+      "inSetup": false,
+      "phase": "InvestigationPhase",
+      "question": {
+        "6b943836-845a-473a-81df-2d5ff6738090": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "Label",
+              "label": "Discover Clue at O'Malley's Watch Shop",
+              "messages": [
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "Successful_",
+                    "contents": [
+                      [
+                        "Investigate",
+                        {
+                          "tag": "LocationTarget",
+                          "contents": "a4bfa47d-c8ce-492d-9cce-445175b299bc"
+                        }
+                      ],
+                      "c01001",
+                      {
+                        "tag": "AbilitySource",
+                        "contents": [
+                          {
+                            "tag": "AssetSource",
+                            "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a"
+                          },
+                          1
+                        ]
+                      },
+                      {
+                        "tag": "AssetTarget",
+                        "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a"
+                      },
+                      6
+                    ]
+                  }
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "SkillTestResultOptions_",
+                    "contents": [
+                      {
+                        "option": {
+                          "tag": "Label",
+                          "label": "$name __name=s:\"01090\" name=s:\"Perception\"",
+                          "messages": [
+                            {
+                              "tag": "DrawCards",
+                              "contents": [
+                                "c01001",
+                                {
+                                  "cardDrawSource": {
+                                    "tag": "SkillSource",
+                                    "contents": "787094ba-7498-4f0c-a129-19a732881b53"
+                                  },
+                                  "cardDrawDeck": {
+                                    "tag": "InvestigatorDeck",
+                                    "contents": "c01001"
+                                  },
+                                  "cardDrawAmount": 1,
+                                  "cardDrawState": {
+                                    "tag": "UnresolvedCardDraw"
+                                  },
+                                  "cardDrawTarget": null,
+                                  "cardDrawAction": false,
+                                  "cardDrawKind": "StandardCardDraw",
+                                  "cardDrawPosition": "DrawFromTop",
+                                  "cardDrawRules": [],
+                                  "cardDrawAndThen": null,
+                                  "cardDrawAlreadyDrawn": [],
+                                  "cardDrawDiscard": null
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "kind": "AdditionalOptionKind",
+                        "criteria": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tag": "Label",
+              "label": "$name __name=s:\"01090\" name=s:\"Perception\"",
+              "messages": [
+                {
+                  "tag": "DrawCards",
+                  "contents": [
+                    "c01001",
+                    {
+                      "cardDrawSource": {
+                        "tag": "SkillSource",
+                        "contents": "787094ba-7498-4f0c-a129-19a732881b53"
+                      },
+                      "cardDrawDeck": {
+                        "tag": "InvestigatorDeck",
+                        "contents": "c01001"
+                      },
+                      "cardDrawAmount": 1,
+                      "cardDrawState": {
+                        "tag": "UnresolvedCardDraw"
+                      },
+                      "cardDrawTarget": null,
+                      "cardDrawAction": false,
+                      "cardDrawKind": "StandardCardDraw",
+                      "cardDrawPosition": "DrawFromTop",
+                      "cardDrawRules": [],
+                      "cardDrawAndThen": null,
+                      "cardDrawAlreadyDrawn": [],
+                      "cardDrawDiscard": null
+                    }
+                  ]
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "SkillTestResultOptions_",
+                    "contents": [
+                      {
+                        "option": {
+                          "tag": "Label",
+                          "label": "Discover Clue at O'Malley's Watch Shop",
+                          "messages": [
+                            {
+                              "tag": "SkillTestMessage",
+                              "contents": {
+                                "tag": "Successful_",
+                                "contents": [
+                                  [
+                                    "Investigate",
+                                    {
+                                      "tag": "LocationTarget",
+                                      "contents": "a4bfa47d-c8ce-492d-9cce-445175b299bc"
+                                    }
+                                  ],
+                                  "c01001",
+                                  {
+                                    "tag": "AbilitySource",
+                                    "contents": [
+                                      {
+                                        "tag": "AssetSource",
+                                        "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a"
+                                      },
+                                      1
+                                    ]
+                                  },
+                                  {
+                                    "tag": "AssetTarget",
+                                    "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a"
+                                  },
+                                  6
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "kind": "OriginalOptionKind",
+                        "criteria": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+          "placement": {
+            "contents": "a4bfa47d-c8ce-492d-9cce-445175b299bc",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 1,
+          "tokens": [["Resource", 5]]
+        }
+      },
+      "locations": {
+        "a4bfa47d-c8ce-492d-9cce-445175b299bc": {
+          "id": "a4bfa47d-c8ce-492d-9cce-445175b299bc",
+          "cardCode": "c87008",
+          "revealed": true,
+          "tokens": [["Clue", 3]]
+        }
+      },
+      "assets": {
+        "7e48e0a0-b144-40ab-8881-bbe020b40b1a": {
+          "id": "7e48e0a0-b144-40ab-8881-bbe020b40b1a",
+          "cardCode": "c87013",
+          "placement": {
+            "contents": "a4bfa47d-c8ce-492d-9cce-445175b299bc",
+            "tag": "AtLocation"
+          },
+          "controller": null
+        }
+      },
+      "enemies": {},
+      "stories": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "id": "87001",
+        "log": []
+      },
+      "skillTest": {
+        "id": "9a917dd9-a6ca-401c-924f-59f313139f9f",
+        "investigator": "c01001",
+        "action": "Investigate",
+        "source": {
+          "contents": [
+            {
+              "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a",
+              "tag": "AssetSource"
+            },
+            1
+          ],
+          "tag": "AbilitySource"
+        },
+        "target": {
+          "contents": [
+            {
+              "contents": "a4bfa47d-c8ce-492d-9cce-445175b299bc",
+              "tag": "LocationTarget"
+            },
+            {
+              "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a",
+              "tag": "AssetTarget"
+            }
+          ],
+          "tag": "ProxyTarget"
+        },
+        "step": "ApplySkillTestResultsStep",
+        "result": {
+          "contents": ["NonAutomatic", 6],
+          "tag": "SucceededBy"
+        }
+      }
+    }
+  },
+  "memory": {
+    "group": "Past",
+    "gameId": "59661314-cebd-445b-ae32-22675c2f4785",
+    "actorId": "c01001",
+    "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+    "lastAbility": {
+      "cardCode": "87013",
+      "index": 1,
+      "source": {
+        "tag": "AssetSource",
+        "contents": "7e48e0a0-b144-40ab-8881-bbe020b40b1a"
+      },
+      "witness": {
+        "gameId": "59661314-cebd-445b-ae32-22675c2f4785",
+        "actorId": "c01001",
+        "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+        "questionVersion": 20,
+        "questionTag": "PlayerWindowChooseOne",
+        "answerIndex": 8,
+        "label": "Mary Zielinski: Investigate"
+      }
+    },
+    "locationVisits": {
+      "a4bfa47d-c8ce-492d-9cce-445175b299bc": 1
+    }
+  },
+  "expected": {
+    "answerIndex": 0
+  }
+}

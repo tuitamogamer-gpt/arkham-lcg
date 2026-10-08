@@ -1,0 +1,1393 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "03a7f1e74925744f021f6e8fe0e39945d2c3a833",
+  "catalog": {
+    "revision": "7ae21d7563ce9f68396c0d5e3a36f40f90fe1156",
+    "cardDefinitions": 6109,
+    "products": 116,
+    "visibleNonMiniNonKeyRecords": 5757,
+    "capturedRegistryCodeMatches": 5696,
+    "capturedRegistryCodeMismatches": 61,
+    "unmatchedPlayerDeckDefinitions": 0
+  },
+  "core": {
+    "scenarios": [
+      {
+        "id": "12105",
+        "name": "Spreading Flames"
+      }
+    ],
+    "investigatorCodes": [
+      "12001",
+      "12004",
+      "12007",
+      "12010",
+      "12013"
+    ],
+    "reachableScriptedCardCodes": [
+      "12001",
+      "12004",
+      "12007",
+      "12010",
+      "12013",
+      "12002",
+      "12016",
+      "12017",
+      "12018",
+      "12019",
+      "12020",
+      "12021",
+      "12072",
+      "12073",
+      "12074",
+      "12075",
+      "12076",
+      "12077",
+      "12086",
+      "12088",
+      "12022",
+      "12023",
+      "12024",
+      "12078",
+      "12079",
+      "12089",
+      "12025",
+      "12080",
+      "12081",
+      "12092",
+      "12094",
+      "12003",
+      "12104",
+      "12030",
+      "12031",
+      "12032",
+      "12033",
+      "12034",
+      "12035",
+      "12087",
+      "12005",
+      "12036",
+      "12037",
+      "12038",
+      "12039",
+      "12093",
+      "12006",
+      "12100",
+      "12008",
+      "12044",
+      "12045",
+      "12046",
+      "12047",
+      "12048",
+      "12049",
+      "12050",
+      "12051",
+      "12052",
+      "12053",
+      "12091",
+      "12009",
+      "12103",
+      "12058",
+      "12059",
+      "12060",
+      "12061",
+      "12062",
+      "12063",
+      "12011",
+      "12064",
+      "12065",
+      "12066",
+      "12067",
+      "12090",
+      "12012",
+      "12101",
+      "12014",
+      "12015",
+      "12102",
+      "12105",
+      "12113",
+      "12117",
+      "12116",
+      "12118",
+      "12119",
+      "12120",
+      "12106",
+      "12107",
+      "12108",
+      "12109",
+      "12110",
+      "12111",
+      "12112",
+      "12121",
+      "12122",
+      "12123",
+      "12124",
+      "12125",
+      "12126",
+      "12127",
+      "12128",
+      "12130",
+      "12131",
+      "12132",
+      "12114",
+      "12129",
+      "12115"
+    ],
+    "scope": "Independent Core TypeScript engine: fixed starter lists and this reachable scenario pool; focused regressions do not certify every possible interaction."
+  },
+  "native": {
+    "declaredBuilders": {
+      "Scenario": 160,
+      "Asset": 1177,
+      "Event": 519,
+      "Skill": 157,
+      "Investigator": 96
+    },
+    "sourceFiles": 2127,
+    "sourceSha256": "f2d864719e092f9693b52cd65a92f9448c47a723c52fd20876e7574e5d7146ae",
+    "campaignRegistryKeys": 20,
+    "playModeCount": 161,
+    "uniqueScenarioIds": 159,
+    "campaigns": [
+      {
+        "id": "01",
+        "name": "The Night of the Zealot"
+      },
+      {
+        "id": "02",
+        "name": "The Dunwich Legacy"
+      },
+      {
+        "id": "03",
+        "name": "The Path to Carcosa"
+      },
+      {
+        "id": "04",
+        "name": "The Forgotten Age"
+      },
+      {
+        "id": "05",
+        "name": "The Circle Undone"
+      },
+      {
+        "id": "06",
+        "name": "The Dream-Eaters"
+      },
+      {
+        "id": "07",
+        "name": "The Innsmouth Conspiracy"
+      },
+      {
+        "id": "08",
+        "name": "Edge of the Earth"
+      },
+      {
+        "id": "09",
+        "name": "The Scarlet Keys"
+      },
+      {
+        "id": "10",
+        "name": "The Feast of Hemlock Vale"
+      },
+      {
+        "id": "11",
+        "name": "The Drowned City",
+        "beta": true
+      },
+      {
+        "id": "12",
+        "name": "Brethren of Ash"
+      },
+      {
+        "id": "13",
+        "name": "Children of Blood",
+        "alpha": true
+      },
+      {
+        "id": "83",
+        "name": "Guardians of the Abyss",
+        "beta": true
+      }
+    ],
+    "scenarios": [
+      {
+        "id": "01104",
+        "name": "The Gathering",
+        "campaign": "01",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "50011",
+        "name": "Return to the Gathering",
+        "campaign": "01",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "01120",
+        "name": "The Midnight Masks",
+        "campaign": "01",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "50025",
+        "name": "Return to The Midnight Masks",
+        "campaign": "01",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "01142",
+        "name": "The Devourer Below",
+        "campaign": "01",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "50032",
+        "name": "Return to The Devourer Below",
+        "campaign": "01",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02041",
+        "name": "Extracurricular Activity",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51012",
+        "name": "Return to Extracurricular Activities",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02062",
+        "name": "The House Always Wins",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51015",
+        "name": "Return to the House Always Wins",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02118",
+        "name": "The Miskatonic Museum",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51020",
+        "name": "Return to the Miskatonic Museum",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02159",
+        "name": "The Essex County Express",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51025",
+        "name": "Return to the Essex County Express",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02195",
+        "name": "Blood on the Altar",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51032",
+        "name": "Return to Blood on the Altar",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02236",
+        "name": "Undimensioned and Unseen",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51041",
+        "name": "Return to Undimensioned and Unseen",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02274",
+        "name": "Where Doom Awaits",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51047",
+        "name": "Return to Where Doom Awaits",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "02311",
+        "name": "Lost in Time and Space",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "51053",
+        "name": "Return to Lost in Time and Space",
+        "campaign": "02",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03043",
+        "name": "Curtain Call",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52014",
+        "name": "Return to Curtain Call",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03061",
+        "name": "The Last King",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52021",
+        "name": "Return to The Last King",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03120",
+        "name": "Echoes of the Past",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52028",
+        "name": "Return to Echoes of the Path",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03159",
+        "name": "The Unspeakable Oath",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52034",
+        "name": "Return to The Unspeakable Oath",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03200",
+        "name": "A Phantom of Truth",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52040",
+        "name": "Return to A Phantom of Truth",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03240",
+        "name": "The Pallid Mask",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52048",
+        "name": "Return to The Pallid Mask",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03274",
+        "name": "Black Stars Rise",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52054",
+        "name": "Return to Black Stars Rise",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "03316",
+        "name": "Dim Carcosa",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "52059",
+        "name": "Return to Dim Carcosa",
+        "campaign": "03",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04043",
+        "name": "The Untamed Wilds",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53016",
+        "name": "Return to The Untamed Wilds",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04054",
+        "name": "The Doom of Eztli",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53017",
+        "name": "Return to The Doom of Eztli",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04113",
+        "name": "Threads of Fate",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53028",
+        "name": "Return to Threads of Fate",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04161",
+        "name": "The Boundary Beyond",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53038",
+        "name": "Return to The Boundary Beyond",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04205a",
+        "name": "Heart of the Elders, Part1",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53045",
+        "name": "Return to Heart of the Elders",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04205b",
+        "name": "Heart of the Elders, Part2",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53048",
+        "name": "Return to Heart of the Elders",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04237",
+        "name": "The City of Archives",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53053",
+        "name": "Return to The City of Archives",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04277",
+        "name": "The Depths of Yoth",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53059",
+        "name": "Return to The Depths of Yoth",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04314",
+        "name": "Shattered Aeons",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53061",
+        "name": "Return to Shattered Aeons",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "04344",
+        "name": "Turn Back Time",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "53066",
+        "name": "Return to Turn Back Time",
+        "campaign": "04",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05043",
+        "name": "Disappearance at the Twilight Estate",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54016",
+        "name": "Return to Disappearance at the Twilight Estate",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05050",
+        "name": "The Witching Hour",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54017",
+        "name": "Return to The Witching Hour",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05065",
+        "name": "At Death's Doorstep",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54024",
+        "name": "Return to At Death's Doorstep",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05120",
+        "name": "The Secret Name",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54029",
+        "name": "Return to The Secret Name",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05161",
+        "name": "The Wages of Sin",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54034",
+        "name": "Return to The Wages of Sin",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05197",
+        "name": "For the Greater Good",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54042",
+        "name": "Return to For the Greater Good",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05238",
+        "name": "Union and Disillusion",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54046",
+        "name": "Return to Union and Disillusion",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05284",
+        "name": "In the Clutches of Chaos",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54049",
+        "name": "Return to In the Clutches of Chaos",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "05325",
+        "name": "Before the Black Throne",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "54056",
+        "name": "Return to Before the Black Throne",
+        "campaign": "05",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06039",
+        "name": "Beyond the Gates of Sleep",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06063",
+        "name": "Waking Nightmare",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06119",
+        "name": "The Search for Kadath",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06168",
+        "name": "A Thousand Shapes of Horror",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06206",
+        "name": "Dark Side of the Moon",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06247",
+        "name": "Point of No Return",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06286",
+        "name": "Where the Gods Dwell",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "06333",
+        "name": "Weaver of the Cosmos",
+        "campaign": "06",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07041",
+        "name": "The Pit of Despair",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07056",
+        "name": "The Vanishing of Elina Harper",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07123",
+        "name": "In Too Deep",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07163",
+        "name": "Devil Reef",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07198",
+        "name": "Horror in High Gear",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07231",
+        "name": "A Light in the Fog",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07274",
+        "name": "The Lair of Dagon",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "07311",
+        "name": "Into the Maelstrom",
+        "campaign": "07",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08501a",
+        "name": "Ice and Death, Part I",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08501b",
+        "name": "Ice and Death, Part II",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08501c",
+        "name": "Ice and Death, Part III",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08549",
+        "name": "Fatal Mirage",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08596",
+        "name": "To the Forbidden Peaks",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08621",
+        "name": "City of the Elder Things",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08648a",
+        "name": "The Heart of Madness, Part I",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "08648b",
+        "name": "The Heart of Madness, Part II",
+        "campaign": "08",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09501",
+        "name": "Riddles and Rain",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09520",
+        "name": "Dead Heat",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09545",
+        "name": "Sanguine Shadows",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09566",
+        "name": "Dealings in the Dark",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09591",
+        "name": "Dancing Mad",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09609",
+        "name": "On Thin Ice",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09635",
+        "name": "Dogs of War",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09660",
+        "name": "Shades of Suffering",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09681",
+        "name": "Without a Trace",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "09694",
+        "name": "Congress of the Keys",
+        "campaign": "09",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10704",
+        "name": "Prelude: Welcome to Hemlock Vale",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10501",
+        "name": "Written in Rock",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10523",
+        "name": "Hemlock House",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10549",
+        "name": "The Silent Heath",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10569",
+        "name": "The Lost Sister",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10588",
+        "name": "The Thing in the Depths",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10605",
+        "name": "The Twisted Hollow",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10677a",
+        "name": "Prelude: Dawn of the Second Day",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10626",
+        "name": "The Longest Night",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10679a",
+        "name": "Prelude: Dawn of the Final Day",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10679b",
+        "name": "Prelude: The Final Evening",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "10651",
+        "name": "Fate of the Vale",
+        "campaign": "10",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11501",
+        "name": "One Last Job",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11517",
+        "name": "The Western Wall",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11536",
+        "name": "The Drowned Quarter",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11553",
+        "name": "The Apiary",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11587",
+        "name": "The Grand Vault",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11612",
+        "name": "Court of the Ancients",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11639",
+        "name": "Obsidian Canyons",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11673",
+        "name": "Sepulchre of the Sleeper",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11682",
+        "name": "The Doom of Arkham Part I",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "11688a",
+        "name": "The Doom of Arkham Part II",
+        "campaign": "11",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "12105",
+        "name": "Spreading Flames",
+        "campaign": "12",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "12133",
+        "name": "Smoke and Mirrors",
+        "campaign": "12",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "12168",
+        "name": "Queen of Ash",
+        "campaign": "12",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "13001",
+        "name": "River of Blood",
+        "campaign": "13",
+        "alpha": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "13031",
+        "name": "New Horizons",
+        "campaign": "13",
+        "alpha": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "13068",
+        "name": "Blood Money",
+        "campaign": "13",
+        "alpha": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "81001",
+        "name": "Curse of the Rougarou",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "82001",
+        "name": "Carnevale of Horrors",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "70001",
+        "name": "The Labyrinths of Lunacy",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "70001",
+        "name": "The Labyrinths of Lunacy · mini campaign",
+        "variant": "mini",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "83001",
+        "name": "The Eternal Slumber",
+        "campaign": "83",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "83016",
+        "name": "The Night's Usurper",
+        "campaign": "83",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "84001",
+        "name": "Murder at the Excelsior Hotel",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "85001",
+        "name": "The Blob That Ate Everything",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "85001",
+        "name": "The Blob That Ate Everything ELSE!",
+        "variant": "blobElse",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "86001",
+        "name": "War of the Outer Gods",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "87001",
+        "name": "Machinations Through Time",
+        "beta": true,
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "88001",
+        "name": "Fortune and Folly",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "71001",
+        "name": "The Midwinter Gala",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "72001",
+        "name": "Film Fatale",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90004",
+        "name": "Read or Die",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90011",
+        "name": "All or Nothing",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90020",
+        "name": "Bad Blood",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90032",
+        "name": "By the Book",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90041",
+        "name": "Red Tide Rising",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90054",
+        "name": "Laid to Rest",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90065",
+        "name": "Relics of the Past",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": "90094",
+        "name": "Enthralling Encore",
+        "sourceBuilderDeclared": true
+      },
+      {
+        "id": ":barkham:022",
+        "name": "The Meddling of Meowlathotep",
+        "campaign": ":barkham",
+        "sourceBuilderDeclared": true
+      }
+    ],
+    "scenarioAliases": [
+      [
+        "08648",
+        "08648a"
+      ],
+      [
+        "10502",
+        "10501"
+      ]
+    ]
+  },
+  "evidence": {
+    "registry": {
+      "provenance": {
+        "path": "output/native-api-resume-2026-10-08/status.json",
+        "sha256": "14f49a1ac77421173aa1911737e78c36c9e11daa8f7a8b1e0b107c248209b258"
+      },
+      "scope": "Recorded private native QA registry; these aliases/reference codes are not an executable-builder allowlist.",
+      "platform": "linux",
+      "recordedReady": true,
+      "binarySha256": "12833b2c26599a610148becf2842a738cce8c71d5ee7b80b54f7676f552d6bd4",
+      "extensionSourceSha256": "4088f4badb00f37a9e3a77680698cd2b1872469b1796c70b82e2a3dd0a2d1cd3",
+      "supportedCodeAliases": 6331,
+      "investigatorCodes": 114,
+      "scenarioReferenceCodes": 169
+    },
+    "focusedNativeTests": {
+      "provenance": {
+        "path": "output/rules-server/rules-native-check.json",
+        "sha256": "2c3b90fa90fe339b14674811edf603650f1647220d0c4eac5f5499550f624667"
+      },
+      "examples": 232,
+      "failures": 0,
+      "platform": "linux",
+      "verifiedAt": "2026-10-08T06:39:56.576Z",
+      "binarySha256": "12833b2c26599a610148becf2842a738cce8c71d5ee7b80b54f7676f552d6bd4",
+      "extensionSourceSha256": "4088f4badb00f37a9e3a77680698cd2b1872469b1796c70b82e2a3dd0a2d1cd3",
+      "scope": "Focused aggregate extension behavior; every upstream card interaction and whole legal victories are outside this proof."
+    },
+    "legalAttempts": [
+      {
+        "provenance": {
+          "path": "output/native-api-acceptance/run-4/scenario-barkham-legal-232-1-resume-7/report.json",
+          "sha256": "ac4eca25b12ae1309fdd3d18bcc70795f058b1e97c1b9a1452e90a37836f0dfc"
+        },
+        "scenario": "barkham",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": null,
+        "nativeGameEnded": false
+      },
+      {
+        "provenance": {
+          "path": "output/native-api-acceptance/run-4/scenario-barkham-legal-232-2-resume-5/report.json",
+          "sha256": "b6d89639c23c31dc8f4f8d4fde248b5e3334d967fbbed95585da4e3244d9c1ae"
+        },
+        "scenario": "barkham",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": 2,
+        "nativeGameEnded": true
+      },
+      {
+        "provenance": {
+          "path": "output/native-api-acceptance/run-4/scenario-barkham-legal-232-3-resume-1/report.json",
+          "sha256": "2ee3fea80700776739a1578acfefe9189507e3507c9465c849f9523010b62890"
+        },
+        "scenario": "barkham",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": 2,
+        "nativeGameEnded": true
+      },
+      {
+        "provenance": {
+          "path": "output/native-api-acceptance/run-4/scenario-labyrinth-legal-232-1-resume-4/report.json",
+          "sha256": "7436a54ef01ccf463b523a71a170a8e9e1ce89cf3a8be63f9767ba7c4f6d5e5c"
+        },
+        "scenario": "labyrinth",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": null,
+        "nativeGameEnded": false
+      },
+      {
+        "provenance": {
+          "path": "output/continuation-ordered/legal/barkham-232-fresh-4-resume-1/report.json",
+          "sha256": "953c12800493d49cf70919fef7cb9415573745ab072ff4c1d2a8ea801d9fa355"
+        },
+        "scenario": "barkham",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": 2,
+        "nativeGameEnded": true
+      },
+      {
+        "provenance": {
+          "path": "output/continuation-ordered/legal/labyrinth-232-fresh-1-resume-6/report.json",
+          "sha256": "fd8a617f388670bc1d9d11790e853e5cdff4243f566d47227689e2a25cd6df07"
+        },
+        "scenario": "labyrinth",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": null,
+        "nativeGameEnded": false
+      },
+      {
+        "provenance": {
+          "path": "output/continuation-ordered/legal/machinations-232-fresh-1-resume-9/report.json",
+          "sha256": "3a784c609f228ebf758d409b965c2fe7926f9f6f3e3be5704b8194de0de45372"
+        },
+        "scenario": "machinations",
+        "passed": false,
+        "reportedWholeScenarioCompleted": false,
+        "wholeScenarioCompleted": false,
+        "status": "incomplete",
+        "setupOnly": false,
+        "identityMatches": true,
+        "observedNativeResolution": null,
+        "nativeGameEnded": false
+      }
+    ],
+    "installation": {
+      "packaged": false,
+      "installed": false,
+      "capabilityCertified": false,
+      "scope": "This source inventory and private QA evidence do not establish an installed or certified macOS release."
+    }
+  },
+  "provenance": [
+    {
+      "path": "public/data/catalog.json",
+      "sha256": "532a260ff1165cca3581da7452d38484bfd538cd0e6abcbd51136bcaa0bbfb6c"
+    },
+    {
+      "path": "public/data/cards-001.json",
+      "sha256": "0748d24a11701f4a464552f919c182af9b20217e84fedb86d224619779421b7e"
+    },
+    {
+      "path": "public/data/cards-002.json",
+      "sha256": "a95cfdad76a06984973d82d291e89e02fe780951d9d41e1a024f3c2775100c01"
+    },
+    {
+      "path": "public/data/cards-003.json",
+      "sha256": "cf29a14bdaa1b4b863f60608c4b777be00f7781439016122905cdb1476b0e4f5"
+    },
+    {
+      "path": "src/game/scriptSupport.ts",
+      "sha256": "fdf72a1dfef1a81b41c36b233d028cad4ed3ddda151f0e6584c1c06677877a50"
+    },
+    {
+      "path": "src/game/scenario.ts",
+      "sha256": "c7a810c729336131c2f47ee57cc5cff163034ba66902e5c19724a774568a1c36"
+    },
+    {
+      "path": "src/game/data.ts",
+      "sha256": "74516328c8d03351a49a8436c23e56afeba5063f9f51ddf681b09079ae039af2"
+    },
+    {
+      "path": "public/data/core-2026.json",
+      "sha256": "e0f985b5375ff5515eaa1ce6a683bb57fc47d4e8daad4eec687d85c03da049f7"
+    },
+    {
+      "path": "scripts/build-companion-options.mjs",
+      "sha256": "ac2615669c45d73a325c53fbaba50e3640e60c59792f1f9d53700865954025f8"
+    },
+    {
+      "path": "scripts/build-support-coverage.mjs",
+      "sha256": "cd0a12831c7f019aec7caafbcae1f9880e053990b9dba1b5e7fb6389d7f8ff69"
+    },
+    {
+      "path": "rules/extensions/barkham/frontend/scenarios.json",
+      "sha256": "00d8f5cbb39976efb72c8e9325099dca6b8ffe1c96417ae35c2293262943ba43"
+    },
+    {
+      "path": "output/native-api-acceptance/run-4/runtime/chronicle-native-qa.json",
+      "sha256": "f9b798b65b1f9db467d6eb054447d2351a6b646d496b89296972738cbbac08f6"
+    }
+  ],
+  "limitations": [
+    "Catalog records, reference faces, aliases and executable builders are different representations; a code mismatch is not proof of absent implementation.",
+    "Source declarations and recorded registry definitions do not certify all rule interactions or unlock capabilities.",
+    "Focused native extension tests and a legally completed scenario are separate evidence; debug-assisted, setup-only, failed and defeat reports cannot establish a successful whole scenario.",
+    "Legal reports retain their own acceptance status and hashes. This inventory does not replay those games.",
+    "The existing Barkham winning report contract is recognized; future successful Epic report contracts require review and remain completion-unverified until their winning group evidence is validated.",
+    "Upstream alpha/beta provenance is retained per play mode; isolated passing tests do not remove it.",
+    "Recorded ready status is historical evidence, not a claim that a service is running now."
+  ]
+}

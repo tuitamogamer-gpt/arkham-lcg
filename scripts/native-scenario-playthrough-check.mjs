@@ -15,14 +15,14 @@ import {
   acceptanceManifest,
   qaFileSha256,
 } from "./rules-qa-runtime-identity.mjs";
-import { assertLegalMutation, assertLabyrinthResumeRoster } from "./native-scenario-playthrough-policy.mjs";
+import { assertLegalMutation, assertLabyrinthResumeRoster, assertMachinationsResumeRoster, selectSuccessfulInvestigationChoice, assertAddOnlyResumeBaseline, assertEpicResumeStates, captureEpicStoppedStates, epicReadResolution } from "./native-scenario-playthrough-policy.mjs";
 import { createNativeScenarioDeck } from "./native-scenario-decks.mjs";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const options = process.argv.slice(2);
 if (options.includes("--help")) {
-  console.log(`EPIC_QA_CONFIRMED=1 ARKHAM_RULES_QA_MANIFEST=<verified native manifest> ARKHAM_RULES_URL=<private loopback service> ARKHAM_RULES_PSQL=<private psql> ARKHAM_RULES_PG_PORT=<private port> QA_OUT=<new directory under output> node --import tsx scripts/native-scenario-playthrough-check.mjs [--scenario barkham|labyrinth] [--stop-after-setup] [--max-answers 1800] [--max-minutes 45] [--resume-report <own stopped report>]
-This creates fresh legal XP0 decks/games, records a uniform actual Core Set basic weakness draw, and sends only responses to actual offered questions. Every pre-answer native snapshot is stored privately as gzip JSON with a SHA. Existing saves are protected by full SQL row fingerprints. Setup-only and unsupported-policy checkpoints do not claim a whole playthrough. Resume is confined to this runner's own newly created stopped games, unchanged binary/source, and a new output directory; the original trace/report remains intact.`);
+  console.log(`EPIC_QA_CONFIRMED=1 ARKHAM_RULES_QA_MANIFEST=<verified native manifest> ARKHAM_RULES_URL=<private loopback service> ARKHAM_RULES_PSQL=<private psql> ARKHAM_RULES_PG_PORT=<private port> QA_OUT=<new directory under output> node --import tsx scripts/native-scenario-playthrough-check.mjs [--scenario barkham|labyrinth|machinations] [--stop-after-setup] [--max-answers 1800] [--max-minutes 45] [--resume-report <own stopped report>] [--resume-baseline-checkpoint <original full SQL checkpoint>]
+This creates fresh legal XP0 decks/games, records a uniform actual Core Set basic weakness draw, and sends only responses to actual offered questions. Every pre-answer native snapshot is stored privately as gzip JSON with a SHA. Existing saves are protected by full SQL row fingerprints. Setup-only and unsupported-policy checkpoints do not claim a whole playthrough. Resume is confined to this runner's own newly created stopped games, unchanged binary/source, and a new output directory; the original trace/report remains intact. An optional full unrelated-row checkpoint permits new unrelated rows only when its hash equals the original baseline and every original row remains unchanged; the complete current baseline is then protected.`);
   process.exit(0);
 }
 const valueOf = (flag, fallback) =>
@@ -33,6 +33,7 @@ const allowed = new Set([
   "--max-answers",
   "--max-minutes",
   "--resume-report",
+  "--resume-baseline-checkpoint",
 ]);
 for (let i = 0; i < options.length; i++) {
   assert.ok(allowed.has(options[i]), `Unknown option ${options[i]}.`);
@@ -45,7 +46,9 @@ assert.equal(
   "Explicit isolated native QA authorization is required.",
 );
 const scenarioKind = valueOf("--scenario", "barkham");
-assert.ok(["barkham", "labyrinth"].includes(scenarioKind));
+assert.ok(!options.includes("--resume-baseline-checkpoint") || options.includes("--resume-report"),
+  "A retained unrelated baseline can only accompany an own stopped-run resume.");
+assert.ok(["barkham", "labyrinth", "machinations"].includes(scenarioKind));
 const setupOnly = options.includes("--stop-after-setup");
 const maxAnswers = Number(valueOf("--max-answers", "1800"));
 const maxMinutes = Number(valueOf("--max-minutes", "45"));
@@ -159,10 +162,14 @@ async function bindRunnerSources() {
     "scripts/native-scenario-playthrough-check.mjs",
     "scripts/native-scenario-playthrough-policy.mjs",
     "scripts/native-scenario-decks.mjs",
-    "scripts/native-scenario-barkham-policy.mjs",
+    ...(scenarioKind === "barkham" ? ["scripts/native-scenario-barkham-policy.mjs"] : []),
     ...(scenarioKind === "labyrinth" ? [
       "scripts/native-scenario-labyrinth-policy.mjs",
       "scripts/native-scenario-labyrinth-run.mjs",
+    ] : []),
+    ...(scenarioKind === "machinations" ? [
+      "scripts/native-scenario-machinations-policy.mjs",
+      "scripts/native-scenario-machinations-run.mjs",
     ] : []),
     "scripts/rules-protocol.mjs",
     "src/game/companionProtocol.ts",
@@ -409,15 +416,8 @@ function conventionalChoice(current, question, setup) {
     return {choice: ordered[0], reason: "Choose an actual offered public enemy target, using visible attack damage for the effect/order; native resolution remains authoritative."};
   }
   const owner = actor(current), hand = values(owner?.hand).map((c) => c?.contents || c);
-  if (!question.isPlayerWindow && question.tag === "ChooseOne") {
-    const locationId = owner?.placement?.tag === "AtLocation" ? owner.placement.contents : undefined;
-    const location = values(current.game.locations).find((l) => l.id === locationId && l.revealed === true);
-    const printed = location && cards.find((definition) => definition.code === code(location));
-    const discover = printed && enabled.find((c) => c.tag === "Label"
-      && c.label === `Discover Clue at ${printed.name}`);
-    if (discover)
-      return {choice: discover, reason: "Resolve the actual offered successful investigation at this actor's public location before its printed skill-card bonus; native draw order remains authoritative."};
-  }
+  const investigation = selectSuccessfulInvestigationChoice({snapshot: current, question});
+  if (investigation) return investigation;
   const skipOptional = enabled.find((c) => c.tag === "Label" && c.raw?.label === "$label.skip");
   if (!question.isPlayerWindow && question.tag === "ChooseOne" && skipOptional)
     return {choice: skipOptional, reason: "Decline the genuinely offered optional native effect without spending a prerequisite clue."};
@@ -658,8 +658,7 @@ async function resumeBarkham() {
     "The exact stopped native state/question must still be present; never restore a cursor or edit a save.",
   );
   priorFingerprint = await unrelatedFingerprint();
-  assert.equal(sha(priorFingerprint), previous.unrelatedBeforeSha256);
-  proof.unrelatedBeforeSha256 = previous.unrelatedBeforeSha256;
+  await bindResumeBaseline(previous);
   await checkpoint();
   return participant;
 }
@@ -762,27 +761,34 @@ async function playBarkham(participant) {
     "Legal play reached its finite action/wall-time bound; no whole-scenario claim.",
   );
 }
-async function resumeLabyrinth() {
+async function resumeEpic() {
+  const isLabyrinth = scenarioKind === "labyrinth";
+  const expectedScenario = isLabyrinth ? "70001" : "87001";
+  const winningReadName = isLabyrinth ? "native-printed-Labyrinth-R4" : "native-printed-Machinations-R1";
+  const winningReadPattern = isLabyrinth ? /resolution4|resolution 4/i : /resolution1|resolution 1/i;
   const previousPath = resolve(valueOf("--resume-report"));
   assert.ok(previousPath.startsWith(resolve(project, "output") + sep));
   assert.notEqual(dirname(previousPath), output);
   const previousBytes = await readFile(previousPath), previous = JSON.parse(previousBytes);
   assert.equal(previous.mode, proof.mode);
-  assert.equal(previous.scenario, "labyrinth");
+  assert.equal(previous.scenario, scenarioKind);
   assert.equal(previous.passed, false);
   assert.equal(previous.wholeScenarioCompleted, false);
   assert.equal(previous.unrelatedSavesUnchanged, true);
   assert.ok(previous.unsupportedDecision || previous.prepared);
+  assert.notEqual(previous.stoppedStatesCurrent, false, "Incomplete current seat capture cannot resume.");
+  assert.equal(previous.failureCaptureErrors?.length || 0, 0);
+  assert.ok(!previous.failureCaptureError, "Failed current-state capture cannot resume.");
   assert.deepEqual(previous.manifest, proof.manifest);
   for (const field of ["binarySha256", "extensionSourceSha256"])
     assert.equal(previous.runtime[field], proof.runtime[field]);
   assert.equal(previous.scenarioAttempts, 1);
   assert.equal(previous.events.length, 1);
-  assert.equal(previous.events[0].scenarioId, "70001");
+  assert.equal(previous.events[0].scenarioId, expectedScenario);
   assert.equal(previous.games.length, 3);
   assert.ok((previous.resumeDepth || 0) < 12);
   assert.equal(previous.stoppedStates.length, 3);
-  assertLabyrinthResumeRoster({games: previous.games, stoppedStates: previous.stoppedStates,
+  (isLabyrinth ? assertLabyrinthResumeRoster : assertMachinationsResumeRoster)({games: previous.games, stoppedStates: previous.stoppedStates,
     eventId: previous.events[0].id});
   const actualEvent = await request(`/chronicle/epic/events/${previous.events[0].id}`);
   assert.equal(actualEvent.id, previous.events[0].id);
@@ -797,20 +803,24 @@ async function resumeLabyrinth() {
   proof.events = previous.events;
   proof.decks = previous.decks;
   proof.milestones = previous.milestones;
+  proof.stoppedStates = previous.stoppedStates.map((state) => ({...state}));
+  proof.stoppedStatesCurrent = false;
   proof.validatedWinningReadGameIds = [];
-  for (const milestone of proof.milestones.filter((m) => m.name === "native-printed-Labyrinth-R4")) {
+  for (const milestone of proof.milestones.filter((m) => m.name === winningReadName)) {
     const participant = participants.find((p) => p.group === milestone.group);
-    assert.ok(participant, "An inherited winning Read must belong to an actual A/B/C group.");
+    assert.ok(participant, "An inherited winning Read must belong to an actual owned group.");
     assert.ok(!proof.validatedWinningReadGameIds.includes(participant.gameId), "Duplicate inherited winning Read.");
     const retained = await archivedSnapshot(milestone.snapshot, participant.gameId, dirname(previousPath));
     const retainedQuestion = questionFor(retained);
     assert.equal(retainedQuestion.tag, "Read");
-    assert.match(JSON.stringify(retainedQuestion.raw), /resolution4|resolution 4/i);
+    if (isLabyrinth) assert.match(JSON.stringify(retainedQuestion.raw), winningReadPattern);
+    else assert.equal((await import("./native-scenario-machinations-run.mjs")).machinationsReadResolution(retainedQuestion), 1);
     proof.validatedWinningReadGameIds.push(participant.gameId);
   }
   proof.resumeDepth = (previous.resumeDepth || 0) + 1;
   proof.previousTrace = {path: previousPath, sha256: sha(previousBytes),
     harnessSha256: previous.harnessSha256, previousAnswers: previous.cumulativeAnswerCount};
+  const resumeStates = [];
   for (const participant of participants) {
     memories.set(participant.gameId, previous.strategyMemories[participant.gameId] || {});
     const witness = previous.stoppedStates.find((s) => s.gameId === participant.gameId);
@@ -821,13 +831,39 @@ async function resumeLabyrinth() {
     const stored = await readFile(witnessPath);
     assert.equal(sha(stored), witness.gzipSha256);
     assert.equal(sha(await decompress(stored)), witness.snapshotSha256);
-    assert.equal(sha(await snapshot(participant)), witness.snapshotSha256,
+    const current = await snapshot(participant);
+    assert.equal(protocol.companionCatalogCode(scenario(current)?.id), expectedScenario,
+      "The actual stopped native scenario must match this Epic runner.");
+    assert.equal(sha(current), witness.snapshotSha256,
       "Every exact stopped native seat/question must remain; no save or cursor restoration.");
+    resumeStates.push({gameId: participant.gameId, snapshot: current, resolution: epicReadResolution(questionFor(current), scenarioKind)});
   }
+  assertEpicResumeStates({states: resumeStates, validatedWinningReadGameIds: proof.validatedWinningReadGameIds, winningResolution: isLabyrinth ? 4 : 1});
+  proof.stoppedStatesCurrent = true;
   priorFingerprint = await unrelatedFingerprint();
-  assert.equal(sha(priorFingerprint), previous.unrelatedBeforeSha256);
-  proof.unrelatedBeforeSha256 = previous.unrelatedBeforeSha256;
+  await bindResumeBaseline(previous);
   await checkpoint();
+}
+
+async function bindResumeBaseline(previous) {
+  if (!options.includes("--resume-baseline-checkpoint")) {
+    assert.equal(sha(priorFingerprint), previous.unrelatedBeforeSha256);
+    proof.unrelatedBeforeSha256 = previous.unrelatedBeforeSha256;
+    return;
+  }
+  const path = resolve(valueOf("--resume-baseline-checkpoint"));
+  assert.ok(path.startsWith(resolve(project, "output") + sep));
+  const bytes = await readFile(path), retained = JSON.parse(bytes);
+  assert.equal(retained.nativeBinarySha256, candidate.binarySha256);
+  assert.equal(retained.extensionSourceSha256, candidate.extensionSourceSha256);
+  assert.equal(retained.allGamePlayerStepLogRowsSha256, previous.unrelatedBeforeSha256);
+  const addedRows = assertAddOnlyResumeBaseline(retained.rows, priorFingerprint, previous.unrelatedBeforeSha256);
+  const archive = "sources/resume-unrelated-baseline.json";
+  await writeFile(resolve(output, archive), bytes, {flag: "wx", mode: 0o600});
+  proof.resumeBaseline = {path, sha256: sha(bytes), archived: archive,
+    originalRowsSha256: previous.unrelatedBeforeSha256, currentRowsSha256: sha(priorFingerprint),
+    originalRowsUnchanged: true, addedRows};
+  proof.unrelatedBeforeSha256 = sha(priorFingerprint);
 }
 try {
   const status = await request("/chronicle/status");
@@ -858,15 +894,17 @@ try {
     sideStories: presentation.sideStories,
   };
   await bindRunnerSources();
-  if (scenarioKind === "labyrinth") {
+  if (scenarioKind !== "barkham") {
     const resuming = options.includes("--resume-report");
-    if (resuming) await resumeLabyrinth();
+    if (resuming) await resumeEpic();
     else {
       priorFingerprint = await unrelatedFingerprint();
       proof.unrelatedBeforeSha256 = sha(priorFingerprint);
     }
-    const {playFreshLabyrinth} = await import("./native-scenario-labyrinth-run.mjs");
-    await playFreshLabyrinth({
+    const play = scenarioKind === "labyrinth"
+      ? (await import("./native-scenario-labyrinth-run.mjs")).playFreshLabyrinth
+      : (await import("./native-scenario-machinations-run.mjs")).playFreshMachinations;
+    await play({
       proof, participants, memories, cards, protocol, request, snapshot,
       questionFor, respond, respondVentNote, saveSnapshot, checkpoint, pathFor,
       createNativeScenarioDeck, maxAnswers, maxMinutes, setupOnly, resuming, conventionalChoice,
@@ -901,12 +939,12 @@ try {
 } catch (error) {
   primaryError = error;
   proof.failure = { message: error.message, stack: error.stack };
-  if (scenarioKind === "labyrinth" && proof.unsupportedDecision) {
-    try {
-      proof.stoppedStates = [];
-      for (const participant of participants)
-        proof.stoppedStates.push(await saveSnapshot(participant, await snapshot(participant), "all-seats-stopped"));
-    } catch (captureError) { proof.failureCaptureError = captureError.message; }
+  if (scenarioKind !== "barkham" && participants.length) {
+    const captured = await captureEpicStoppedStates({participants, previousStates: proof.stoppedStates,
+      capture: async (participant) => saveSnapshot(participant, await snapshot(participant), "all-seats-stopped")});
+    proof.stoppedStates = captured.states;
+    proof.stoppedStatesCurrent = captured.current;
+    if (captured.errors.length) proof.failureCaptureErrors = captured.errors;
   }
   if (priorFingerprint) {
     try {

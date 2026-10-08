@@ -1,0 +1,157 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-public-scientist-penalty",
+    "snapshotSha256": "907cecaac9102e6ee432d3313d9035976ab9c5779b682f20be051e6a957d2d66",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+    "game": {
+      "id": "59661314-cebd-445b-ae32-22675c2f4785",
+      "scenarioSteps": 78,
+      "inSetup": false,
+      "phase": "InvestigationPhase",
+      "question": {
+        "6b943836-845a-473a-81df-2d5ff6738090": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "Label",
+              "label": "$label.dealDamage count=i:1.0",
+              "messages": [
+                {
+                  "tag": "DealAssetDamageWithCheck",
+                  "contents": [
+                    "7e48e0a0-b144-40ab-8881-bbe020b40b1a",
+                    {
+                      "tag": "ChaosTokenEffectSource",
+                      "contents": "ElderThing"
+                    },
+                    1,
+                    0,
+                    true
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "Label",
+              "label": "$label.dealHorror count=i:1.0",
+              "messages": [
+                {
+                  "tag": "DealAssetDamageWithCheck",
+                  "contents": [
+                    "7e48e0a0-b144-40ab-8881-bbe020b40b1a",
+                    {
+                      "tag": "ChaosTokenEffectSource",
+                      "contents": "ElderThing"
+                    },
+                    0,
+                    1,
+                    true
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "skillTest": {
+        "id": "677b6c19-41a6-49f7-89ae-3af0116d63e3",
+        "investigator": "c01001",
+        "step": "ApplySkillTestResultsStep",
+        "result": {
+          "contents": ["NonAutomatic", 1],
+          "tag": "FailedBy"
+        },
+        "revealedChaosTokens": [
+          {
+            "chaosTokenCancelled": false,
+            "chaosTokenFace": "ElderThing",
+            "chaosTokenId": "4730aada-76fa-4813-8c02-d2d51ac730a0",
+            "chaosTokenRevealedBy": "c01001",
+            "chaosTokenSealed": false
+          }
+        ]
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+          "placement": {
+            "contents": "ef12072b-a69c-4ad7-9c7e-2dd066e5b664",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 1,
+          "tokens": [
+            ["Clue", 1],
+            ["Damage", 2],
+            ["Resource", 1]
+          ]
+        }
+      },
+      "locations": {
+        "ef12072b-a69c-4ad7-9c7e-2dd066e5b664": {
+          "id": "ef12072b-a69c-4ad7-9c7e-2dd066e5b664",
+          "cardCode": "c87010",
+          "revealed": true,
+          "tokens": [["Clue", 1]]
+        }
+      },
+      "assets": {
+        "7e48e0a0-b144-40ab-8881-bbe020b40b1a": {
+          "id": "7e48e0a0-b144-40ab-8881-bbe020b40b1a",
+          "cardCode": "c87013",
+          "placement": {
+            "contents": "ef12072b-a69c-4ad7-9c7e-2dd066e5b664",
+            "tag": "AtLocation"
+          },
+          "health": 2,
+          "sanity": 2,
+          "tokens": [],
+          "controller": null
+        }
+      },
+      "enemies": {},
+      "stories": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "id": "87001",
+        "log": []
+      }
+    }
+  },
+  "memory": {
+    "group": "Past",
+    "gameId": "59661314-cebd-445b-ae32-22675c2f4785",
+    "actorId": "c01001",
+    "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+    "lastAbility": {
+      "cardCode": "01020",
+      "index": 1,
+      "source": {
+        "tag": "AssetSource",
+        "contents": "fc492bd1-52a3-497a-ad5c-99bc1d042f7c"
+      },
+      "witness": {
+        "gameId": "59661314-cebd-445b-ae32-22675c2f4785",
+        "actorId": "c01001",
+        "playerId": "6b943836-845a-473a-81df-2d5ff6738090",
+        "questionVersion": 73,
+        "questionTag": "PlayerWindowChooseOne",
+        "answerIndex": 11,
+        "label": "Machete: Fight"
+      }
+    },
+    "locationVisits": {
+      "a4bfa47d-c8ce-492d-9cce-445175b299bc": 1,
+      "ef12072b-a69c-4ad7-9c7e-2dd066e5b664": 1
+    },
+    "lastCardPlayed": "01030"
+  },
+  "expected": {
+    "answerIndex": 0
+  }
+}

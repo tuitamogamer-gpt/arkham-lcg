@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "scope": "actual232-public-question-policy-regression-only",
+  "provenance": {
+    "report": "output/continuation-ordered/legal/machinations-232-fresh-1/report.json",
+    "snapshot": "snapshots/00025-1-unsupported-policy.json.gz",
+    "snapshotSha256": "6e1b55094ef58db50ad1bab0ccf08f8ba51491d3be9f4f4afed8fcc4b5bc7c9c",
+    "binarySha256": "12833b2c26599a610148becf2842a738cce8c71d5ee7b80b54f7676f552d6bd4",
+    "extensionSourceSha256": "4088f4badb00f37a9e3a77680698cd2b1872469b1796c70b82e2a3dd0a2d1cd3",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+    "game": {
+      "id": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+      "inSetup": false,
+      "phase": "InvestigationPhase",
+      "scenarioSteps": 19,
+      "question": {
+        "6c254742-8fbe-444b-bf86-703f3de131ed": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "SkillLabel",
+              "skillType": "SkillCombat",
+              "messages": [
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "BeginSkillTestWithPreMessages'_",
+                    "contents": [
+                      [],
+                      {
+                        "id": "54222a83-1257-4111-baf1-dd9ba6d7a40d",
+                        "investigator": "c01001",
+                        "resolveFailureInvestigator": "c01001",
+                        "type": {
+                          "tag": "SkillSkillTest",
+                          "contents": "SkillCombat"
+                        },
+                        "baseValue": {
+                          "tag": "SkillBaseValue",
+                          "contents": "SkillCombat"
+                        },
+                        "difficulty": {
+                          "tag": "Fixed",
+                          "contents": 3
+                        },
+                        "originalDifficulty": {
+                          "tag": "Fixed",
+                          "contents": 3
+                        },
+                        "difficultyIncrease": 0,
+                        "setAsideChaosTokens": [],
+                        "revealedChaosTokens": [],
+                        "additionalRevealedChaosTokens": [],
+                        "resolvedChaosTokens": [],
+                        "toResolveChaosTokens": [],
+                        "result": {
+                          "tag": "Unrun"
+                        },
+                        "resultForced": false,
+                        "committedCards": {},
+                        "source": {
+                          "tag": "AbilitySource",
+                          "contents": [
+                            {
+                              "tag": "LocationSource",
+                              "contents": "4db206b4-70b0-40ed-a422-b32a686728c0"
+                            },
+                            2
+                          ]
+                        },
+                        "target": {
+                          "tag": "InvestigatorTarget",
+                          "contents": "c01001"
+                        },
+                        "action": null,
+                        "subscribers": [
+                          {
+                            "tag": "InvestigatorTarget",
+                            "contents": "c01001"
+                          }
+                        ],
+                        "isRevelation": false,
+                        "iconValues": [
+                          [
+                            {
+                              "contents": "SkillCombat",
+                              "tag": "SkillIcon"
+                            },
+                            1
+                          ],
+                          [
+                            {
+                              "tag": "WildIcon"
+                            },
+                            1
+                          ],
+                          [
+                            {
+                              "tag": "WildMinusIcon"
+                            },
+                            -1
+                          ]
+                        ],
+                        "sourceCard": null,
+                        "targetCard": null,
+                        "card": null,
+                        "step": "DetermineSkillOfTestStep",
+                        "revealedChaosTokensCount": 0
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tag": "SkillLabel",
+              "skillType": "SkillAgility",
+              "messages": [
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "BeginSkillTestWithPreMessages'_",
+                    "contents": [
+                      [],
+                      {
+                        "id": "54222a83-1257-4111-baf1-dd9ba6d7a40d",
+                        "investigator": "c01001",
+                        "resolveFailureInvestigator": "c01001",
+                        "type": {
+                          "tag": "SkillSkillTest",
+                          "contents": "SkillAgility"
+                        },
+                        "baseValue": {
+                          "tag": "SkillBaseValue",
+                          "contents": "SkillAgility"
+                        },
+                        "difficulty": {
+                          "tag": "Fixed",
+                          "contents": 3
+                        },
+                        "originalDifficulty": {
+                          "tag": "Fixed",
+                          "contents": 3
+                        },
+                        "difficultyIncrease": 0,
+                        "setAsideChaosTokens": [],
+                        "revealedChaosTokens": [],
+                        "additionalRevealedChaosTokens": [],
+                        "resolvedChaosTokens": [],
+                        "toResolveChaosTokens": [],
+                        "result": {
+                          "tag": "Unrun"
+                        },
+                        "resultForced": false,
+                        "committedCards": {},
+                        "source": {
+                          "tag": "AbilitySource",
+                          "contents": [
+                            {
+                              "tag": "LocationSource",
+                              "contents": "4db206b4-70b0-40ed-a422-b32a686728c0"
+                            },
+                            2
+                          ]
+                        },
+                        "target": {
+                          "tag": "InvestigatorTarget",
+                          "contents": "c01001"
+                        },
+                        "action": null,
+                        "subscribers": [
+                          {
+                            "tag": "InvestigatorTarget",
+                            "contents": "c01001"
+                          }
+                        ],
+                        "isRevelation": false,
+                        "iconValues": [
+                          [
+                            {
+                              "contents": "SkillAgility",
+                              "tag": "SkillIcon"
+                            },
+                            1
+                          ],
+                          [
+                            {
+                              "tag": "WildIcon"
+                            },
+                            1
+                          ],
+                          [
+                            {
+                              "tag": "WildMinusIcon"
+                            },
+                            -1
+                          ]
+                        ],
+                        "sourceCard": null,
+                        "targetCard": null,
+                        "card": null,
+                        "step": "DetermineSkillOfTestStep",
+                        "revealedChaosTokensCount": 0
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+          "placement": {
+            "contents": "4db206b4-70b0-40ed-a422-b32a686728c0",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 2,
+          "combat": 4,
+          "agility": 2,
+          "intellect": 3,
+          "willpower": 3
+        }
+      },
+      "locations": {
+        "4db206b4-70b0-40ed-a422-b32a686728c0": {
+          "id": "4db206b4-70b0-40ed-a422-b32a686728c0",
+          "cardCode": "c87005b",
+          "revealed": true
+        }
+      },
+      "assets": {},
+      "stories": {},
+      "enemies": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "log": []
+      }
+    }
+  },
+  "memory": {
+    "group": "Present",
+    "gameId": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+    "actorId": "c01001",
+    "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+    "lastAbility": {
+      "cardCode": "87005b",
+      "index": 2,
+      "source": {
+        "tag": "LocationSource",
+        "contents": "4db206b4-70b0-40ed-a422-b32a686728c0"
+      },
+      "witness": {
+        "gameId": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+        "actorId": "c01001",
+        "playerId": "6c254742-8fbe-444b-bf86-703f3de131ed",
+        "questionVersion": 18,
+        "questionTag": "PlayerWindowChooseOne",
+        "answerIndex": 9,
+        "label": "Tindalos: Ability"
+      }
+    }
+  },
+  "expected": {
+    "answerIndex": 0,
+    "skillType": "SkillCombat"
+  }
+}

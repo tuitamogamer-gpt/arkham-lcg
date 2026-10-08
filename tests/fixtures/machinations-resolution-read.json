@@ -1,0 +1,58 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-printed-machinations-r2-read",
+    "reportSha256": "3a784c609f228ebf758d409b965c2fe7926f9f6f3e3be5704b8194de0de45372",
+    "wholeScenarioCompleted": false,
+    "witnesses": [
+      {
+        "group": "Future",
+        "gameId": "9b094ea9-7906-4519-87bf-639ac97414ed",
+        "snapshotFile": "snapshots/00242-2-before-answer.json.gz",
+        "snapshotSha256": "9246a06a329adcfd7fa939a2e201dcff55a5583bdddf06ba2b2a83a7fc703728",
+        "gzipSha256": "fa7762fa9ad419c954ab87b420f15cb31776a6b63a38049f8a381166349fac38"
+      },
+      {
+        "group": "Present",
+        "gameId": "b1652e0b-73fe-4ff4-aafb-4537fd3e387d",
+        "snapshotFile": "snapshots/00244-1-before-answer.json.gz",
+        "snapshotSha256": "9f8e1b9fed325bab52ca4f99d437b2fb05b2cec327368e6e6e92c6056fe83ec8",
+        "gzipSha256": "64e6f73a13f7b7da806f5bf7d151886b0126a7a7975ecc1230869608a2e4b57a"
+      }
+    ]
+  },
+  "nativeQuestion": {
+    "tag": "Read",
+    "flavorText": {
+      "title": "$standalone.machinationsThroughTime.resolutions.resolution2.title xp=i:0.0",
+      "body": [
+        {
+          "tag": "ModifyEntry",
+          "modifiers": ["ResolutionEntry"],
+          "entry": {
+            "tag": "CompositeEntry",
+            "entries": [
+              {
+                "tag": "I18nEntry",
+                "key": "standalone.machinationsThroughTime.resolutions.resolution2.body",
+                "variables": {
+                  "xp": 0
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "readChoices": {
+      "tag": "BasicReadChoices",
+      "contents": [
+        {
+          "tag": "Label",
+          "label": "$continue",
+          "messages": []
+        }
+      ]
+    },
+    "readCards": null
+  }
+}

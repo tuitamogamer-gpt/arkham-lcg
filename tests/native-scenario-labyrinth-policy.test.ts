@@ -442,3 +442,96 @@ test("C can reach the Rune's public physical attachment before learning the secr
   assert.equal(select(s, q).choice, move);
   assert.equal(observeLabyrinthChoice({snapshot: s, question: q, selection: select(s, q)}).secretChamber, undefined);
 });
+
+function torturedVictimFixture() {
+  // Exact effect shapes retained at resume-1 snapshot 00021-0. The enemy is
+  // still Unplaced because these are its genuine Revelation alternatives.
+  const s = snapshot("GroupA"), enemyId = "45755c37-bbe4-4dd4-8889-88535f65f938";
+  s.game.enemies[enemyId] = {id: enemyId, cardCode: "c70053", placement: {tag: "Unplaced"}};
+  s.game.investigators[actorId].hand = [{tag: "PlayerCard", contents: {id: "own-hand-card", owner: actorId, cardCode: "c01093"}}];
+  const discard = label("$standalone.theLabyrinthsOfLunacy.torturedVictim.label.discardRandomCard", [{tag: "DiscardFromHand", contents: {
+    discardAmount: 1, discardBatchCards: [], discardDestination: "ToDiscardPile", discardFilter: {tag: "AnyCard"},
+    discardInvestigator: actorId, discardSource: {tag: "EnemySource", contents: enemyId}, discardStrategy: "DiscardRandom",
+    discardTarget: null, discardThen: null,
+  }}]);
+  const attack = label("$standalone.theLabyrinthsOfLunacy.torturedVictim.label.takeAttack", [{tag: "EnemyAttackMessage", contents: {
+    tag: "InitiateEnemyAttack_", contents: {attackEnemy: enemyId, attackSource: {tag: "EnemySource", contents: enemyId},
+      attackTarget: {tag: "SingleAttackTarget", contents: {tag: "InvestigatorTarget", contents: actorId}}},
+  }}], 1);
+  return {s, discard, attack, q: question([discard, attack], {playerId: s.playerId}), enemyId};
+}
+
+test("Tortured Victim chooses its actual random-discard Revelation with an own hand, without reading hidden cards or changing inputs", () => {
+  const f = torturedVictimFixture(), before = JSON.stringify(f);
+  assert.equal(select(f.s, f.q).choice, f.discard);
+  assert.equal(JSON.stringify(f), before);
+  noHiddenReads(f.s);
+  assert.equal(select(f.s, f.q).choice, f.discard);
+});
+
+test("Tortured Victim selector rejects unavailable hand, foreign actors/sources, unrelated effects and a label-only resemblance", () => {
+  for (const change of [
+    (f: any) => {f.s.game.investigators[actorId].hand = [];},
+    (f: any) => {f.q.playerId = "another-player";},
+    (f: any) => {f.discard.raw.messages[0].contents.discardInvestigator = "another-actor";},
+    (f: any) => {f.discard.raw.messages[0].contents.discardSource.contents = "another-physical-enemy";},
+    (f: any) => {f.s.game.enemies[f.enemyId].cardCode = "c70049";},
+    (f: any) => {f.discard.raw.messages[0].contents.discardAmount = 2;},
+    (f: any) => {f.discard.raw.messages[0].contents.discardStrategy = "DiscardChoose";},
+    (f: any) => {f.discard.raw.messages[0].contents.discardThen = {tag: "DrawCards"};},
+    (f: any) => {f.attack.raw.messages[0].contents.contents.attackEnemy = "another-physical-enemy";},
+    (f: any) => {f.attack.raw.messages[0].contents.contents.attackTarget.contents.contents = "another-actor";},
+    (f: any) => {f.discard.raw.messages = [];},
+  ]) {
+    const f = torturedVictimFixture(); change(f);
+    assert.equal(select(f.s, f.q), undefined);
+  }
+  const f = torturedVictimFixture(); f.discard.disabled = true;
+  assert.notEqual(select(f.s, f.q)?.choice, f.discard);
+});
+
+function successfulFightFixture() {
+  const s = snapshot(), enemyId = "6799f8b5-ddea-4250-bd68-1265cfbd6b52";
+  const source = {tag: "AbilitySource", contents: [{tag: "AssetSource", contents: "bdacecce-883c-451e-8542-4516d9d443bd"}, 1] as [{tag: string; contents: string}, number]};
+  const target = {tag: "EnemyTarget", contents: enemyId};
+  s.game.enemies[enemyId] = {id: enemyId, cardCode: "c70054", placement: {tag: "InThreatArea", contents: actorId}};
+  s.game.investigators[actorId].engagedEnemies = [enemyId];
+  // Stored entities and offered messages order JSON fields differently.
+  s.game.skillTest = {investigator: actorId, action: "Fight", step: "ApplySkillTestResultsStep",
+    source: {contents: [{contents: source.contents[0].contents, tag: "AssetSource"}, 1], tag: "AbilitySource"}, target,
+    result: {tag: "SucceededBy", contents: ["NonAutomatic", 1]}};
+  const effect = {tag: "SkillTestMessage", contents: {tag: "Successful_", contents: [["Fight", target], actorId, source, target, 1]}};
+  const damage = label("Damage Mi-Go Guard", [effect], 0);
+  const bonus = label("Overpower", [{tag: "DrawCards", contents: [actorId, {cardDrawAmount: 1}]},
+    {tag: "SkillTestMessage", contents: {tag: "SkillTestResultOptions_", contents: [{option: {tag: "Label", messages: [effect]}}]}}], 1);
+  return {s, q: question([bonus, damage], {playerId: s.playerId}), damage, bonus, effect, enemyId};
+}
+
+test("successful native fight selects its immediate physical damage result without confusing a skill bonus continuation", () => {
+  const f = successfulFightFixture(), before = JSON.stringify(f);
+  assert.equal(select(f.s, f.q).choice, f.damage);
+  assert.equal(JSON.stringify(f), before);
+  noHiddenReads(f.s);
+  assert.equal(select(f.s, f.q).choice, f.damage);
+});
+
+test("successful fight rejects foreign actors, stale target/source/result and an unrelated enabled label", () => {
+  for (const change of [
+    (f: any) => {f.q.playerId = "another-player";},
+    (f: any) => {f.s.game.skillTest.investigator = "another-actor";},
+    (f: any) => {f.s.game.skillTest.action = "Evade";},
+    (f: any) => {f.s.game.skillTest.step = "DetermineSkillTestResultsStep";},
+    (f: any) => {f.s.game.skillTest.result.tag = "FailedBy";},
+    (f: any) => {f.s.game.skillTest.result.contents[1] = 2;},
+    (f: any) => {f.s.game.skillTest.source = {tag: "EnemySource", contents: "different-source"};},
+    (f: any) => {f.s.game.skillTest.target = {tag: "EnemyTarget", contents: "different-target"};},
+    (f: any) => {f.effect.contents.contents[1] = "another-actor";},
+    (f: any) => {f.effect.contents.contents[3] = {tag: "EnemyTarget", contents: "different-target"};},
+    (f: any) => {f.damage.raw.messages = [];},
+    (f: any) => {f.s.game.investigators[actorId].engagedEnemies = [];},
+    (f: any) => {f.q.choices.push({...f.damage, answerIndex: 2});},
+  ]) {
+    const f = successfulFightFixture(); change(f);
+    assert.equal(select(f.s, f.q), undefined);
+  }
+});

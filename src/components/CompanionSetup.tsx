@@ -35,9 +35,10 @@ export function CompanionSetup({ mode, onOpen }: {
     }).catch(e => active && setError(e.message)).finally(() => active && setBusy(false));
     return () => { active = false; };
   }, [mode]);
-  const campaigns = options?.campaigns.flatMap(c => [c, ...(c.returnTo ? [{ id: c.returnTo.id, name: `Return to ${c.name.replace(/^The /, "the ")}` }] : [])]) || [];
+  const campaigns = options?.campaigns.flatMap(c => [c, ...(c.returnTo ? [{ id: c.returnTo.id, name: `Return to ${c.name.replace(/^The /, "the ")}`, ...(c.returnTo.beta ? {beta: true as const} : {}), ...(c.returnTo.alpha ? {alpha: true as const} : {}) }] : [])]) || [];
   const entries = kind === "campaign" ? campaigns : options?.scenarios || [];
   const optionKey = (entry: {id:string;variant?:string}) => entry.variant ? `${entry.id}:${entry.variant}` : entry.id;
+  const developmentLabel = (entry: {beta?: true; alpha?: true}) => entry.alpha ? "Alpha" : entry.beta ? "Beta" : "";
   const chosen = entries.find(entry => optionKey(entry) === selected);
   const scenario = kind === "scenario" ? options?.scenarios.find(entry => optionKey(entry) === selected) : undefined;
   const campaign = kind === "campaign" ? campaigns.find(entry => entry.id === selected) : undefined;
@@ -76,7 +77,8 @@ export function CompanionSetup({ mode, onOpen }: {
         const id = e.target.value; setSelected(id); setName(""); setVariant("");
         const permitted = options.scenarios.find(s => optionKey(s) === id)?.standaloneDifficulties;
         if (kind === "scenario" && permitted && !permitted.includes(difficulty)) setDifficulty(permitted[0]);
-      }}>{entries.map(entry => <option key={optionKey(entry)} value={optionKey(entry)}>{entry.name}</option>)}</select></label>
+      }}>{entries.map(entry => <option key={optionKey(entry)} value={optionKey(entry)}>{entry.name}{developmentLabel(entry) ? ` · ${developmentLabel(entry)}` : ""}</option>)}</select></label>
+      {chosen && developmentLabel(chosen) && <p className="rules-note">{developmentLabel(chosen)}: this {kind === "campaign" ? "campaign" : "scenario"} is experimental in the rules engine. Some rules and interactions remain unfinished.</p>}
       {campaign?.variants && <label>Campaign path<select value={variant || campaign.variants[0].key} onChange={e => setVariant(e.target.value)}>{campaign.variants.map(v=><option key={v.key} value={v.key}>{({theDreamEaters:"The Dream-Eaters · both campaigns",theDreamQuest:"The Dream-Quest",theWebOfDreams:"The Web of Dreams"} as Record<string,string>)[v.key] || v.key}</option>)}</select></label>}
       <label>Difficulty<select value={difficulty} onChange={e => setDifficulty(e.target.value)}>{levels.map(value => <option key={value}>{value}</option>)}</select></label>
       <label>Investigators<select value={count} onChange={e => setCount(Number(e.target.value))}>{[1, 2, 3, 4].map(value => <option key={value} value={value}>{value}</option>)}</select></label>

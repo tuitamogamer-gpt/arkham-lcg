@@ -1,0 +1,315 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-public-elderthing-target",
+    "snapshotSha256": "821d015a0719a247e2861d11a0f19f08de02009c135d159b84a6268a3e49a61d",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+    "game": {
+      "id": "9b094ea9-7906-4519-87bf-639ac97414ed",
+      "scenarioSteps": 97,
+      "inSetup": false,
+      "phase": "InvestigationPhase",
+      "question": {
+        "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "TargetLabel",
+              "target": {
+                "tag": "AssetTarget",
+                "contents": "1c5c2f4a-e135-41ea-9a7a-2447ab5141d1"
+              },
+              "messages": [
+                {
+                  "tag": "Ask",
+                  "contents": [
+                    "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+                    {
+                      "tag": "ChooseOne",
+                      "choices": [
+                        {
+                          "tag": "Label",
+                          "label": "$label.dealDamage count=i:1.0",
+                          "messages": [
+                            {
+                              "tag": "DealAssetDamageWithCheck",
+                              "contents": [
+                                "1c5c2f4a-e135-41ea-9a7a-2447ab5141d1",
+                                {
+                                  "tag": "ChaosTokenEffectSource",
+                                  "contents": "ElderThing"
+                                },
+                                1,
+                                0,
+                                true
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "Label",
+                          "label": "$label.dealHorror count=i:1.0",
+                          "messages": [
+                            {
+                              "tag": "DealAssetDamageWithCheck",
+                              "contents": [
+                                "1c5c2f4a-e135-41ea-9a7a-2447ab5141d1",
+                                {
+                                  "tag": "ChaosTokenEffectSource",
+                                  "contents": "ElderThing"
+                                },
+                                0,
+                                1,
+                                true
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "TargetLabel",
+              "target": {
+                "tag": "AssetTarget",
+                "contents": "5adcf81e-7515-4358-909b-2d3a3cdd1565"
+              },
+              "messages": [
+                {
+                  "tag": "Ask",
+                  "contents": [
+                    "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+                    {
+                      "tag": "ChooseOne",
+                      "choices": [
+                        {
+                          "tag": "Label",
+                          "label": "$label.dealDamage count=i:1.0",
+                          "messages": [
+                            {
+                              "tag": "DealAssetDamageWithCheck",
+                              "contents": [
+                                "5adcf81e-7515-4358-909b-2d3a3cdd1565",
+                                {
+                                  "tag": "ChaosTokenEffectSource",
+                                  "contents": "ElderThing"
+                                },
+                                1,
+                                0,
+                                true
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "Label",
+                          "label": "$label.dealHorror count=i:1.0",
+                          "messages": [
+                            {
+                              "tag": "DealAssetDamageWithCheck",
+                              "contents": [
+                                "5adcf81e-7515-4358-909b-2d3a3cdd1565",
+                                {
+                                  "tag": "ChaosTokenEffectSource",
+                                  "contents": "ElderThing"
+                                },
+                                0,
+                                1,
+                                true
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "TargetLabel",
+              "target": {
+                "tag": "AssetTarget",
+                "contents": "ba9053d4-2a48-4a22-901b-cdd198a9f1fb"
+              },
+              "messages": [
+                {
+                  "tag": "Ask",
+                  "contents": [
+                    "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+                    {
+                      "tag": "ChooseOne",
+                      "choices": [
+                        {
+                          "tag": "Label",
+                          "label": "$label.dealDamage count=i:1.0",
+                          "messages": [
+                            {
+                              "tag": "DealAssetDamageWithCheck",
+                              "contents": [
+                                "ba9053d4-2a48-4a22-901b-cdd198a9f1fb",
+                                {
+                                  "tag": "ChaosTokenEffectSource",
+                                  "contents": "ElderThing"
+                                },
+                                1,
+                                0,
+                                true
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "Label",
+                          "label": "$label.dealHorror count=i:1.0",
+                          "messages": [
+                            {
+                              "tag": "DealAssetDamageWithCheck",
+                              "contents": [
+                                "ba9053d4-2a48-4a22-901b-cdd198a9f1fb",
+                                {
+                                  "tag": "ChaosTokenEffectSource",
+                                  "contents": "ElderThing"
+                                },
+                                0,
+                                1,
+                                true
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "skillTest": {
+        "id": "5b8a18dd-ad82-43ad-bf15-c31163edc29a",
+        "investigator": "c01001",
+        "step": "ApplySkillTestResultsStep",
+        "result": {
+          "contents": ["NonAutomatic", 2],
+          "tag": "FailedBy"
+        },
+        "revealedChaosTokens": [
+          {
+            "chaosTokenCancelled": false,
+            "chaosTokenFace": "ElderThing",
+            "chaosTokenId": "31f7aceb-6375-4adf-ac6c-60a835a5a247",
+            "chaosTokenRevealedBy": "c01001",
+            "chaosTokenSealed": false
+          }
+        ]
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+          "placement": {
+            "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 2,
+          "tokens": [
+            ["Clue", 2],
+            ["Resource", 3]
+          ]
+        }
+      },
+      "locations": {
+        "006e77c2-c70f-490a-bfec-7b0b3222845d": {
+          "id": "006e77c2-c70f-490a-bfec-7b0b3222845d",
+          "cardCode": "c87027",
+          "revealed": true,
+          "tokens": []
+        }
+      },
+      "assets": {
+        "1c5c2f4a-e135-41ea-9a7a-2447ab5141d1": {
+          "id": "1c5c2f4a-e135-41ea-9a7a-2447ab5141d1",
+          "cardCode": "c01033",
+          "placement": {
+            "contents": "c01001",
+            "tag": "InPlayArea"
+          },
+          "health": 1,
+          "sanity": 2,
+          "tokens": [["Horror", 1]],
+          "controller": "c01001"
+        },
+        "5adcf81e-7515-4358-909b-2d3a3cdd1565": {
+          "id": "5adcf81e-7515-4358-909b-2d3a3cdd1565",
+          "cardCode": "c87030",
+          "placement": {
+            "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d",
+            "tag": "AtLocation"
+          },
+          "health": 1,
+          "sanity": 2,
+          "tokens": [],
+          "controller": null
+        },
+        "ba9053d4-2a48-4a22-901b-cdd198a9f1fb": {
+          "id": "ba9053d4-2a48-4a22-901b-cdd198a9f1fb",
+          "cardCode": "c87031",
+          "placement": {
+            "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d",
+            "tag": "AtLocation"
+          },
+          "health": 1,
+          "sanity": 2,
+          "tokens": [],
+          "controller": null
+        }
+      },
+      "enemies": {},
+      "stories": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "id": "87001",
+        "log": []
+      }
+    }
+  },
+  "memory": {
+    "group": "Future",
+    "gameId": "9b094ea9-7906-4519-87bf-639ac97414ed",
+    "actorId": "c01001",
+    "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+    "lastAbility": {
+      "cardCode": "87045",
+      "index": 100,
+      "source": {
+        "tag": "EnemySource",
+        "contents": "88074885-dee8-4f46-8e3a-7b27fc68736d"
+      },
+      "witness": {
+        "gameId": "9b094ea9-7906-4519-87bf-639ac97414ed",
+        "actorId": "c01001",
+        "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+        "questionVersion": 92,
+        "questionTag": "PlayerWindowChooseOne",
+        "answerIndex": 11,
+        "label": "Fight Hound of Tindalos"
+      }
+    },
+    "lastCardPlayed": "01033",
+    "locationVisits": {
+      "006e77c2-c70f-490a-bfec-7b0b3222845d": 1
+    }
+  },
+  "expected": {
+    "answerIndex": 0
+  }
+}

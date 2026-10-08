@@ -4,6 +4,7 @@ import {
   assertLegalMutation,
   assertOfferedAnswer,
   assertLabyrinthResumeRoster,
+  assertMachinationsResumeRoster,
 } from "../scripts/native-scenario-playthrough-policy.mjs";
 
 const gameId = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
@@ -213,4 +214,84 @@ test("Labyrinth resume requires exactly one unchanged A/B/C seat and snapshot ea
     {...roster, stoppedStates: roster.stoppedStates.map((s, i) => i === 2 ? {gameId} : s)},
   ];
   for (const bad of variants) assert.throws(() => assertLabyrinthResumeRoster(bad));
+});
+
+test("Machinations resume binds each owned seat to its original Past/Present/Future era", () => {
+  const eventId = "dddddddd-dddd-4ddd-dddd-dddddddddddd";
+  const roster = {
+    eventId,
+    games: ["Past", "Present", "Future"].map((group, ordinal) => ({
+      ordinal, group, eventId,
+      gameId: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaa${ordinal}`,
+      id: `bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbb${ordinal}`,
+      seatIndex: 0, investigatorCode: "01001",
+    })),
+    stoppedStates: [0, 1, 2].map((ordinal) => ({
+      gameId: `aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaa${ordinal}`,
+    })),
+  };
+  assert.doesNotThrow(() => assertMachinationsResumeRoster(roster));
+  assert.doesNotThrow(() => assertMachinationsResumeRoster({
+    ...roster, stoppedStates: [...roster.stoppedStates].reverse(),
+  }), "snapshot storage order must not reassign the native era seats");
+  const variants = [
+    {
+      name: "Past and Present renamed without changing their owned games",
+      games: roster.games.map((seat, ordinal) => ({
+        ...seat, group: ["Present", "Past", "Future"][ordinal],
+      })),
+    },
+    {
+      name: "Labyrinth aliases substituted for Machinations eras",
+      games: roster.games.map((seat, ordinal) => ({
+        ...seat, group: ["GroupA", "GroupB", "GroupC"][ordinal],
+      })),
+    },
+    {
+      name: "era order changed",
+      games: [...roster.games].reverse(),
+    },
+    {
+      name: "Future replaced by a second Present",
+      games: roster.games.map((seat, ordinal) => ordinal === 2
+        ? { ...seat, group: "Present" } : seat),
+    },
+    {
+      name: "seat imported from another epic event",
+      games: roster.games.map((seat, ordinal) => ordinal === 1
+        ? { ...seat, eventId: gameId } : seat),
+    },
+    {
+      name: "another seat in the same era substituted",
+      games: roster.games.map((seat, ordinal) => ordinal === 1
+        ? { ...seat, seatIndex: 1 } : seat),
+    },
+    {
+      name: "unreviewed investigator substituted",
+      games: roster.games.map((seat, ordinal) => ordinal === 1
+        ? { ...seat, investigatorCode: "01002" } : seat),
+    },
+    {
+      name: "two eras share a game",
+      games: roster.games.map((seat, ordinal) => ordinal === 2
+        ? { ...seat, gameId: roster.games[0].gameId } : seat),
+    },
+    {
+      name: "two eras share a seat identity",
+      games: roster.games.map((seat, ordinal) => ordinal === 2
+        ? { ...seat, id: roster.games[0].id } : seat),
+    },
+  ];
+  for (const variant of variants)
+    assert.throws(() => assertMachinationsResumeRoster({
+      ...roster, games: variant.games,
+    }), variant.name);
+  for (const stoppedStates of [
+    roster.stoppedStates.slice(0, 2),
+    [roster.stoppedStates[0], roster.stoppedStates[1], roster.stoppedStates[1]],
+    [...roster.stoppedStates.slice(0, 2), { gameId }],
+  ]) assert.throws(() => assertMachinationsResumeRoster({ ...roster, stoppedStates }),
+    "every original era must retain exactly one matching stopped snapshot");
+  assert.throws(() => assertLabyrinthResumeRoster(roster),
+    "Machinations era names cannot qualify as a Labyrinth resume");
 });

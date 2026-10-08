@@ -1,0 +1,2494 @@
+{
+  "evidence": {
+    "description": "Public-state projection of an actual native Kate offered question. Concealed identities, deck, RNG, future draws, scenario metadata and native outcomes omitted; the offered own question is unchanged.",
+    "source": "scenario-barkham-legal-232-1-resume-7/snapshots/00005-0-before-answer.json.gz",
+    "snapshotSha256": "bdfea974d15cd44c697e2c8f9ea7a03b6263e7463a8f30db8f1fe673a7f58e5e",
+    "gzipSha256": "4b72eae4fda0282b671d04876c8d672f248c32112c5b9ea8a54aebc494160f61",
+    "originalSelectedAnswerIndex": 13,
+    "originalAnswerNumber": 5,
+    "originalSelectedLabel": "Evade Meowlathotep"
+  },
+  "snapshot": {
+    "playerId": "d0c8cd07-e266-40b4-b098-ad07449ccce8",
+    "game": {
+      "id": "97f48aef-5e23-4932-abca-1582f4d8b4e8",
+      "phase": "InvestigationPhase",
+      "inSetup": false,
+      "scenarioSteps": 128,
+      "gameState": {
+        "tag": "IsActive"
+      },
+      "investigators": {
+        "c:barkham:004": {
+          "id": "c:barkham:004",
+          "cardCode": "c:barkham:004",
+          "playerId": "d0c8cd07-e266-40b4-b098-ad07449ccce8",
+          "placement": {
+            "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 3,
+          "hand": [
+            {
+              "contents": {
+                "cardCode": "c01092",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "e2ef82b6-c123-45c6-b13b-9c84e1453fb4",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01092",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c01093",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "9bbd6196-724e-4741-bd18-ed85742abb0b",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01093",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c01089",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "1ca3e7c8-1b1e-4002-a634-1c8dd30ba8db",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01089",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c02107",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "fe09b5de-3381-45e4-8bb5-50e6f8684e43",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c02107",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c01090",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "11eb30ce-f9da-40ed-8576-fe12f18e3229",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01090",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c01093",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "773cde84-426c-4d67-894c-e8582a71502a",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01093",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c:barkham:017",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "b3ce8bf3-bf65-431d-8846-0e25bb70a57a",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c:barkham:017",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c01039",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "b29f609c-b1fa-4a4a-bc75-a6a29c83bdd1",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01039",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            }
+          ],
+          "tokens": [
+            [
+              "Clue",
+              1
+            ],
+            [
+              "Damage",
+              2
+            ],
+            [
+              "Resource",
+              4
+            ]
+          ],
+          "engagedEnemies": [
+            "a00086cd-260a-463e-8230-4ce013d325d5",
+            "a4be001e-0354-444a-989a-fffc1304a9b1"
+          ],
+          "currentHealth": 5,
+          "currentSanity": 9,
+          "meta": {
+            "sniffedLocations": [
+              "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+              "1f1e1b77-e96d-4025-9841-73404e484cb9",
+              "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1",
+              "875b7b5d-102a-4d18-912f-824f42a6de45",
+              "1e66da80-8d37-4175-a263-a79b54ebf72d",
+              "1e896b12-4ef9-456e-a4bd-fd925a4258c5"
+            ]
+          }
+        }
+      },
+      "locations": {
+        "1a2db109-15aa-49ed-b805-b3f7517f2c3e": {
+          "id": "1a2db109-15aa-49ed-b805-b3f7517f2c3e",
+          "revealed": false,
+          "connectedLocations": [
+            "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+            "c2bdf390-3e75-4306-b47b-c187eb5cb617",
+            "1f1e1b77-e96d-4025-9841-73404e484cb9",
+            "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1",
+            "1e896b12-4ef9-456e-a4bd-fd925a4258c5"
+          ],
+          "tokens": [],
+          "cardsUnderneath": []
+        },
+        "1e66da80-8d37-4175-a263-a79b54ebf72d": {
+          "id": "1e66da80-8d37-4175-a263-a79b54ebf72d",
+          "revealed": true,
+          "connectedLocations": [
+            "1f1e1b77-e96d-4025-9841-73404e484cb9",
+            "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1",
+            "1e896b12-4ef9-456e-a4bd-fd925a4258c5",
+            "875b7b5d-102a-4d18-912f-824f42a6de45"
+          ],
+          "tokens": [
+            [
+              "Clue",
+              1
+            ]
+          ],
+          "cardCode": "c:barkham:033",
+          "label": "muttskatonicUniversity",
+          "cardsUnderneath": []
+        },
+        "1e896b12-4ef9-456e-a4bd-fd925a4258c5": {
+          "id": "1e896b12-4ef9-456e-a4bd-fd925a4258c5",
+          "revealed": true,
+          "connectedLocations": [
+            "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+            "1e66da80-8d37-4175-a263-a79b54ebf72d",
+            "1f1e1b77-e96d-4025-9841-73404e484cb9",
+            "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1",
+            "1a2db109-15aa-49ed-b805-b3f7517f2c3e",
+            "875b7b5d-102a-4d18-912f-824f42a6de45"
+          ],
+          "tokens": [],
+          "cardCode": "c:barkham:029",
+          "label": "snoutside",
+          "cardsUnderneath": []
+        },
+        "1f1e1b77-e96d-4025-9841-73404e484cb9": {
+          "id": "1f1e1b77-e96d-4025-9841-73404e484cb9",
+          "revealed": true,
+          "connectedLocations": [
+            "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+            "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+            "1e66da80-8d37-4175-a263-a79b54ebf72d",
+            "1e896b12-4ef9-456e-a4bd-fd925a4258c5",
+            "1a2db109-15aa-49ed-b805-b3f7517f2c3e"
+          ],
+          "tokens": [],
+          "cardCode": "c:barkham:028",
+          "label": "tailside",
+          "cardsUnderneath": []
+        },
+        "43bd4989-e5dc-4f70-b44a-55cc01be50e8": {
+          "id": "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+          "revealed": false,
+          "connectedLocations": [
+            "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+            "c2bdf390-3e75-4306-b47b-c187eb5cb617",
+            "1f1e1b77-e96d-4025-9841-73404e484cb9",
+            "1e896b12-4ef9-456e-a4bd-fd925a4258c5",
+            "1a2db109-15aa-49ed-b805-b3f7517f2c3e",
+            "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+          ],
+          "tokens": [],
+          "cardsUnderneath": []
+        },
+        "875b7b5d-102a-4d18-912f-824f42a6de45": {
+          "id": "875b7b5d-102a-4d18-912f-824f42a6de45",
+          "revealed": true,
+          "connectedLocations": [
+            "1e66da80-8d37-4175-a263-a79b54ebf72d",
+            "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1",
+            "1e896b12-4ef9-456e-a4bd-fd925a4258c5"
+          ],
+          "tokens": [],
+          "cardCode": "c:barkham:035",
+          "label": "stMarysAnimalHospital",
+          "cardsUnderneath": []
+        },
+        "a2fdbb8e-2138-4add-89bc-c9de54e30b4a": {
+          "id": "a2fdbb8e-2138-4add-89bc-c9de54e30b4a",
+          "revealed": false,
+          "connectedLocations": [
+            "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+            "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+            "c2bdf390-3e75-4306-b47b-c187eb5cb617"
+          ],
+          "tokens": [],
+          "cardsUnderneath": []
+        },
+        "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1": {
+          "id": "a8fc5a0a-8175-4113-b46b-0ff1d10b8ba1",
+          "revealed": true,
+          "connectedLocations": [
+            "1e66da80-8d37-4175-a263-a79b54ebf72d",
+            "1e896b12-4ef9-456e-a4bd-fd925a4258c5",
+            "1a2db109-15aa-49ed-b805-b3f7517f2c3e",
+            "875b7b5d-102a-4d18-912f-824f42a6de45"
+          ],
+          "tokens": [],
+          "cardCode": "c:barkham:032",
+          "label": "boneyard",
+          "cardsUnderneath": []
+        },
+        "c2bdf390-3e75-4306-b47b-c187eb5cb617": {
+          "id": "c2bdf390-3e75-4306-b47b-c187eb5cb617",
+          "revealed": false,
+          "connectedLocations": [
+            "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+            "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+            "1a2db109-15aa-49ed-b805-b3f7517f2c3e",
+            "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+          ],
+          "tokens": [],
+          "cardsUnderneath": []
+        },
+        "de479f8a-9c88-4a1f-b8d5-d627575d092a": {
+          "id": "de479f8a-9c88-4a1f-b8d5-d627575d092a",
+          "revealed": true,
+          "connectedLocations": [
+            "43bd4989-e5dc-4f70-b44a-55cc01be50e8",
+            "c2bdf390-3e75-4306-b47b-c187eb5cb617",
+            "1f1e1b77-e96d-4025-9841-73404e484cb9",
+            "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+          ],
+          "tokens": [],
+          "cardCode": "c:barkham:031",
+          "label": "barkhamAsylum",
+          "cardsUnderneath": []
+        }
+      },
+      "enemies": {
+        "a00086cd-260a-463e-8230-4ce013d325d5": {
+          "id": "a00086cd-260a-463e-8230-4ce013d325d5",
+          "cardCode": "c:barkham:037",
+          "placement": {
+            "contents": "c:barkham:004",
+            "tag": "InThreatArea"
+          },
+          "tokens": [],
+          "exhausted": false,
+          "defeated": false,
+          "currentHealth": 7,
+          "healthDamage": 2,
+          "sanityDamage": 2
+        },
+        "a4be001e-0354-444a-989a-fffc1304a9b1": {
+          "id": "a4be001e-0354-444a-989a-fffc1304a9b1",
+          "cardCode": "c:barkham:047",
+          "placement": {
+            "contents": "c:barkham:004",
+            "tag": "InThreatArea"
+          },
+          "tokens": [
+            [
+              "Doom",
+              1
+            ]
+          ],
+          "exhausted": false,
+          "defeated": false,
+          "currentHealth": 2,
+          "healthDamage": 1,
+          "sanityDamage": 0
+        }
+      },
+      "assets": {
+        "88897644-ac2a-42bd-acde-766ce8fff4bb": {
+          "id": "88897644-ac2a-42bd-acde-766ce8fff4bb",
+          "cardCode": "c01030",
+          "controller": "c:barkham:004",
+          "placement": {
+            "contents": "c:barkham:004",
+            "tag": "InPlayArea"
+          },
+          "tokens": []
+        },
+        "daf2f914-06fc-4c5b-8f10-ad1eda2e4ed7": {
+          "id": "daf2f914-06fc-4c5b-8f10-ad1eda2e4ed7",
+          "cardCode": "c:barkham:005",
+          "controller": "c:barkham:004",
+          "placement": {
+            "contents": "c:barkham:004",
+            "tag": "InPlayArea"
+          },
+          "tokens": []
+        }
+      },
+      "treacheries": {
+        "a3640c8b-7137-454b-b340-6932676113a4": {
+          "id": "a3640c8b-7137-454b-b340-6932676113a4",
+          "cardCode": "c:barkham:055",
+          "placement": {
+            "contents": "1e66da80-8d37-4175-a263-a79b54ebf72d",
+            "tag": "AttachedToLocation"
+          },
+          "tokens": []
+        }
+      },
+      "acts": {
+        "c:barkham:026": {
+          "id": "c:barkham:026",
+          "sequence": [
+            2,
+            "A"
+          ],
+          "flipped": false
+        }
+      },
+      "agendas": {
+        "c:barkham:024": {
+          "id": "c:barkham:024",
+          "sequence": {
+            "agendaSequenceSide": "A",
+            "agendaSequenceStep": 2
+          },
+          "flipped": false
+        }
+      },
+      "question": {
+        "d0c8cd07-e266-40b4-b098-ad07449ccce8": {
+          "tag": "PlayerWindowChooseOne",
+          "choices": [
+            {
+              "tag": "ComponentLabel",
+              "component": {
+                "tag": "InvestigatorComponent",
+                "investigatorId": "c:barkham:004",
+                "tokenType": "ResourceToken"
+              },
+              "messages": [
+                {
+                  "tag": "TakeResources",
+                  "contents": [
+                    "c:barkham:004",
+                    1,
+                    {
+                      "tag": "ResourceSource",
+                      "contents": "c:barkham:004"
+                    },
+                    true
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "ComponentLabel",
+              "component": {
+                "tag": "InvestigatorDeckComponent",
+                "investigatorId": "c:barkham:004"
+              },
+              "messages": [
+                {
+                  "tag": "DrawCards",
+                  "contents": [
+                    "c:barkham:004",
+                    {
+                      "cardDrawSource": {
+                        "tag": "InvestigatorSource",
+                        "contents": "c:barkham:004"
+                      },
+                      "cardDrawDeck": {
+                        "tag": "InvestigatorDeck",
+                        "contents": "c:barkham:004"
+                      },
+                      "cardDrawAmount": 1,
+                      "cardDrawState": {
+                        "tag": "UnresolvedCardDraw"
+                      },
+                      "cardDrawTarget": null,
+                      "cardDrawAction": true,
+                      "cardDrawKind": "StandardCardDraw",
+                      "cardDrawPosition": "DrawFromTop",
+                      "cardDrawRules": [],
+                      "cardDrawAndThen": null,
+                      "cardDrawAlreadyDrawn": [],
+                      "cardDrawDiscard": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "TargetLabel",
+              "target": {
+                "tag": "CardIdTarget",
+                "contents": "fe09b5de-3381-45e4-8bb5-50e6f8684e43"
+              },
+              "messages": [
+                {
+                  "tag": "InitiatePlayCardWithWindows",
+                  "contents": [
+                    "c:barkham:004",
+                    {
+                      "tag": "PlayerCard",
+                      "contents": {
+                        "cardCode": "c02107",
+                        "chained": null,
+                        "customizations": [],
+                        "errata": null,
+                        "facedown": null,
+                        "id": "fe09b5de-3381-45e4-8bb5-50e6f8684e43",
+                        "meta": null,
+                        "mutated": null,
+                        "originalCardCode": "c02107",
+                        "owner": "c:barkham:004",
+                        "tabooList": null
+                      }
+                    },
+                    null,
+                    {
+                      "tag": "NoPayment"
+                    },
+                    [
+                      {
+                        "windowTiming": "When",
+                        "windowType": {
+                          "tag": "DuringTurn",
+                          "contents": "c:barkham:004"
+                        },
+                        "windowBatchId": null,
+                        "windowConditionTick": null
+                      },
+                      {
+                        "windowTiming": "When",
+                        "windowType": {
+                          "tag": "FastPlayerWindow"
+                        },
+                        "windowBatchId": null,
+                        "windowConditionTick": null
+                      },
+                      {
+                        "windowTiming": "When",
+                        "windowType": {
+                          "tag": "NonFast"
+                        },
+                        "windowBatchId": null,
+                        "windowConditionTick": null
+                      }
+                    ],
+                    true
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "TargetLabel",
+              "target": {
+                "tag": "CardIdTarget",
+                "contents": "b3ce8bf3-bf65-431d-8846-0e25bb70a57a"
+              },
+              "messages": [
+                {
+                  "tag": "InitiatePlayCardWithWindows",
+                  "contents": [
+                    "c:barkham:004",
+                    {
+                      "tag": "PlayerCard",
+                      "contents": {
+                        "cardCode": "c:barkham:017",
+                        "chained": null,
+                        "customizations": [],
+                        "errata": null,
+                        "facedown": null,
+                        "id": "b3ce8bf3-bf65-431d-8846-0e25bb70a57a",
+                        "meta": null,
+                        "mutated": null,
+                        "originalCardCode": "c:barkham:017",
+                        "owner": "c:barkham:004",
+                        "tabooList": null
+                      }
+                    },
+                    null,
+                    {
+                      "tag": "NoPayment"
+                    },
+                    [
+                      {
+                        "windowTiming": "When",
+                        "windowType": {
+                          "tag": "DuringTurn",
+                          "contents": "c:barkham:004"
+                        },
+                        "windowBatchId": null,
+                        "windowConditionTick": null
+                      },
+                      {
+                        "windowTiming": "When",
+                        "windowType": {
+                          "tag": "FastPlayerWindow"
+                        },
+                        "windowBatchId": null,
+                        "windowConditionTick": null
+                      },
+                      {
+                        "windowTiming": "When",
+                        "windowType": {
+                          "tag": "NonFast"
+                        },
+                        "windowBatchId": null,
+                        "windowConditionTick": null
+                      }
+                    ],
+                    true
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "EndTurnButton",
+              "investigatorId": "c:barkham:004",
+              "messages": [
+                {
+                  "tag": "ChooseEndTurn",
+                  "contents": "c:barkham:004"
+                }
+              ]
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "1f1e1b77-e96d-4025-9841-73404e484cb9"
+                },
+                "cardCode": "c:barkham:028",
+                "index": 104,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Move",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "CanMoveTo",
+                      "contents": {
+                        "tag": "LocationWithId",
+                        "contents": "1f1e1b77-e96d-4025-9841-73404e484cb9"
+                      }
+                    },
+                    {
+                      "tag": "OnLocation",
+                      "contents": {
+                        "tag": "IncludeEmptySpace",
+                        "contents": {
+                          "tag": "IncludeEmptySpace",
+                          "contents": {
+                            "tag": "AccessibleTo",
+                            "contents": [
+                              "ForMovement",
+                              {
+                                "tag": "LocationWithId",
+                                "contents": "1f1e1b77-e96d-4025-9841-73404e484cb9"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "tag": "InvestigatorExists",
+                      "contents": {
+                        "tag": "InvestigatorMatches",
+                        "contents": [
+                          {
+                            "tag": "You"
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotMove"
+                            }
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotEnter",
+                              "contents": "1f1e1b77-e96d-4025-9841-73404e484cb9"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "1f1e1b77-e96d-4025-9841-73404e484cb9"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "43bd4989-e5dc-4f70-b44a-55cc01be50e8"
+                },
+                "cardCode": "c:barkham:027",
+                "index": 104,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Move",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "Costs",
+                    "contents": [
+                      {
+                        "tag": "ActionCost",
+                        "contents": 1
+                      },
+                      {
+                        "tag": "NonBlankedCost",
+                        "contents": {
+                          "tag": "CostToEnterUnrevealed",
+                          "contents": {
+                            "tag": "Free"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "CanMoveTo",
+                      "contents": {
+                        "tag": "LocationWithId",
+                        "contents": "43bd4989-e5dc-4f70-b44a-55cc01be50e8"
+                      }
+                    },
+                    {
+                      "tag": "OnLocation",
+                      "contents": {
+                        "tag": "IncludeEmptySpace",
+                        "contents": {
+                          "tag": "IncludeEmptySpace",
+                          "contents": {
+                            "tag": "AccessibleTo",
+                            "contents": [
+                              "ForMovement",
+                              {
+                                "tag": "LocationWithId",
+                                "contents": "43bd4989-e5dc-4f70-b44a-55cc01be50e8"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "tag": "InvestigatorExists",
+                      "contents": {
+                        "tag": "InvestigatorMatches",
+                        "contents": [
+                          {
+                            "tag": "You"
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotMove"
+                            }
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotEnter",
+                              "contents": "43bd4989-e5dc-4f70-b44a-55cc01be50e8"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "43bd4989-e5dc-4f70-b44a-55cc01be50e8"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+                },
+                "cardCode": "c:barkham:036",
+                "index": 104,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Move",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "Costs",
+                    "contents": [
+                      {
+                        "tag": "ActionCost",
+                        "contents": 1
+                      },
+                      {
+                        "tag": "NonBlankedCost",
+                        "contents": {
+                          "tag": "CostToEnterUnrevealed",
+                          "contents": {
+                            "tag": "Free"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "CanMoveTo",
+                      "contents": {
+                        "tag": "LocationWithId",
+                        "contents": "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+                      }
+                    },
+                    {
+                      "tag": "OnLocation",
+                      "contents": {
+                        "tag": "IncludeEmptySpace",
+                        "contents": {
+                          "tag": "IncludeEmptySpace",
+                          "contents": {
+                            "tag": "AccessibleTo",
+                            "contents": [
+                              "ForMovement",
+                              {
+                                "tag": "LocationWithId",
+                                "contents": "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "tag": "InvestigatorExists",
+                      "contents": {
+                        "tag": "InvestigatorMatches",
+                        "contents": [
+                          {
+                            "tag": "You"
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotMove"
+                            }
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotEnter",
+                              "contents": "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "a2fdbb8e-2138-4add-89bc-c9de54e30b4a"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "c2bdf390-3e75-4306-b47b-c187eb5cb617"
+                },
+                "cardCode": "c:barkham:034",
+                "index": 104,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Move",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "Costs",
+                    "contents": [
+                      {
+                        "tag": "ActionCost",
+                        "contents": 1
+                      },
+                      {
+                        "tag": "NonBlankedCost",
+                        "contents": {
+                          "tag": "CostToEnterUnrevealed",
+                          "contents": {
+                            "tag": "Free"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "CanMoveTo",
+                      "contents": {
+                        "tag": "LocationWithId",
+                        "contents": "c2bdf390-3e75-4306-b47b-c187eb5cb617"
+                      }
+                    },
+                    {
+                      "tag": "OnLocation",
+                      "contents": {
+                        "tag": "IncludeEmptySpace",
+                        "contents": {
+                          "tag": "IncludeEmptySpace",
+                          "contents": {
+                            "tag": "AccessibleTo",
+                            "contents": [
+                              "ForMovement",
+                              {
+                                "tag": "LocationWithId",
+                                "contents": "c2bdf390-3e75-4306-b47b-c187eb5cb617"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "tag": "InvestigatorExists",
+                      "contents": {
+                        "tag": "InvestigatorMatches",
+                        "contents": [
+                          {
+                            "tag": "You"
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotMove"
+                            }
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotEnter",
+                              "contents": "c2bdf390-3e75-4306-b47b-c187eb5cb617"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "c2bdf390-3e75-4306-b47b-c187eb5cb617"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                },
+                "cardCode": "c:barkham:031",
+                "index": 103,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Investigate",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": {
+                    "tag": "AbilitySkill",
+                    "contents": "SkillIntellect"
+                  },
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "OnLocation",
+                      "contents": {
+                        "tag": "LocationWithId",
+                        "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                      }
+                    },
+                    {
+                      "tag": "LocationExists",
+                      "contents": {
+                        "tag": "LocationMatchAll",
+                        "contents": [
+                          {
+                            "tag": "LocationWithId",
+                            "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                          },
+                          {
+                            "tag": "InvestigatableLocation"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                },
+                "triggersSkillTest": true,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                },
+                "cardCode": "c:barkham:031",
+                "index": 2,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Parley",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "Costs",
+                    "contents": [
+                      {
+                        "tag": "ActionCost",
+                        "contents": 1
+                      },
+                      {
+                        "tag": "HorrorCost",
+                        "contents": [
+                          {
+                            "tag": "AbilitySource",
+                            "contents": [
+                              {
+                                "tag": "LocationSource",
+                                "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                              },
+                              2
+                            ]
+                          },
+                          {
+                            "tag": "YouTarget"
+                          },
+                          1
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Here"
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": false,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "de479f8a-9c88-4a1f-b8d5-d627575d092a"
+                },
+                "triggersSkillTest": true,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "InvestigatorSource",
+                  "contents": "c:barkham:004"
+                },
+                "cardCode": "c:barkham:004",
+                "index": 1,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": [],
+                    "tag": "AndActions"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "Self"
+                    },
+                    {
+                      "tag": "LocationExists",
+                      "contents": {
+                        "tag": "LocationWithInvestigator",
+                        "contents": {
+                          "tag": "You"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": {
+                  "tag": "AnyEnemy"
+                },
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": false,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "InvestigatorSource",
+                  "contents": "c:barkham:004"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "EnemySource",
+                  "contents": "a00086cd-260a-463e-8230-4ce013d325d5"
+                },
+                "cardCode": "c:barkham:037",
+                "index": 100,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Fight",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": {
+                    "tag": "AbilitySkill",
+                    "contents": "SkillCombat"
+                  },
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "OnSameLocation"
+                    },
+                    {
+                      "tag": "EnemyCriteria",
+                      "contents": {
+                        "tag": "ThisEnemy",
+                        "contents": {
+                          "tag": "CanBeAttackedBy",
+                          "contents": {
+                            "tag": "You"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "tag": "InvestigatorExists",
+                      "contents": {
+                        "tag": "InvestigatorMatches",
+                        "contents": [
+                          {
+                            "tag": "You"
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotAttack"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "tag": "AnyCriterion",
+                      "contents": [
+                        {
+                          "tag": "EnemyCriteria",
+                          "contents": {
+                            "tag": "ThisEnemy",
+                            "contents": {
+                              "tag": "EnemyOneOf",
+                              "contents": [
+                                {
+                                  "tag": "NotEnemy",
+                                  "contents": {
+                                    "tag": "EnemyWithKeyword",
+                                    "contents": {
+                                      "tag": "Aloof"
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "EnemyIsEngagedWith",
+                                  "contents": {
+                                    "tag": "Anyone"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "InvestigatorExists",
+                          "contents": {
+                            "tag": "InvestigatorMatches",
+                            "contents": [
+                              {
+                                "tag": "You"
+                              },
+                              {
+                                "tag": "InvestigatorWithModifier",
+                                "contents": {
+                                  "tag": "IgnoreAloof"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "EnemySource",
+                  "contents": "a00086cd-260a-463e-8230-4ce013d325d5"
+                },
+                "triggersSkillTest": true,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "EnemySource",
+                  "contents": "a00086cd-260a-463e-8230-4ce013d325d5"
+                },
+                "cardCode": "c:barkham:037",
+                "index": 101,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Evade",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": {
+                    "tag": "AbilitySkill",
+                    "contents": "SkillAgility"
+                  },
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "OnSameLocation"
+                    },
+                    {
+                      "tag": "EnemyCriteria",
+                      "contents": {
+                        "tag": "ThisEnemy",
+                        "contents": {
+                          "tag": "EnemyMatchAll",
+                          "contents": [
+                            {
+                              "tag": "EnemyIsEngagedWith",
+                              "contents": {
+                                "tag": "You"
+                              }
+                            },
+                            {
+                              "tag": "EnemyWithEvade"
+                            },
+                            {
+                              "tag": "EnemyWithoutModifier",
+                              "contents": {
+                                "tag": "CannotBeEvaded"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "EnemySource",
+                  "contents": "a00086cd-260a-463e-8230-4ce013d325d5"
+                },
+                "triggersSkillTest": true,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "EnemySource",
+                  "contents": "a4be001e-0354-444a-989a-fffc1304a9b1"
+                },
+                "cardCode": "c:barkham:047",
+                "index": 100,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Fight",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": {
+                    "tag": "AbilitySkill",
+                    "contents": "SkillCombat"
+                  },
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "OnSameLocation"
+                    },
+                    {
+                      "tag": "EnemyCriteria",
+                      "contents": {
+                        "tag": "ThisEnemy",
+                        "contents": {
+                          "tag": "CanBeAttackedBy",
+                          "contents": {
+                            "tag": "You"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "tag": "InvestigatorExists",
+                      "contents": {
+                        "tag": "InvestigatorMatches",
+                        "contents": [
+                          {
+                            "tag": "You"
+                          },
+                          {
+                            "tag": "InvestigatorWithoutModifier",
+                            "contents": {
+                              "tag": "CannotAttack"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "tag": "AnyCriterion",
+                      "contents": [
+                        {
+                          "tag": "EnemyCriteria",
+                          "contents": {
+                            "tag": "ThisEnemy",
+                            "contents": {
+                              "tag": "EnemyOneOf",
+                              "contents": [
+                                {
+                                  "tag": "NotEnemy",
+                                  "contents": {
+                                    "tag": "EnemyWithKeyword",
+                                    "contents": {
+                                      "tag": "Aloof"
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "EnemyIsEngagedWith",
+                                  "contents": {
+                                    "tag": "Anyone"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "InvestigatorExists",
+                          "contents": {
+                            "tag": "InvestigatorMatches",
+                            "contents": [
+                              {
+                                "tag": "You"
+                              },
+                              {
+                                "tag": "InvestigatorWithModifier",
+                                "contents": {
+                                  "tag": "IgnoreAloof"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "EnemySource",
+                  "contents": "a4be001e-0354-444a-989a-fffc1304a9b1"
+                },
+                "triggersSkillTest": true,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "EnemySource",
+                  "contents": "a4be001e-0354-444a-989a-fffc1304a9b1"
+                },
+                "cardCode": "c:barkham:047",
+                "index": 101,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": "Evade",
+                    "tag": "SingleAction"
+                  },
+                  "skillTypes": {
+                    "tag": "AbilitySkill",
+                    "contents": "SkillAgility"
+                  },
+                  "cost": {
+                    "tag": "ActionCost",
+                    "contents": 1
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Criteria",
+                  "contents": [
+                    {
+                      "tag": "OnSameLocation"
+                    },
+                    {
+                      "tag": "EnemyCriteria",
+                      "contents": {
+                        "tag": "ThisEnemy",
+                        "contents": {
+                          "tag": "EnemyMatchAll",
+                          "contents": [
+                            {
+                              "tag": "EnemyIsEngagedWith",
+                              "contents": {
+                                "tag": "You"
+                              }
+                            },
+                            {
+                              "tag": "EnemyWithEvade"
+                            },
+                            {
+                              "tag": "EnemyWithoutModifier",
+                              "contents": {
+                                "tag": "CannotBeEvaded"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": true,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "EnemySource",
+                  "contents": "a4be001e-0354-444a-989a-fffc1304a9b1"
+                },
+                "triggersSkillTest": true,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "ActSource",
+                  "contents": "c:barkham:026"
+                },
+                "cardCode": "c:barkham:026",
+                "index": 1,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": [],
+                    "tag": "AndActions"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "Costs",
+                    "contents": [
+                      {
+                        "tag": "ActionCost",
+                        "contents": 1
+                      },
+                      {
+                        "tag": "ClueCost",
+                        "contents": {
+                          "tag": "Static",
+                          "contents": 1
+                        }
+                      }
+                    ]
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "EnemyCriteria",
+                  "contents": {
+                    "tag": "EnemyExists",
+                    "contents": {
+                      "tag": "EnemyAt",
+                      "contents": {
+                        "tag": "LocationWithInvestigator",
+                        "contents": {
+                          "tag": "You"
+                        }
+                      }
+                    }
+                  }
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": false,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "ActSource",
+                  "contents": "c:barkham:026"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c:barkham:004",
+              "ability": {
+                "source": {
+                  "tag": "ActSource",
+                  "contents": "c:barkham:026"
+                },
+                "cardCode": "c:barkham:026",
+                "index": 2,
+                "type": {
+                  "tag": "ActionAbility",
+                  "actions": {
+                    "contents": [],
+                    "tag": "AndActions"
+                  },
+                  "skillTypes": null,
+                  "cost": {
+                    "tag": "Costs",
+                    "contents": [
+                      {
+                        "tag": "ActionCost",
+                        "contents": 1
+                      },
+                      {
+                        "tag": "ClueCost",
+                        "contents": {
+                          "tag": "Static",
+                          "contents": 1
+                        }
+                      }
+                    ]
+                  }
+                },
+                "limit": {
+                  "tag": "NoLimit"
+                },
+                "window": {
+                  "tag": "DuringYourAction",
+                  "contents": {
+                    "tag": "You"
+                  }
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "EnemyCriteria",
+                  "contents": {
+                    "tag": "EnemyExists",
+                    "contents": {
+                      "tag": "EnemyAt",
+                      "contents": {
+                        "tag": "LocationWithInvestigator",
+                        "contents": {
+                          "tag": "You"
+                        }
+                      }
+                    }
+                  }
+                },
+                "doesNotProvokeAttacksOfOpportunity": {
+                  "tag": "AnyEnemy"
+                },
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": false,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "ActSource",
+                  "contents": "c:barkham:026"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c:barkham:004"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            }
+          ]
+        }
+      },
+      "cards": {
+        "e2ef82b6-c123-45c6-b13b-9c84e1453fb4": {
+          "contents": {
+            "cardCode": "c01092",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "e2ef82b6-c123-45c6-b13b-9c84e1453fb4",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c01092",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "9bbd6196-724e-4741-bd18-ed85742abb0b": {
+          "contents": {
+            "cardCode": "c01093",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "9bbd6196-724e-4741-bd18-ed85742abb0b",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c01093",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "1ca3e7c8-1b1e-4002-a634-1c8dd30ba8db": {
+          "contents": {
+            "cardCode": "c01089",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "1ca3e7c8-1b1e-4002-a634-1c8dd30ba8db",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c01089",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "fe09b5de-3381-45e4-8bb5-50e6f8684e43": {
+          "contents": {
+            "cardCode": "c02107",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "fe09b5de-3381-45e4-8bb5-50e6f8684e43",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c02107",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "11eb30ce-f9da-40ed-8576-fe12f18e3229": {
+          "contents": {
+            "cardCode": "c01090",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "11eb30ce-f9da-40ed-8576-fe12f18e3229",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c01090",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "773cde84-426c-4d67-894c-e8582a71502a": {
+          "contents": {
+            "cardCode": "c01093",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "773cde84-426c-4d67-894c-e8582a71502a",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c01093",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "b3ce8bf3-bf65-431d-8846-0e25bb70a57a": {
+          "contents": {
+            "cardCode": "c:barkham:017",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "b3ce8bf3-bf65-431d-8846-0e25bb70a57a",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c:barkham:017",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        },
+        "b29f609c-b1fa-4a4a-bc75-a6a29c83bdd1": {
+          "contents": {
+            "cardCode": "c01039",
+            "chained": null,
+            "customizations": [],
+            "errata": null,
+            "facedown": null,
+            "id": "b29f609c-b1fa-4a4a-bc75-a6a29c83bdd1",
+            "meta": null,
+            "mutated": null,
+            "originalCardCode": "c01039",
+            "owner": "c:barkham:004",
+            "tabooList": null
+          },
+          "tag": "PlayerCard"
+        }
+      }
+    }
+  }
+}

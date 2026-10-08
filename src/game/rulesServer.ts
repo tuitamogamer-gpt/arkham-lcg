@@ -334,8 +334,8 @@ export const sendCompanionVentNote = (session: CompanionSession, note: unknown) 
   request<unknown>(`play/games/${session.gameId}/vent-note${companionQuery(session)}`, note);
 export interface CompanionPlayOptions {
   sourceRevision: string;
-  campaigns: { id: string; name: string; returnTo?: { id: string }; variants?: {key:string}[] }[];
-  scenarios: { id: string; name: string; campaign?: string; variant?: "blobElse" | "mini"; standaloneDifficulties?: string[] }[];
+  campaigns: { id: string; name: string; beta?: true; alpha?: true; returnTo?: { id: string; beta?: true; alpha?: true }; variants?: {key:string}[] }[];
+  scenarios: { id: string; name: string; beta?: true; alpha?: true; campaign?: string; variant?: "blobElse" | "mini"; standaloneDifficulties?: string[] }[];
 }
 export const getCompanionPlayOptions = () => request<CompanionPlayOptions>("play/options");
 export interface CompanionPresentation {

@@ -95,18 +95,21 @@ distribution runs locally on Apple silicon. The separate private Linux acceptanc
 route uses the actual compiled aggregate without claiming a signed installation;
 the static production deployment does not include its Haskell/PostgreSQL server.
 The [ARM64 Mac build/export pipeline](docs/macos-runtime-release.md) verifies
-the actual candidate and produces an archive with ad-hoc installation signatures;
+the actual candidate; its hosted build now passes all 232 native examples and
+exports a checksum-bound archive with ad-hoc installation signatures.
 Developer ID signing, notarization and Mac gameplay acceptance remain separate.
 The native game remains usable
 without the companion.
 
 The engine scripts these five fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **508 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **590 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 
 The full importer and its coverage, release cutoff, supplemental Barkham data, product mappings and repeatable checks are documented in [content import](docs/content-import.md). Run `npm run sync:cards -- --as-of 2026-09-30` to regenerate the snapshot. Three small card shards load when the collection is first opened; the installed app precaches the card data for offline browsing. The scripted 196-card Core snapshot is preserved independently of the larger reference catalog.
+
+The [recorded support map](public/data/support-coverage.json) separates imported definitions, native source declarations, captured registry aliases, focused rule tests, legal playthrough reports and installation status. Its provenance and regeneration commands are documented in [support coverage](docs/support-coverage.md). The campaign/scenario chooser now retains the upstream Alpha/Beta labels, including multipart and variant modes.
 
 ArkhamDB provides a public JSON API with no credential needed for public card endpoints:
 

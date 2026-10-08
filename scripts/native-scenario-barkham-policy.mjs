@@ -17,6 +17,11 @@ const hereId = (actor) => actor.placement?.tag === "AtLocation" ? actor.placemen
 const ownAsset = (asset, actor) => asset.controller === actor.id
   || (asset.placement?.tag === "InPlayArea" && asset.placement.contents === actor.id);
 const ownTreachery = (treachery, actor) => treachery.placement?.tag === "InThreatArea" && treachery.placement.contents === actor.id;
+const localStubbornCat = (treachery, actor, sourceId) => treachery.id === sourceId
+  && codeOf(treachery) === "barkham-055" && treachery.placement?.tag === "AttachedToLocation"
+  && typeof hereId(actor) === "string" && treachery.placement.contents === hereId(actor);
+const usableTreachery = (treachery, actor, sourceId) => ownTreachery(treachery, actor)
+  || localStubbornCat(treachery, actor, sourceId);
 const choiceTags = new Set(["ChooseOne", "PlayerWindowChooseOne", "WindowChooseOne", "ChooseN",
   "ChooseSome", "ChooseSome1", "ChooseUpToN", "ChooseOneAtATime", "ChooseOneAtATimeWithAuto", "Read"]);
 
@@ -76,7 +81,7 @@ function availableAbility(choices, game, actor, cardCode, index, sourceId) {
       case "EnemySource": return !!game.enemies?.[source.id] && codeOf(game.enemies[source.id]) === cardCode;
       case "AssetSource": return !!game.assets?.[source.id] && ownAsset(game.assets[source.id], actor)
         && codeOf(game.assets[source.id]) === cardCode;
-      case "TreacherySource": return !!game.treacheries?.[source.id] && ownTreachery(game.treacheries[source.id], actor)
+      case "TreacherySource": return !!game.treacheries?.[source.id] && usableTreachery(game.treacheries[source.id], actor, source.id)
         && codeOf(game.treacheries[source.id]) === cardCode;
       case "ActSource": return !!game.acts?.[source.id] && codeOf(game.acts[source.id]) === cardCode;
       case "AgendaSource": return !!game.agendas?.[source.id] && codeOf(game.agendas[source.id]) === cardCode;
@@ -100,7 +105,7 @@ function ownedChoice(choice, actor, game) {
     const source = reference(record(raw.ability).source);
     if (source.tag === "InvestigatorSource" && source.id !== actor.id) return false;
     if (source.tag === "AssetSource" && !ownAsset(record(game.assets?.[source.id]), actor)) return false;
-    if (source.tag === "TreacherySource" && !ownTreachery(record(game.treacheries?.[source.id]), actor)) return false;
+    if (source.tag === "TreacherySource" && !usableTreachery(record(game.treacheries?.[source.id]), actor, source.id)) return false;
   }
   return true;
 }
@@ -182,6 +187,36 @@ export function selectBarkhamChoice({ snapshot, question, cards, memory = {} }) 
     for (const [code, index] of [["barkham-005", 1], ["01033", 1], ["02020", 1]]) {
       const choice = ability(code, index);
       if (choice) return decide(choice, `Use the offered printed ${code} reaction from the controlled physical card.`);
+    }
+    if (pending.kind === "stubborn-cat") {
+      const cat = record(game.treacheries?.[pending.treacheryId]);
+      if (typeof pending.gameId !== "string" || !pending.gameId || pending.gameId !== game.id || pending.investigatorId !== actor.id
+        || pending.locationId !== hereId(actor) || !localStubbornCat(cat, actor, pending.treacheryId)
+        || !Number.isSafeInteger(pending.questionVersion) || question.questionVersion <= pending.questionVersion
+        || question.tag !== "ChooseOne" || enabled.length !== 2
+        || (source.tag && (source.tag !== "TreacherySource" || source.id !== cat.id))) return undefined;
+      const tests = enabled.map((choice) => {
+        const raw = record(choice.raw), skill = raw.skillType;
+        if (choice.tag !== "SkillLabel" || !["SkillWillpower", "SkillAgility"].includes(skill)) return undefined;
+        const starts = messages(choice);
+        if (starts.length !== 1 || starts[0].tag !== "BeginSkillTestWithPreMessages'_") return undefined;
+        const contents = list(starts[0].contents), test = record(contents[1]);
+        const testSource = reference(test.source), testTarget = reference(test.target);
+        return contents.length === 2 && Array.isArray(contents[0]) && contents[0].length === 0
+          && typeof test.id === "string" && test.id && test.investigator === actor.id
+          && test.source?.tag === "AbilitySource" && list(test.source.contents)[1] === 1
+          && testSource.tag === "TreacherySource" && testSource.id === cat.id
+          && testTarget.tag === "TreacheryTarget" && testTarget.id === cat.id
+          && test.type?.tag === "SkillSkillTest" && test.type.contents === skill
+          && test.baseValue?.tag === "SkillBaseValue" && test.baseValue.contents === skill
+          && test.difficulty?.tag === "Fixed" && test.difficulty.contents === 4
+          ? { choice, skill, id: test.id } : undefined;
+      });
+      if (tests.some((test) => !test) || new Set(tests.map((test) => test.id)).size !== 1
+        || new Set(tests.map((test) => test.skill)).size !== 2) return undefined;
+      delete memory.pendingAction;
+      return decide(tests.find((test) => test.skill === "SkillAgility").choice,
+        "Choose the actual printed agility-four Stubborn Cat test for the exact own location attachment; the native chaos draw remains authoritative.");
     }
     if (pending.kind === "sniff") {
       const answer = takeTarget("LocationTarget", pending.locationId, "Sniff the exact current physical location.");
@@ -340,6 +375,27 @@ export function selectBarkhamChoice({ snapshot, question, cards, memory = {} }) 
   if (finalPacifyReserve !== undefined) memory.finalPacifyClueReserve = finalPacifyReserve;
   const hasFoulOdor = values(game.treacheries).find((treachery) => codeOf(treachery) === "barkham-006" && ownTreachery(treachery, actor));
   if (readyEngaged.length) {
+    if (actor.remainingActions === 0) {
+      const end = enabled.find((choice) => choice.tag === "EndTurnButton"
+        && record(choice.raw).investigatorId === actor.id
+        && messages(choice).length === 1 && messages(choice)[0].tag === "ChooseEndTurn"
+        && messages(choice)[0].contents === actor.id);
+      if (end) return decide(end, "End the actually completed turn with zero remaining actions; the native enemy phase and attacks remain authoritative.");
+    }
+    const bossDamage = tokenCount(boss, "Damage"), health = boss?.currentHealth;
+    const remaining = Number.isSafeInteger(health) && Number.isSafeInteger(bossDamage)
+      && health > 0 && bossDamage >= 0 ? health - bossDamage : undefined;
+    const safeDamage = bossHere && Number.isSafeInteger(remaining) && remaining > 0
+      && Number.isSafeInteger(clues) && clues >= remaining
+      && Number.isSafeInteger(actor.remainingActions) && actor.remainingActions >= remaining
+      ? ability("barkham-026", 2) : undefined;
+    const safeAbility = record(record(safeDamage?.raw).ability), costs = list(safeAbility.type?.cost?.contents);
+    if (safeDamage && safeAbility.doesNotProvokeAttacksOfOpportunity?.tag === "AnyEnemy"
+      && safeAbility.type?.tag === "ActionAbility" && safeAbility.type?.cost?.tag === "Costs" && costs.length === 2
+      && costs.some((cost) => cost.tag === "ActionCost" && cost.contents === 1)
+      && costs.some((cost) => cost.tag === "ClueCost" && cost.contents?.tag === "Static" && cost.contents.contents === 1))
+      return decide(safeDamage, "Use the offered one-clue/one-damage action without attacks of opportunity when the remaining boss health fits the actual current clue and action budget.",
+        { kind: "damage", enemyId: boss.id });
     if (!sniffed) {
       const sniff = ability("barkham-004", 1, actor.id);
       if (sniff) return decide(sniff, "Sniff without attacks of opportunity before the necessary evade test.", { kind: "sniff", locationId: here.id });
@@ -348,11 +404,6 @@ export function selectBarkhamChoice({ snapshot, question, cards, memory = {} }) 
     for (const enemy of enemies) {
       const evade = ability(codeOf(enemy), 101, enemy.id);
       if (evade) return decide(evade, "Use the offered basic evade on the exact ready engaged enemy.", { kind: "evade", enemyId: enemy.id });
-    }
-    if (bossHere && Number.isFinite(boss.currentHealth)
-      && clues >= Math.max(1, boss.currentHealth - tokenCount(boss, "Damage"))) {
-      const safeDamage = ability("barkham-026", 2);
-      if (safeDamage) return decide(safeDamage, "Use the printed one-damage clue action without provoking attacks of opportunity.", { kind: "damage", enemyId: boss.id });
     }
     return undefined;
   }
@@ -395,14 +446,20 @@ export function selectBarkhamChoice({ snapshot, question, cards, memory = {} }) 
     if (pacify) return decide(pacify, "Pay two actual clues to pacify the facedown card without using its hidden identity.");
   }
   if (localClues > 0) {
+    const flashlight = ownedAssets.find((asset) => codeOf(asset) === "01087" && supplies(asset) > 0);
+    const investigate = flashlight ? ability("01087", 1, flashlight.id) : undefined;
+    const basic = ability(codeOf(here), 103, here.id);
+    const cat = here.revealed === true && !investigate && !basic
+      ? values(game.treacheries).find((treachery) => localStubbornCat(treachery, actor, treachery.id)) : undefined;
+    const clearCat = cat ? ability("barkham-055", 1, cat.id) : undefined;
+    if (clearCat) return decide(clearCat, "Use the actually offered Stubborn Cat action on this exact location attachment before trying to investigate its visible clues.",
+      { kind: "stubborn-cat", treacheryId: cat.id, locationId: here.id,
+        investigatorId: actor.id, gameId: game.id, questionVersion: question.questionVersion });
     if (!sniffed) {
       const sniff = ability("barkham-004", 1, actor.id);
       if (sniff) return decide(sniff, "Sniff the current physical location before its repeated clue tests.", { kind: "sniff", locationId: here.id });
     }
-    const flashlight = ownedAssets.find((asset) => codeOf(asset) === "01087" && supplies(asset) > 0);
-    const investigate = flashlight ? ability("01087", 1, flashlight.id) : undefined;
     if (investigate) return decide(investigate, "Investigate using the actual Flashlight supply and printed shroud reduction.", { kind: "investigate", locationId: here.id });
-    const basic = ability(codeOf(here), 103, here.id);
     if (basic) return decide(basic, "Investigate the revealed current location for its actual remaining clues.", { kind: "investigate", locationId: here.id });
   }
 

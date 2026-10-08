@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   standaloneSettingsForAnswer,
   standaloneSettingsState,
@@ -11,13 +12,135 @@ const scenarioCodes = new Set([":barkham:022", "70001", "87001"]);
 const object = (value) =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
+/** Validate every group before the scheduler can submit another answer. */
+export function epicReadResolution(question, scenarioKind) {
+  if (question?.tag !== "Read") return;
+  const namespace = {labyrinth: "theLabyrinthsOfLunacy", machinations: "machinationsThroughTime"}[scenarioKind];
+  assert.ok(namespace);
+  let native = question.raw;
+  for (let n = 0; n < 8 && ["QuestionLabel", "QuestionLabelWithCard", "QuestionWithTooltip", "QuestionWithSource", "PayCostQuestion"].includes(native?.tag); n++)
+    native = native.question;
+  if (native?.tag !== "Read" || typeof native.flavorText?.title !== "string") return;
+  // Native resolutionWithXp uses one Int variable, serialized by I18n as
+  // " xp=i:0.0". Machinations R1/R2/R4 use it; Labyrinth and fatal R3 do not.
+  const match = new RegExp(`^\\$?standalone\\.${namespace}\\.resolutions\\.resolution([1-4])\\.title(?: xp=i:(0|[1-9][0-9]*)\\.0)?$`).exec(native.flavorText.title);
+  if (!match || match[0] !== native.flavorText.title || (match[2] !== undefined && (scenarioKind !== "machinations"
+    || match[1] === "3" || !Number.isSafeInteger(Number(match[2]))))) return;
+  return Number(match[1]);
+}
+
+export function assertEpicResumeStates({states, validatedWinningReadGameIds, winningResolution}) {
+  assert.ok([1, 4].includes(winningResolution));
+  assert.equal(states.length, 3);
+  const ids = states.map((state) => state.gameId);
+  assert.equal(new Set(ids).size, 3);
+  assert.ok(ids.every((id) => uuid.test(id)));
+  assert.ok(validatedWinningReadGameIds.every((id) => ids.includes(id)));
+  for (const {gameId, snapshot, resolution} of states) {
+    assert.equal(snapshot?.game?.id, gameId);
+    const status = snapshot.game.gameState?.tag;
+    assert.ok(["IsActive", "IsOver"].includes(status), "Only active or validated winning native groups can resume.");
+    if (resolution !== undefined)
+      assert.equal(resolution, winningResolution, "An actual printed losing Epic resolution cannot resume the event.");
+    if (status === "IsOver")
+      assert.ok(validatedWinningReadGameIds.includes(gameId), "A terminal losing Epic group cannot resume the event.");
+  }
+}
+
+/** A failed seat read must not prevent capture of the remaining groups. */
+export async function captureEpicStoppedStates({participants, previousStates = [], capture}) {
+  const states = [], errors = [];
+  for (const participant of participants) {
+    try {
+      states.push(await capture(participant));
+    } catch (error) {
+      errors.push({gameId: participant.gameId, group: participant.group, message: error.message});
+      const retained = previousStates.find((state) => state.gameId === participant.gameId);
+      if (retained) states.push(retained);
+    }
+  }
+  return {states, errors, current: errors.length === 0 && states.length === participants.length};
+}
+
+/** A stopped run may acquire newly created unrelated games, but none of its
+ * original protected rows may be removed or changed. The retained full SQL
+ * checkpoint must hash to that run's exact prior baseline. */
+export function assertAddOnlyResumeBaseline(previous, current, expectedSha256) {
+  assert.match(expectedSha256, /^[a-f0-9]{64}$/);
+  assert.equal(createHash("sha256").update(JSON.stringify(previous)).digest("hex"), expectedSha256);
+  const tables = ["games", "players", "steps", "logs"];
+  assert.deepEqual(Object.keys(previous).sort(), [...tables].sort());
+  assert.deepEqual(Object.keys(current).sort(), [...tables].sort());
+  const added = {};
+  for (const table of tables) {
+    const rows = (input) => {
+      assert.ok(Array.isArray(input[table]));
+      const result = new Map();
+      for (const row of input[table]) {
+        assert.ok(object(row));
+        assert.deepEqual(Object.keys(row).sort(), table === "steps" ? ["game", "hash", "step"] : ["hash", "id"]);
+        assert.match(row.hash, /^[a-f0-9]{32}$/);
+        const id = table === "steps" ? row.game : row.id;
+        assert.ok(table === "logs" ? Number.isSafeInteger(id) && id > 0 : uuid.test(id));
+        if (table === "steps") assert.ok(Number.isSafeInteger(row.step) && row.step >= 0);
+        const key = table === "steps" ? `${id}:${row.step}` : id;
+        assert.ok(!result.has(key), `Duplicate ${table} row in the protected checkpoint.`);
+        result.set(key, row.hash);
+      }
+      return result;
+    };
+    const oldRows = rows(previous), newRows = rows(current);
+    for (const [key, hash] of oldRows)
+      assert.equal(newRows.get(key), hash, `Protected ${table} row changed or disappeared: ${key}`);
+    added[table] = newRows.size - oldRows.size;
+  }
+  return added;
+}
+
+/** Select the actual successful investigation result, whose display label may
+ * include a printed subtitle. Never match nested bonus options or just text. */
+export function selectSuccessfulInvestigationChoice({snapshot, question}) {
+  if (question?.kind !== "choices" || question.tag !== "ChooseOne"
+    || question.isPlayerWindow || question.playerId !== snapshot?.playerId) return;
+  const game = snapshot.game;
+  const owners = Object.values(game.investigators || {}).filter((i) => i.playerId === snapshot.playerId);
+  if (owners.length !== 1) return;
+  const owner = owners[0], test = game.skillTest;
+  const locationId = owner.placement?.tag === "AtLocation" ? owner.placement.contents : undefined;
+  if (!locationId || game.locations?.[locationId]?.revealed !== true
+    || test?.investigator !== owner.id || test.action !== "Investigate"
+    || test.result?.tag !== "SucceededBy" || !Array.isArray(test.result.contents)
+    || !Number.isSafeInteger(test.result.contents[1]) || test.result.contents[1] < 0
+    || test.step !== "ApplySkillTestResultsStep" || test.target?.tag !== "LocationTarget"
+    || test.source?.tag !== "AbilitySource" || !Array.isArray(test.source.contents)
+    || test.source.contents[0]?.tag !== "LocationSource"
+    || test.source.contents[0].contents !== locationId || test.source.contents[1] !== 103
+    || test.target.contents !== locationId) return;
+  const matches = question.choices.filter((choice) => choice.disabled === false
+    && Number.isSafeInteger(choice.answerIndex) && choice.raw?.tag === "Label"
+    && Array.isArray(choice.raw.messages) && choice.raw.messages.some((wrapped) => {
+      const message = wrapped?.tag === "SkillTestMessage" ? wrapped.contents : wrapped;
+      if (message?.tag !== "Successful_" || !Array.isArray(message.contents)) return false;
+      const [action, investigator, source, target, margin] = message.contents;
+      return Array.isArray(action) && action[0] === "Investigate"
+        && action[1]?.tag === "LocationTarget" && action[1].contents === locationId
+        && investigator === owner.id && source?.tag === "AbilitySource"
+        && Array.isArray(source.contents) && source.contents[0]?.tag === "LocationSource"
+        && source.contents[0].contents === locationId && source.contents[1] === 103
+        && target?.tag === "LocationTarget" && target.contents === locationId
+        && margin === test.result.contents[1];
+    }));
+  if (matches.length !== 1) return;
+  return {choice: matches[0], reason: "Resolve the actually offered successful investigation at the owning actor's physical location; native clue discovery and subsequent skill-card bonuses remain authoritative."};
+}
+
 /** The scheduler relies on exact A/B/C ordering, never a caller-provided alias. */
-export function assertLabyrinthResumeRoster({games, stoppedStates, eventId}) {
+function assertEpicResumeRoster({games, stoppedStates, eventId}, groups) {
   assert.ok(uuid.test(eventId));
   assert.equal(games.length, 3);
   assert.equal(stoppedStates.length, 3);
   assert.deepEqual(games.map((p) => p.ordinal), [0, 1, 2]);
-  assert.deepEqual(games.map((p) => p.group), ["GroupA", "GroupB", "GroupC"]);
+  assert.deepEqual(games.map((p) => p.group), groups);
   for (const participant of games) {
     assert.ok(uuid.test(participant.gameId) && uuid.test(participant.id));
     assert.equal(participant.eventId, eventId);
@@ -28,6 +151,15 @@ export function assertLabyrinthResumeRoster({games, stoppedStates, eventId}) {
   assert.equal(new Set(games.map((p) => p.id)).size, 3);
   assert.equal(new Set(stoppedStates.map((p) => p.gameId)).size, 3);
   assert.deepEqual(stoppedStates.map((p) => p.gameId).sort(), games.map((p) => p.gameId).sort());
+}
+
+export function assertLabyrinthResumeRoster(input) {
+  assertEpicResumeRoster(input, ["GroupA", "GroupB", "GroupC"]);
+}
+
+/** Machinations keeps the actual ordered Past/Present/Future seat identities. */
+export function assertMachinationsResumeRoster(input) {
+  assertEpicResumeRoster(input, ["Past", "Present", "Future"]);
 }
 
 /** The legal runner submits responses to offered questions. It never submits

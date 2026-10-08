@@ -1,0 +1,248 @@
+{
+  "provenance": {
+    "kind": "actual-own-native-public-zero-action-window",
+    "snapshotSha256": "3d0d56d84cb261d01c9461eb2b1c67eed4da8221f51901329327682c25a3d0c5",
+    "wholeScenarioCompleted": false
+  },
+  "snapshot": {
+    "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+    "game": {
+      "id": "9b094ea9-7906-4519-87bf-639ac97414ed",
+      "scenarioSteps": 79,
+      "inSetup": false,
+      "phase": "InvestigationPhase",
+      "activeInvestigatorId": "c01001",
+      "skillTest": null,
+      "question": {
+        "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2": {
+          "tag": "PlayerWindowChooseOne",
+          "choices": [
+            {
+              "tag": "EndTurnButton",
+              "investigatorId": "c01001",
+              "messages": [
+                {
+                  "tag": "ChooseEndTurn",
+                  "contents": "c01001"
+                }
+              ]
+            },
+            {
+              "tag": "AbilityLabel",
+              "investigatorId": "c01001",
+              "ability": {
+                "source": {
+                  "tag": "LocationSource",
+                  "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d"
+                },
+                "cardCode": "c87027",
+                "index": 2,
+                "type": {
+                  "tag": "FastAbility'",
+                  "cost": {
+                    "tag": "OrCost",
+                    "contents": [
+                      {
+                        "tag": "ResourceCost",
+                        "contents": 3
+                      },
+                      {
+                        "tag": "Costs",
+                        "contents": [
+                          {
+                            "tag": "ExhaustAssetCost",
+                            "contents": {
+                              "tag": "AssetMatches",
+                              "contents": [
+                                {
+                                  "tag": "AssetWithTrait",
+                                  "contents": "Scientist"
+                                },
+                                {
+                                  "tag": "AssetAt",
+                                  "contents": {
+                                    "tag": "LocationWithId",
+                                    "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "tag": "ExhaustAssetCost",
+                            "contents": {
+                              "tag": "AssetMatches",
+                              "contents": [
+                                {
+                                  "tag": "AssetWithTrait",
+                                  "contents": "Scientist"
+                                },
+                                {
+                                  "tag": "AssetAt",
+                                  "contents": {
+                                    "tag": "LocationWithId",
+                                    "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "contents": [],
+                    "tag": "AndActions"
+                  }
+                },
+                "limit": {
+                  "tag": "GroupLimit",
+                  "contents": [
+                    {
+                      "tag": "PerRound"
+                    },
+                    1
+                  ]
+                },
+                "window": {
+                  "tag": "FastPlayerWindow"
+                },
+                "metadata": null,
+                "criteria": {
+                  "tag": "Here"
+                },
+                "doesNotProvokeAttacksOfOpportunity": null,
+                "tooltip": null,
+                "canBeCancelled": true,
+                "displayAs": null,
+                "delayAdditionalCosts": null,
+                "basic": false,
+                "additionalCosts": [],
+                "requestor": {
+                  "tag": "LocationSource",
+                  "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d"
+                },
+                "triggersSkillTest": false,
+                "wantsSkillTest": null,
+                "target": null,
+                "highlightFromWindow": false,
+                "skipForAll": false,
+                "ignoreAllCosts": false,
+                "fightCriteriaOverride": null,
+                "evadeCriteriaOverride": null,
+                "nonBlocking": false,
+                "blocksIn": null
+              },
+              "windows": [
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "DuringTurn",
+                    "contents": "c01001"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "FastPlayerWindow"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                },
+                {
+                  "windowTiming": "When",
+                  "windowType": {
+                    "tag": "NonFast"
+                  },
+                  "windowBatchId": null,
+                  "windowConditionTick": null
+                }
+              ],
+              "before": [],
+              "messages": []
+            }
+          ]
+        }
+      },
+      "investigators": {
+        "c01001": {
+          "id": "c01001",
+          "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+          "placement": {
+            "contents": "006e77c2-c70f-490a-bfec-7b0b3222845d",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 0,
+          "endedTurn": false,
+          "engagedEnemies": ["88074885-dee8-4f46-8e3a-7b27fc68736d"],
+          "tokens": [
+            ["Clue", 2],
+            ["Resource", 2]
+          ]
+        }
+      },
+      "locations": {
+        "006e77c2-c70f-490a-bfec-7b0b3222845d": {
+          "id": "006e77c2-c70f-490a-bfec-7b0b3222845d",
+          "cardCode": "c87027",
+          "revealed": true,
+          "tokens": []
+        }
+      },
+      "enemies": {
+        "88074885-dee8-4f46-8e3a-7b27fc68736d": {
+          "id": "88074885-dee8-4f46-8e3a-7b27fc68736d",
+          "cardCode": "c87045",
+          "placement": {
+            "contents": "c01001",
+            "tag": "InThreatArea"
+          },
+          "exhausted": false,
+          "tokens": [["Damage", 3]]
+        }
+      },
+      "assets": {},
+      "stories": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "scenario": {
+        "id": "87001",
+        "log": []
+      }
+    }
+  },
+  "memory": {
+    "group": "Future",
+    "gameId": "9b094ea9-7906-4519-87bf-639ac97414ed",
+    "actorId": "c01001",
+    "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+    "lastAbility": {
+      "cardCode": "87045",
+      "index": 100,
+      "source": {
+        "tag": "EnemySource",
+        "contents": "88074885-dee8-4f46-8e3a-7b27fc68736d"
+      },
+      "witness": {
+        "gameId": "9b094ea9-7906-4519-87bf-639ac97414ed",
+        "actorId": "c01001",
+        "playerId": "0ef9a0e2-b9d3-448c-8038-f0e2b63538c2",
+        "questionVersion": 75,
+        "questionTag": "PlayerWindowChooseOne",
+        "answerIndex": 9,
+        "label": "Fight Hound of Tindalos"
+      }
+    },
+    "lastCardPlayed": "01033",
+    "locationVisits": {
+      "006e77c2-c70f-490a-bfec-7b0b3222845d": 1
+    }
+  },
+  "expected": {
+    "answerIndex": 0
+  }
+}

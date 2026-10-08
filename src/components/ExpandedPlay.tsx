@@ -354,6 +354,7 @@ export function ExpandedPlay({
                 does not certify every card interaction or guarantee that every
                 scenario in a product is implemented.
               </p>
+              <p><a href="/data/support-coverage.json" target="_blank" rel="noreferrer">View recorded content and test coverage</a></p>
               <label>
                 Find a product
                 <input

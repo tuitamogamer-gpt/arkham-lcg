@@ -5,6 +5,7 @@
  * secret accepted below has an explicit printed communication witness.
  * Policy unit tests establish these boundaries, not a completed playthrough.
  */
+import {isDeepStrictEqual} from "node:util";
 const object = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const rows = (v) => Array.isArray(v) ? v.map((r) => Array.isArray(r) ? r[1] : r) : Object.values(v || {});
 const unwrap = (v) => object(v?.contents) && /^(PlayerCard|EncounterCard)$/.test(v.tag || "") ? v.contents : v;
@@ -320,6 +321,27 @@ function mundane(f, question, choices, definitions, memory) {
     "Assign the actually offered damage/horror to a controlled physical soak asset, then the actor; native capacity checks remain authoritative.");
   const apply = choices.find((c) => c.tag === "SkillTestApplyResultsButton");
   if (apply) return result(apply, "Apply the actual native skill-test result; RNG remains native.");
+  const test = f.game.skillTest, foughtEnemy = f.enemies.find((e) => e.id === test?.target?.contents);
+  if (question.tag === "ChooseOne" && question.playerId === f.actor.playerId && !question.isPlayerWindow
+    && test?.investigator === f.actor.id && test.action === "Fight" && test.step === "ApplySkillTestResultsStep"
+    && test.result?.tag === "SucceededBy" && Array.isArray(test.result.contents)
+    && Number.isSafeInteger(test.result.contents[1]) && test.result.contents[1] >= 0
+    && test.target?.tag === "EnemyTarget" && foughtEnemy && test.source
+    && (locationId(foughtEnemy) === f.hereId || (f.actor.engagedEnemies || []).includes(foughtEnemy.id))) {
+    // Inspect only each offered option's immediate effect. A skill bonus can
+    // contain the attack under its later result-options continuation.
+    const damage = choices.filter((c) => c.tag === "Label" && Array.isArray(c.raw?.messages)
+      && c.raw.messages.some((wrapped) => {
+        const m = wrapped?.tag === "SkillTestMessage" ? wrapped.contents : wrapped;
+        if (m?.tag !== "Successful_" || !Array.isArray(m.contents)) return false;
+        const [action, investigator, source, target, margin] = m.contents;
+        return Array.isArray(action) && action[0] === "Fight" && action[1]?.tag === "EnemyTarget"
+          && action[1].contents === foughtEnemy.id && investigator === f.actor.id
+          && target?.tag === "EnemyTarget" && target.contents === foughtEnemy.id
+          && isDeepStrictEqual(source, test.source) && margin === test.result.contents[1];
+      }));
+    if (damage.length === 1) return result(damage[0], "Resolve the owning actor's actual successful native fight against its physical local enemy before the retained skill-card bonus; damage stays native.");
+  }
   const start = choices.find((c) => c.tag === "StartSkillTestButton" && c.raw?.investigatorId === f.actor.id);
   if (start && f.game.skillTest?.investigator === f.actor.id && question.playerId === f.actor.playerId) {
     const st = f.game.skillTest, skillTag = st?.skills?.[0] || st?.type?.contents || st?.type?.tag || st?.skillType;
@@ -346,6 +368,28 @@ function mundane(f, question, choices, definitions, memory) {
   }
   const defensive = choices.find((c) => code(handChoice(f, c)) === "01023");
   if (defensive && containsMessage(defensive, "InitiatePlayCardWithWindows")) return result(defensive, "Play the genuinely offered Dodge against the native attack.");
+  // Tortured Victim's Revelation is offered before this physical enemy has
+  // spawned. Bind its printed alternatives to the same visible 70053 source
+  // and this actor; the engine alone chooses which held card is discarded.
+  if (question.tag === "ChooseOne" && question.playerId === f.actor.playerId && hand(f).length > 0) {
+    const victimDiscard = choices.find((c) => c.tag === "Label" && messages(c).some((m) => {
+      const d = m.contents;
+      if (m.tag !== "DiscardFromHand" || !object(d) || d.discardAmount !== 1
+        || d.discardStrategy !== "DiscardRandom" || d.discardInvestigator !== f.actor.id
+        || d.discardSource?.tag !== "EnemySource" || d.discardFilter?.tag !== "AnyCard"
+        || d.discardDestination !== "ToDiscardPile" || d.discardTarget !== null || d.discardThen !== null
+        || !Array.isArray(d.discardBatchCards) || d.discardBatchCards.length !== 0) return false;
+      const enemy = f.enemies.find((e) => e.id === d.discardSource.contents && code(e) === "70053");
+      return !!enemy && choices.some((other) => other !== c && messages(other).some((a) => {
+        const attack = a.contents;
+        return a.tag === "InitiateEnemyAttack_" && attack?.attackEnemy === enemy.id
+          && attack.attackSource?.tag === "EnemySource" && attack.attackSource.contents === enemy.id
+          && attack.attackTarget?.tag === "SingleAttackTarget"
+          && attack.attackTarget.contents?.tag === "InvestigatorTarget" && attack.attackTarget.contents.contents === f.actor.id;
+      }));
+    }));
+    if (victimDiscard) return result(victimDiscard, "Choose Tortured Victim's actually offered random discard from the actor's nonempty visible hand, leaving the random physical card selection to native rules.");
+  }
   const fights = choices.filter((c) => /^FightLabel/.test(c.tag) && f.enemies.some((e) => e.id === c.raw?.enemyId
     && (locationId(e) === f.hereId || (f.actor.engagedEnemies || []).includes(e.id))));
   if (fights.length && !question.isPlayerWindow) return result(fights.find((c) => (f.actor.engagedEnemies || []).includes(c.raw.enemyId)) || fights[0],

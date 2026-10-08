@@ -87,6 +87,22 @@ test("a ready engaged boss is evaded before a clue damage action", () => {
   assert.deepEqual(memory.pendingAction, { kind: "evade", enemyId: "boss-physical" });
 });
 
+test("zero remaining actions can end the owning turn despite a ready engaged enemy, without ending another actor's turn", () => {
+  // Actual fresh-4 stop SHA593ea10a9cc77c650377916b0cc31b1728ce8f8f5d91497533a18f9059154f32.
+  const game = gameFixture();
+  actor(game).remainingActions = 0;
+  game.enemies.boss = {id: "boss", cardCode: "c:barkham:037", exhausted: false,
+    currentHealth: 7, tokens: [], placement: {tag: "InThreatArea", contents: actorId}};
+  const end = {tag: "EndTurnButton", investigatorId: actorId,
+    messages: [{tag: "ChooseEndTurn", contents: actorId}]};
+  assert.equal(select(game, [end])?.choice.answerIndex, 0);
+  assert.equal(select(game, [{...end, investigatorId: "foreign-investigator"}]), undefined);
+  assert.equal(select(game, [{...end, messages: [{tag: "ChooseEndTurn", contents: "foreign-investigator"}]}]), undefined);
+  assert.equal(select(game, [{...end, messages: []}]), undefined);
+  actor(game).remainingActions = 1;
+  assert.equal(select(game, [end]), undefined);
+});
+
 test("exhausted boss damage follows the exact physical enemy target", () => {
   const game = gameFixture();
   actor(game).tokens = [["Clue", 2]];
@@ -410,4 +426,152 @@ test("recorded successful evade ordering resolves only its exact own physical na
   negative((fresh) => { fresh.game.skillTest.result.tag = "FailedBy"; });
   negative((fresh) => { fresh.game.skillTestResults.skillTestResultsSuccess = false; });
   negative((fresh) => { delete fresh.game.enemies[fresh.game.skillTest.target.contents]; });
+});
+
+const recordedPolicy = (name: string) => JSON.parse(readFileSync(
+  new URL(`./fixtures/${name}.json`, import.meta.url), "utf8"));
+const recordedQuestion = (snapshot: any) => companionQuestion(snapshot.game, snapshot.playerId,
+  { card: (code) => catalog.get(catalogCardCode(code)) });
+const chooseRecorded = (snapshot: any, memory: Record<string, any> = {}) => selectBarkhamChoice({
+  snapshot, question: recordedQuestion(snapshot), cards: catalog, memory,
+});
+
+test("recorded Stubborn Cat action binds the exact own current location attachment", () => {
+  const recorded = recordedPolicy("barkham-stubborn-cat-action"), { snapshot } = recorded;
+  const game = snapshot.game, owner = game.investigators[actorId], memory: Record<string, any> = {};
+  const before = structuredClone(game), question = recordedQuestion(snapshot);
+  const chosen = selectBarkhamChoice({ snapshot, question, cards: catalog, memory });
+  assert.equal(recorded.evidence.originalSelectedAnswerIndex, 4, "The retained loss trace left its clue location.");
+  assert.equal(chosen?.choice.answerIndex, 10);
+  const raw = chosen?.choice.raw as any;
+  assert.equal(raw.ability.cardCode, "c:barkham:055");
+  assert.equal(raw.ability.source.contents, "fecbc8fe-9f19-4500-b7f0-bf7598a66ed6");
+  assert.deepEqual(memory.pendingAction, { kind: "stubborn-cat",
+    treacheryId: raw.ability.source.contents, locationId: owner.placement.contents,
+    investigatorId: actorId, gameId: game.id, questionVersion: question?.questionVersion });
+  assert.deepEqual(game, before, "Only the caller's strategy memory changes; the public question and game remain untouched.");
+
+  for (const loc of Object.values(game.locations) as any[]) {
+    const count = loc.cardsUnderneath.length;
+    loc.cardsUnderneath = new Array(count);
+    for (let i = 0; i < count; i++) Object.defineProperty(loc.cardsUnderneath, i,
+      { get() { throw new Error("Concealed cats cannot justify clearing a public location attachment"); } });
+  }
+  for (const [entity, field] of [[owner, "deck"], [game, "scenario"], [game, "queue"]] as const)
+    Object.defineProperty(entity, field, { get() { throw new Error(`Forbidden strategy read: ${field}`); } });
+  assert.equal(selectBarkhamChoice({ snapshot, question, cards: catalog, memory: {} })?.choice.answerIndex, 10);
+
+  const negative = (edit: (fresh: any) => void) => {
+    const fresh = structuredClone(recorded.snapshot);
+    edit(fresh);
+    assert.notEqual(chooseRecorded(fresh)?.choice.answerIndex, 10);
+  };
+  const catId = raw.ability.source.contents;
+  negative((fresh) => { fresh.game.treacheries[catId].placement.contents = "foreign-location"; });
+  negative((fresh) => { fresh.game.treacheries[catId].id = "same-code-other-physical-card"; });
+  negative((fresh) => { fresh.game.treacheries[catId].cardCode = "c:barkham:050"; });
+  negative((fresh) => { fresh.game.treacheries[catId].placement.tag = "InThreatArea";
+    fresh.game.treacheries[catId].placement.contents = "foreign-investigator"; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[10].investigatorId = "foreign-investigator"; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[10].ability.source.contents = "foreign-treachery"; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[10].ability.index = 2; });
+  negative((fresh) => { fresh.game.locations[fresh.game.investigators[actorId].placement.contents].tokens = []; });
+  const fresh = structuredClone(recorded.snapshot), disabled = recordedQuestion(fresh)!;
+  disabled.choices[10].disabled = true;
+  assert.notEqual(selectBarkhamChoice({ snapshot: fresh, question: disabled, cards: catalog, memory: {} })?.choice.answerIndex, 10);
+});
+
+function stubbornCatFollowup() {
+  const { snapshot } = recordedPolicy("barkham-stubborn-cat-action"), memory: Record<string, any> = {};
+  assert.equal(chooseRecorded(snapshot, memory)?.choice.answerIndex, 10);
+  const catId = memory.pendingAction.treacheryId;
+  // This shape follows pinned native skillLabeled/beginSkillTest and the
+  // printed Stubborn Cat Willpower/Agility choice. It is a pure boundary
+  // fixture, not an answered native prompt or a successful chaos draw.
+  const skillChoices = ["SkillWillpower", "SkillAgility"].map((skillType) => ({
+    tag: "SkillLabel", skillType, messages: [{ tag: "SkillTestMessage", contents: {
+      tag: "BeginSkillTestWithPreMessages'_", contents: [[], {
+        id: "92c38650-59ec-4aa2-a73e-bd66db02a803", investigator: actorId,
+        source: { tag: "AbilitySource", contents: [{ tag: "TreacherySource", contents: catId }, 1] },
+        target: { tag: "TreacheryTarget", contents: catId },
+        type: { tag: "SkillSkillTest", contents: skillType },
+        baseValue: { tag: "SkillBaseValue", contents: skillType }, difficulty: { tag: "Fixed", contents: 4 },
+      }],
+    } }],
+  }));
+  snapshot.game.scenarioSteps++;
+  snapshot.game.question[snapshot.playerId] = { tag: "ChooseOne", choices: skillChoices };
+  return { snapshot, memory };
+}
+
+test("Stubborn Cat follow-up chooses only the offered own physical agility-four native test", () => {
+  const { snapshot, memory } = stubbornCatFollowup(), question = recordedQuestion(snapshot)!;
+  const before = structuredClone(snapshot), chosen = selectBarkhamChoice({ snapshot, question, cards: catalog, memory });
+  assert.equal(chosen?.choice, question.choices[1]);
+  assert.equal(chosen?.choice.skill, "SkillAgility");
+  assert.equal(memory.pendingAction, undefined);
+  assert.deepEqual(snapshot, before);
+  const negative = (edit: (fresh: ReturnType<typeof stubbornCatFollowup>) => void) => {
+    const fresh = stubbornCatFollowup();
+    edit(fresh);
+    assert.equal(chooseRecorded(fresh.snapshot, fresh.memory), undefined);
+  };
+  const testAt = (fresh: ReturnType<typeof stubbornCatFollowup>, index = 1) =>
+    fresh.snapshot.game.question[fresh.snapshot.playerId].choices[index].messages[0].contents.contents[1];
+  negative((fresh) => { delete fresh.memory.pendingAction; });
+  negative((fresh) => { fresh.memory.pendingAction.gameId = "foreign-game"; });
+  negative((fresh) => { delete fresh.memory.pendingAction.gameId; });
+  negative((fresh) => { fresh.memory.pendingAction.investigatorId = "foreign-investigator"; });
+  negative((fresh) => { fresh.snapshot.game.scenarioSteps--; });
+  negative((fresh) => { fresh.snapshot.game.investigators[actorId].placement.contents = "foreign-location"; });
+  negative((fresh) => { delete fresh.snapshot.game.treacheries[fresh.memory.pendingAction.treacheryId]; });
+  negative((fresh) => { testAt(fresh).investigator = "foreign-investigator"; });
+  negative((fresh) => { testAt(fresh).source.contents[0].contents = "foreign-treachery"; });
+  negative((fresh) => { testAt(fresh).source.contents[1] = 2; });
+  negative((fresh) => { testAt(fresh).target.contents = "foreign-treachery"; });
+  negative((fresh) => { testAt(fresh).id = "different-test-from-the-other-offer"; });
+  negative((fresh) => { testAt(fresh).type.contents = "SkillWillpower"; });
+  negative((fresh) => { testAt(fresh).difficulty.contents = 3; });
+  negative((fresh) => { fresh.snapshot.game.question[fresh.snapshot.playerId].choices[1].messages[0].contents.contents[0]
+    = [{ tag: "UnexpectedEffect" }]; });
+  negative((fresh) => { fresh.snapshot.game.question[fresh.snapshot.playerId].choices[1].messages.push({ tag: "UnexpectedEffect" }); });
+  const fresh = stubbornCatFollowup(), disabled = recordedQuestion(fresh.snapshot)!;
+  disabled.choices[1].disabled = true;
+  assert.equal(selectBarkhamChoice({ snapshot: fresh.snapshot, question: disabled, cards: catalog, memory: fresh.memory }), undefined);
+});
+
+test("recorded boss offer prefers no-AOO damage only inside the current lethal clue/action budget", () => {
+  const recorded = recordedPolicy("barkham-safe-boss-damage"), { snapshot } = recorded;
+  const game = snapshot.game, owner = game.investigators[actorId];
+  const boss = Object.values(game.enemies).find((enemy: any) => enemy.cardCode === "c:barkham:037") as any;
+  assert.equal(recorded.evidence.originalSelectedAnswerIndex, 13);
+  assert.equal(chooseRecorded(snapshot)?.choice.answerIndex, 13,
+    "The actual retained one-clue/seven-health state remains an evade, with no winning claim.");
+  // Change public arithmetic only to exercise a hypothetical two-health,
+  // two-clue finishing opportunity. This does not change any native save.
+  boss.tokens = [["Damage", 5]];
+  owner.tokens = [["Clue", 2]];
+  owner.remainingActions = 3;
+  owner.meta.sniffedLocations = [];
+  const memory: Record<string, any> = {}, chosen = chooseRecorded(snapshot, memory);
+  assert.equal(chosen?.choice.answerIndex, 17, "The actual printed AnyEnemy/no-AOO offer precedes an unnecessary sniff/evade.");
+  assert.deepEqual(memory.pendingAction, { kind: "damage", enemyId: boss.id });
+  const lethal = structuredClone(snapshot);
+  const negative = (edit: (fresh: any) => void) => {
+    const fresh = structuredClone(lethal);
+    edit(fresh);
+    assert.notEqual(chooseRecorded(fresh)?.choice.answerIndex, 17);
+  };
+  negative((fresh) => { fresh.game.investigators[actorId].remainingActions = 1; });
+  negative((fresh) => { fresh.game.investigators[actorId].tokens = [["Clue", 1]]; });
+  negative((fresh) => { fresh.game.enemies[boss.id].currentHealth = undefined; });
+  negative((fresh) => { fresh.game.enemies[boss.id].tokens = [["Damage", 5.5]]; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[17].ability.doesNotProvokeAttacksOfOpportunity = null; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[17].ability.doesNotProvokeAttacksOfOpportunity = { tag: "EnemyWithId", contents: "other-enemy" }; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[17].ability.type.cost.contents[0].contents = 2; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[17].ability.source.contents = "foreign-act"; });
+  negative((fresh) => { fresh.game.question[fresh.playerId].choices[17].investigatorId = "foreign-investigator"; });
+  const fresh = structuredClone(lethal), disabled = recordedQuestion(fresh)!;
+  disabled.choices[17].disabled = true;
+  assert.notEqual(selectBarkhamChoice({ snapshot: fresh, question: disabled, cards: catalog, memory: {} })?.choice.answerIndex, 17);
 });
