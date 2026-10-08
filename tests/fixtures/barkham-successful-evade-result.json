@@ -1,0 +1,378 @@
+{
+  "evidence": {
+    "description": "Public-state projection of actual third Kate post-evade result choice; original offered question unchanged, no decks, hidden cards or native outcome included.",
+    "snapshotSha256": "f2f94d81ec3bfd336e04a9cbaedb3a54300b431d2246e6c77822444c5248fd0e"
+  },
+  "snapshot": {
+    "playerId": "60606356-04eb-44ce-905f-3a7ac33cbb8c",
+    "game": {
+      "investigators": {
+        "c:barkham:004": {
+          "id": "c:barkham:004",
+          "cardCode": "c:barkham:004",
+          "playerId": "60606356-04eb-44ce-905f-3a7ac33cbb8c",
+          "placement": {
+            "contents": "c4dc0598-a5b1-47c2-b17d-2102e3f1040c",
+            "tag": "AtLocation"
+          },
+          "remainingActions": 1,
+          "meta": {
+            "sniffedLocations": [
+              "c4dc0598-a5b1-47c2-b17d-2102e3f1040c",
+              "8f4d2518-d810-4ce7-8cdb-a095c261102f",
+              "2ad96b1d-5b58-4634-81a3-21a9ab10ec8e",
+              "cd6c68b6-c6bb-4d96-bcc2-232d69fef24d"
+            ]
+          },
+          "hand": [
+            {
+              "contents": {
+                "cardCode": "c01030",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "3637d2c2-f64c-4bb4-b6b1-be71443e7819",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01030",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            },
+            {
+              "contents": {
+                "cardCode": "c01089",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "946a9683-15b3-44f6-8f84-f9173c18c84d",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01089",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            }
+          ],
+          "tokens": [
+            [
+              "Horror",
+              7
+            ],
+            [
+              "Resource",
+              9
+            ]
+          ],
+          "engagedEnemies": [
+            "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+          ],
+          "currentHealth": 5
+        }
+      },
+      "enemies": {
+        "79e4334c-7db8-4cb0-bc68-140aeeb572cf": {
+          "id": "79e4334c-7db8-4cb0-bc68-140aeeb572cf",
+          "cardCode": "c:barkham:042",
+          "placement": {
+            "contents": "c:barkham:004",
+            "tag": "InThreatArea"
+          },
+          "exhausted": false,
+          "currentHealth": 3,
+          "tokens": []
+        }
+      },
+      "locations": {},
+      "assets": {},
+      "acts": {},
+      "agendas": {},
+      "treacheries": {},
+      "cards": {},
+      "skills": {
+        "1fae4ca7-e1e8-4266-9369-43030da1a786": {
+          "additionalCost": null,
+          "additionalPayment": null,
+          "afterPlay": {
+            "tag": "DiscardThis"
+          },
+          "cardCode": "c01092",
+          "cardId": "6055c09d-e2ba-49d0-a82d-e9d90a0182b2",
+          "customizations": [],
+          "id": "1fae4ca7-e1e8-4266-9369-43030da1a786",
+          "meta": null,
+          "mutated": null,
+          "owner": "c:barkham:004",
+          "placement": {
+            "tag": "Limbo"
+          },
+          "sealedChaosTokens": [],
+          "taboo": null
+        }
+      },
+      "skillTest": {
+        "id": "931dde76-7074-40ee-a04e-a394927ec612",
+        "investigator": "c:barkham:004",
+        "action": "Evade",
+        "step": "ApplySkillTestResultsStep",
+        "result": {
+          "contents": [
+            "NonAutomatic",
+            4
+          ],
+          "tag": "SucceededBy"
+        },
+        "target": {
+          "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf",
+          "tag": "EnemyTarget"
+        },
+        "source": {
+          "contents": [
+            {
+              "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf",
+              "tag": "EnemySource"
+            },
+            101
+          ],
+          "tag": "AbilitySource"
+        },
+        "committedCards": {
+          "c:barkham:004": [
+            {
+              "contents": {
+                "cardCode": "c01092",
+                "chained": null,
+                "customizations": [],
+                "errata": null,
+                "facedown": null,
+                "id": "6055c09d-e2ba-49d0-a82d-e9d90a0182b2",
+                "meta": null,
+                "mutated": null,
+                "originalCardCode": "c01092",
+                "owner": "c:barkham:004",
+                "tabooList": null
+              },
+              "tag": "PlayerCard"
+            }
+          ]
+        },
+        "subscribers": [
+          {
+            "contents": "1fae4ca7-e1e8-4266-9369-43030da1a786",
+            "tag": "SkillTarget"
+          },
+          {
+            "contents": "c:barkham:004",
+            "tag": "InvestigatorTarget"
+          }
+        ]
+      },
+      "skillTestResults": {
+        "skillTestResultsSkillValue": 5,
+        "skillTestResultsIconValue": 2,
+        "skillTestResultsChaosTokensValue": 0,
+        "skillTestResultsDifficulty": 3,
+        "skillTestResultsResultModifiers": null,
+        "skillTestResultsSuccess": true
+      },
+      "question": {
+        "60606356-04eb-44ce-905f-3a7ac33cbb8c": {
+          "tag": "ChooseOne",
+          "choices": [
+            {
+              "tag": "Label",
+              "label": "Evade GHOST CAT!",
+              "messages": [
+                {
+                  "tag": "UpdateHistory",
+                  "contents": [
+                    "c:barkham:004",
+                    {
+                      "field": "HistorySuccessfulEvasions",
+                      "value": 1
+                    }
+                  ]
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "Successful_",
+                    "contents": [
+                      [
+                        "Evade",
+                        {
+                          "tag": "EnemyTarget",
+                          "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+                        }
+                      ],
+                      "c:barkham:004",
+                      {
+                        "tag": "AbilitySource",
+                        "contents": [
+                          {
+                            "tag": "EnemySource",
+                            "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+                          },
+                          101
+                        ]
+                      },
+                      {
+                        "tag": "EnemyTarget",
+                        "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+                      },
+                      4
+                    ]
+                  }
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "SkillTestResultOptions_",
+                    "contents": [
+                      {
+                        "option": {
+                          "tag": "Label",
+                          "label": "$name __name=s:\"01092\" name=s:\"Manual Dexterity\"",
+                          "messages": [
+                            {
+                              "tag": "DrawCards",
+                              "contents": [
+                                "c:barkham:004",
+                                {
+                                  "cardDrawSource": {
+                                    "tag": "SkillSource",
+                                    "contents": "1fae4ca7-e1e8-4266-9369-43030da1a786"
+                                  },
+                                  "cardDrawDeck": {
+                                    "tag": "InvestigatorDeck",
+                                    "contents": "c:barkham:004"
+                                  },
+                                  "cardDrawAmount": 1,
+                                  "cardDrawState": {
+                                    "tag": "UnresolvedCardDraw"
+                                  },
+                                  "cardDrawTarget": null,
+                                  "cardDrawAction": false,
+                                  "cardDrawKind": "StandardCardDraw",
+                                  "cardDrawPosition": "DrawFromTop",
+                                  "cardDrawRules": [],
+                                  "cardDrawAndThen": null,
+                                  "cardDrawAlreadyDrawn": [],
+                                  "cardDrawDiscard": null
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "kind": "AdditionalOptionKind",
+                        "criteria": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "tag": "Label",
+              "label": "$name __name=s:\"01092\" name=s:\"Manual Dexterity\"",
+              "messages": [
+                {
+                  "tag": "DrawCards",
+                  "contents": [
+                    "c:barkham:004",
+                    {
+                      "cardDrawSource": {
+                        "tag": "SkillSource",
+                        "contents": "1fae4ca7-e1e8-4266-9369-43030da1a786"
+                      },
+                      "cardDrawDeck": {
+                        "tag": "InvestigatorDeck",
+                        "contents": "c:barkham:004"
+                      },
+                      "cardDrawAmount": 1,
+                      "cardDrawState": {
+                        "tag": "UnresolvedCardDraw"
+                      },
+                      "cardDrawTarget": null,
+                      "cardDrawAction": false,
+                      "cardDrawKind": "StandardCardDraw",
+                      "cardDrawPosition": "DrawFromTop",
+                      "cardDrawRules": [],
+                      "cardDrawAndThen": null,
+                      "cardDrawAlreadyDrawn": [],
+                      "cardDrawDiscard": null
+                    }
+                  ]
+                },
+                {
+                  "tag": "SkillTestMessage",
+                  "contents": {
+                    "tag": "SkillTestResultOptions_",
+                    "contents": [
+                      {
+                        "option": {
+                          "tag": "Label",
+                          "label": "Evade GHOST CAT!",
+                          "messages": [
+                            {
+                              "tag": "UpdateHistory",
+                              "contents": [
+                                "c:barkham:004",
+                                {
+                                  "field": "HistorySuccessfulEvasions",
+                                  "value": 1
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "SkillTestMessage",
+                              "contents": {
+                                "tag": "Successful_",
+                                "contents": [
+                                  [
+                                    "Evade",
+                                    {
+                                      "tag": "EnemyTarget",
+                                      "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+                                    }
+                                  ],
+                                  "c:barkham:004",
+                                  {
+                                    "tag": "AbilitySource",
+                                    "contents": [
+                                      {
+                                        "tag": "EnemySource",
+                                        "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+                                      },
+                                      101
+                                    ]
+                                  },
+                                  {
+                                    "tag": "EnemyTarget",
+                                    "contents": "79e4334c-7db8-4cb0-bc68-140aeeb572cf"
+                                  },
+                                  4
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "kind": "OriginalOptionKind",
+                        "criteria": null
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "phase": "InvestigationPhase"
+    }
+  }
+}

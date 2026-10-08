@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
 import { createBuildSpaceGuard, runWithBuildSpace } from "./rules-build-space.mjs";
 import { nativeTestEnvironment } from "./rules-native-test-environment.mjs";
+import { postgresConfigureEnvironment, postgresSnprintfSource } from "./rules-native-postgres.mjs";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const upstreamRevision = "03a7f1e74925744f021f6e8fe0e39945d2c3a833";
@@ -602,6 +603,10 @@ async function bootstrap() {
       pgSource,
       "--strip-components=1",
     ]);
+    if (process.platform === "darwin") {
+      const snprintf = resolve(pgSource, "src/port/snprintf.c");
+      await writeFile(snprintf, postgresSnprintfSource(await readFile(snprintf, "utf8")));
+    }
     await run(
       "./configure",
       [
@@ -609,7 +614,7 @@ async function bootstrap() {
         "--without-readline",
         "--without-zlib",
       ],
-      { cwd: pgSource },
+      { cwd: pgSource, env: postgresConfigureEnvironment(env) },
     );
     for (const relative of ["src/interfaces/libpq", "src/bin/pg_config"]) {
       await run("make", ["-C", relative, "-j4"], { cwd: pgSource });

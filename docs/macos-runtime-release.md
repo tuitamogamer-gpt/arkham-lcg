@@ -8,6 +8,8 @@ GitHub's [current hosted runner table](https://docs.github.com/en/actions/refere
 
 The Linux workspace cannot execute macOS signing or this archive's native programs; the GitHub hosted workflow is a separate Mac execution route. As of this preparation, the GitHub credential can read normal repository/workflow metadata, but requests to list repository Actions secrets, variables and self-hosted runners return HTTP 403. No Apple signing identity, notarization credential or self-hosted runner is asserted to exist. Preparing these files alone does not execute the workflow.
 
+The [first actual hosted ARM64 attempt](https://github.com/tuitamogamer-gpt/arkham-lcg/actions/runs/37744018748) on 8 October passed architecture, resources, GMP and the pinned base checksum, then failed while compiling PostgreSQL 14.15. Its configure probe found the host's `strchrnul`, introduced in macOS 15.4, while the compiler targeted macOS 15.0. The private bootstrap now selects PostgreSQL's existing local fallback and renames it after the SDK includes to avoid the newer SDK declaration. This macOS-only compatibility patch preserves compiler warnings and the deployment target; Linux source and settings stay unchanged. A conflicting unavailable-declaration compile/run test and an isolated build of the actual pinned PostgreSQL source pass on Linux. Those diagnostics do not constitute successful Mac execution. The original failed logs and evidence artifact remain retained, and the full Mac aggregate/archive still require a successful retry.
+
 After an actual successful `--with-epic-machinations --test --prepare-only` build, the [export helper](../scripts/package-macos-runtime.mjs) accepts the candidate, its matching full behavior proof and the original base archive:
 
 ```sh

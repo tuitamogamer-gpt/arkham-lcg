@@ -128,7 +128,7 @@ Retained terminal evidence:
 - `output/native-api-acceptance/run-4/scenario-labyrinth-legal-232-1-resume-4/report.json`,
   SHA-256 `7436a54ef01ccf463b523a71a170a8e9e1ce89cf3a8be63f9767ba7c4f6d5e5c`.
 
-The complete client suite passes **481 tests, zero failures**; TypeScript and
+The complete client suite passes **487 tests, zero failures**; TypeScript and
 the normal production/PWA build also pass. The production client contains no
 private `127.0.0.1:5494` QA endpoint.
 
@@ -150,3 +150,43 @@ notarization, installation and Mac gameplay acceptance remain separate results.
 The private Linux QA identity remains `packaged: false`, `installed: false` and
 `capabilityCertified: false`. Vercel publishes the Chronicle client; it does
 not host this native API or PostgreSQL service.
+
+## Follow-up after the first Mac workflow
+
+The first actual hosted ARM Mac build stopped during PostgreSQL bootstrap,
+before native compilation. The macOS-only fallback correction and its strict
+source guard preserve the existing deployment target and warnings. Details and
+the failed run are recorded in [Mac runtime preparation](macos-runtime-release.md).
+No new Mac binary, archive or installation is claimed from that failed attempt.
+
+The current 232-example Linux QA runtime was separately restored through a
+managed restart. Complete SQL row fingerprints remained identical for **185
+games, 185 players, 3,240 history steps and 109 logs**. This is new restart
+evidence under engine `12833b2c…6bd4` and extension `4088f4ba…1cd3`;
+it does not reuse the older 194-example proof or establish new browser or
+winning-playthrough acceptance. Report:
+`output/native-api-resume-2026-10-08/restart-report.json`, SHA-256
+`369244ef5c5fe88fcb5a61bb63c8f69577bdc52449f80504466642d782ef5d65`.
+
+The second Kate loss also exposed a route-selection error in the QA strategy:
+its nearest preparation route entered the public boss location while short of
+the required clues. The corrected selector excludes that exact physical
+location both as a goal and as a transit step until the actual public clue
+reserve is met. Tests use the recorded native offered question and a public
+state projection with concealed cards, deck and RNG omitted. This changes
+the QA strategy, not native printed rules, and does not guarantee a win.
+
+One separately bounded fresh Kate attempt used the corrected route and exactly
+one uniformly sampled Stubborn Detective basic weakness. Its successful native
+evade exposed a further offered effect-order prompt; a tested selector binds
+the own successful test, physical enemy/source, basic evade ability and result
+margin, then lets the native engine resolve the remaining skill effect.
+The same game ultimately reached printed R2 and `IsOver` after **181 actual
+answers**, with one mental trauma. Its whole-winning report remains false and
+all 185 preexisting games' complete SQL fingerprints remain unchanged. There
+were zero raw native messages, coordinator operations or RNG/clock edits.
+Terminal report:
+`output/native-api-acceptance/run-4/scenario-barkham-legal-232-3-resume-1/report.json`,
+SHA-256 `2ee3fea80700776739a1578acfefe9189507e3507c9465c849f9523010b62890`.
+The earlier 131-answer unsupported checkpoint and all previous defeats remain
+retained separately. The final complete client suite passes **487/487**.

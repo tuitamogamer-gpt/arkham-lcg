@@ -105,7 +105,7 @@ function ownedChoice(choice, actor, game) {
   return true;
 }
 
-function routes(game, start, memory) {
+function routes(game, start, memory, blockedLocationId) {
   const locations = record(game.locations), distances = new Map([[start, 0]]), firstSteps = new Map();
   const queue = [start];
   for (let n = 0; n < queue.length && n < 100; n++) {
@@ -116,7 +116,7 @@ function routes(game, start, memory) {
       return undefined;
     }
     for (const next of [...location.connectedLocations].sort()) {
-      if (distances.has(next)) continue;
+      if (distances.has(next) || next === blockedLocationId) continue;
       distances.set(next, distances.get(id) + 1);
       firstSteps.set(next, id === start ? next : firstSteps.get(id));
       queue.push(next);
@@ -125,8 +125,8 @@ function routes(game, start, memory) {
   return { distances, firstSteps };
 }
 
-function closestLocation(game, actor, locations, memory) {
-  const graph = routes(game, hereId(actor), memory);
+function closestLocation(game, actor, locations, memory, blockedLocationId) {
+  const graph = routes(game, hereId(actor), memory, blockedLocationId);
   if (!graph) return undefined;
   const goal = [...locations].filter((location) => graph.distances.has(location.id)).sort((a, b) =>
     graph.distances.get(a.id) - graph.distances.get(b.id) || a.id.localeCompare(b.id))[0];
@@ -229,6 +229,26 @@ export function selectBarkhamChoice({ snapshot, question, cards, memory = {} }) 
     }
     const apply = enabled.find((choice) => choice.tag === "SkillTestApplyResultsButton");
     if (apply && test.investigator === actor.id) return decide(apply, "Apply the actual native skill-test result.");
+
+    const testTarget = reference(test.target), testSource = reference(test.source);
+    if (test.investigator === actor.id && typeof test.id === "string" && test.action === "Evade"
+      && test.step === "ApplySkillTestResultsStep" && test.result?.tag === "SucceededBy"
+      && game.skillTestResults?.skillTestResultsSuccess === true
+      && testTarget.tag === "EnemyTarget" && !!game.enemies?.[testTarget.id]
+      && testSource.tag === "EnemySource" && testSource.id === testTarget.id
+      && test.source?.tag === "AbilitySource" && list(test.source.contents)[1] === 101) {
+      const result = enabled.find((choice) => choice.tag === "Label" && messages(choice).some((message) => {
+        const contents = list(message.contents), action = list(contents[0]);
+        const actionTarget = reference(action[1]), target = reference(contents[3]), source = reference(contents[2]);
+        return message.tag === "Successful_" && action[0] === "Evade" && contents[1] === actor.id
+          && actionTarget.tag === "EnemyTarget" && actionTarget.id === testTarget.id
+          && target.tag === "EnemyTarget" && target.id === testTarget.id
+          && source.tag === "EnemySource" && source.id === testSource.id
+          && record(contents[2]).tag === "AbilitySource" && list(record(contents[2]).contents)[1] === 101
+          && Number.isFinite(contents[4]) && contents[4] >= 0 && contents[4] === list(test.result.contents)[1];
+      }));
+      if (result) return decide(result, "Resolve the offered successful evade result for the exact own native test and physical enemy before the remaining committed-skill option.");
+    }
 
     // Damage and horror labels are native ComponentLabel pattern synonyms.
     const soak = enabled.filter((choice) => {
@@ -390,17 +410,24 @@ export function selectBarkhamChoice({ snapshot, question, cards, memory = {} }) 
   const damage = tokenCount(actor, "Damage"), health = Number(actor.currentHealth ?? actor.health);
   const hospital = damage >= 2 && health - damage <= 3 ? locations.filter((location) => location.revealed === true && codeOf(location) === "barkham-035") : [];
   let goals = hospital;
+  let unpreparedBossLocationId;
   if (!goals.length && boss) {
     const bossLocation = boss.placement?.tag === "AtLocation" ? game.locations?.[boss.placement.contents] : undefined;
     const reserve = Number.isFinite(boss.currentHealth) ? Math.ceil(Math.max(0, boss.currentHealth - tokenCount(boss, "Damage")) / 2) : undefined;
     if (reserve === undefined) { memory.unsupportedShape = "Expected actual boss.currentHealth for the clue reserve."; return undefined; }
+    // An unrevealed boss location is not a preparation destination or transit
+    // step. Collect its public clue reserve elsewhere before entering it.
+    if (clues < reserve) unpreparedBossLocationId = bossLocation?.id;
     goals = clues >= reserve && bossLocation ? [bossLocation]
-      : locations.filter((location) => location.revealed !== true || tokenCount(location, "Clue") > 0);
+      : locations.filter((location) => location.id !== unpreparedBossLocationId
+        && (location.revealed !== true || tokenCount(location, "Clue") > 0));
     memory.bossClueReserve = reserve;
   }
-  if (!goals.length) goals = locations.filter((location) => location.id !== here.id && hiddenCount(location) > 0);
-  if (!goals.length) goals = locations.filter((location) => location.id !== here.id && (location.revealed !== true || tokenCount(location, "Clue") > 0));
-  const route = goals.length ? closestLocation(game, actor, goals, memory) : undefined;
+  if (!goals.length) goals = locations.filter((location) => location.id !== here.id
+    && location.id !== unpreparedBossLocationId && hiddenCount(location) > 0);
+  if (!goals.length) goals = locations.filter((location) => location.id !== here.id
+    && location.id !== unpreparedBossLocationId && (location.revealed !== true || tokenCount(location, "Clue") > 0));
+  const route = goals.length ? closestLocation(game, actor, goals, memory, unpreparedBossLocationId) : undefined;
   if (goals.length && !route) return undefined;
   if (route?.firstStep) {
     const readyAtDestination = values(game.enemies).some((enemy) => !enemy.defeated

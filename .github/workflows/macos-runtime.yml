@@ -9,6 +9,8 @@ on:
       - scripts/build-rules-*.mjs
       - scripts/rules-runtime-manifest.mjs
       - scripts/rules-native-test-environment.mjs
+      - scripts/rules-native-postgres.*
+      - tests/rules-native-postgres.test.ts
       - scripts/rules-build-space.mjs
       - scripts/package-macos-runtime.*
       - tests/package-macos-runtime.test.ts

@@ -321,3 +321,93 @@ test("one remaining action does not voluntarily enter an actual ready enemy loca
   game.enemies.visible.exhausted = true;
   assert.equal(select(game, choices)?.choice.answerIndex, 0);
 });
+
+test("recorded below-reserve clue route chooses a preparation goal other than the unrevealed boss location", () => {
+  // Only public state and the unchanged actual offered question were retained
+  // from second Kate / resume-4 / answer 50. This policy test is not a new game.
+  const recorded = JSON.parse(readFileSync(new URL("./fixtures/barkham-boss-clue-route.json", import.meta.url), "utf8"));
+  const { snapshot } = recorded, game = snapshot.game, ownPlayer = snapshot.playerId;
+  const question = companionQuestion(game, ownPlayer, { card: (code) => catalog.get(catalogCardCode(code)) });
+  const memory: Record<string, any> = {};
+  const chosen = selectBarkhamChoice({ snapshot, question, cards: catalog, memory });
+  assert.equal(recorded.evidence.originalSelectedAnswerIndex, 4, "The old trace selected the nearest unrevealed boss destination.");
+  assert.equal(memory.bossClueReserve, 4, "The actual public boss has 8 health, requiring four two-damage clues.");
+  assert.equal(chosen?.choice.answerIndex, 6);
+  assert.equal((chosen?.choice.raw as any).ability.source.contents, "86279cc0-ba47-4e39-93b1-9bd5bc32ba97");
+  assert.equal(chosen?.choice.label, "Move to Snoutside");
+  for (const loc of Object.values(game.locations) as any[]) {
+    const count = loc.cardsUnderneath.length;
+    loc.cardsUnderneath = new Array(count);
+    for (let index = 0; index < count; index++) Object.defineProperty(loc.cardsUnderneath, index,
+      { get() { throw new Error("Concealed card identities must not select the clue route"); } });
+  }
+  Object.defineProperty(game.investigators[actorId], "deck", { get() { throw new Error("Own deck order must not select the clue route"); } });
+  assert.equal(selectBarkhamChoice({ snapshot, question, cards: catalog, memory: {} })?.choice.answerIndex, 6);
+
+  game.investigators[actorId].tokens = [["Clue", 4], ["Damage", 1], ["Horror", 2], ["Resource", 1]];
+  assert.equal(selectBarkhamChoice({ snapshot, question, cards: catalog, memory: {} })?.choice.answerIndex, 4,
+    "Meeting the actual reserve permits the exact printed boss destination.");
+});
+
+test("below-reserve exclusion binds the exact boss location and survives clue-goal fallbacks", () => {
+  const game = gameFixture();
+  for (const loc of Object.values(game.locations) as any[]) loc.cardsUnderneath = [];
+  game.locations.current.tokens = [];
+  game.locations.near.revealed = false;
+  game.locations.far.tokens = [["Clue", 1]];
+  game.enemies.boss = { id: "physical-boss", cardCode: "c:barkham:037", exhausted: false,
+    currentHealth: 8, tokens: [], placement: { tag: "AtLocation", contents: "near" } };
+  actor(game).tokens = [["Clue", 3]];
+  const moveNear = ability("c:barkham:032", 104, "LocationSource", "near");
+  const moveFar = ability("c:barkham:034", 104, "LocationSource", "far");
+  const end = { tag: "EndTurnButton", investigatorId: actorId, messages: [] };
+  assert.equal(select(game, [moveNear, moveFar, end])?.choice.answerIndex, 1);
+  game.enemies.boss.placement.contents = "far";
+  assert.equal(select(game, [moveNear, moveFar, end])?.choice.answerIndex, 0,
+    "Only the boss's actual physical location is removed; other clue locations remain eligible.");
+  game.enemies.boss.placement.contents = "near";
+  game.locations.far.tokens = [];
+  assert.equal(select(game, [moveNear, moveFar, end])?.choice.answerIndex, 2,
+    "An empty preparation set must not reintroduce the boss via the later unrevealed-location fallback.");
+  game.enemies.boss.cardCode = "c:barkham:039";
+  assert.equal(select(game, [moveNear, moveFar, end])?.choice.answerIndex, 0,
+    "Another actual enemy does not impersonate the boss reserve policy.");
+  game.enemies.boss.cardCode = "c:barkham:037";
+  game.locations.far.tokens = [["Clue", 1]];
+  game.locations.current.connectedLocations = ["near"];
+  game.locations.near.connectedLocations = ["current", "far"];
+  game.locations.far.connectedLocations = ["near"];
+  assert.equal(select(game, [moveNear, moveFar, end]), undefined,
+    "When every preparation path crosses the unprepared boss, stop without inventing an alternative route.");
+});
+
+test("recorded successful evade ordering resolves only its exact own physical native result", () => {
+  const recorded = JSON.parse(readFileSync(new URL("./fixtures/barkham-successful-evade-result.json", import.meta.url), "utf8"));
+  const choose = (snapshot: typeof recorded.snapshot) => selectBarkhamChoice({ snapshot,
+    question: companionQuestion(snapshot.game, snapshot.playerId, { card: (code) => catalog.get(catalogCardCode(code)) }),
+    cards: catalog, memory: {} });
+  const { snapshot } = recorded;
+  assert.equal(choose(snapshot)?.choice.answerIndex, 0);
+  assert.equal(choose(snapshot)?.choice.label, "Evade GHOST CAT!");
+  assert.equal(snapshot.game.skillTest.result.tag, "SucceededBy");
+  assert.equal(snapshot.game.skills["1fae4ca7-e1e8-4266-9369-43030da1a786"].owner, actorId);
+  Object.defineProperty(snapshot.game.investigators[actorId], "deck", { get() { throw new Error("Native draw order must not select a completed test result"); } });
+  assert.equal(choose(snapshot)?.choice.answerIndex, 0);
+
+  const negative = (edit: (fresh: typeof snapshot) => void) => {
+    const fresh = structuredClone(recorded.snapshot);
+    edit(fresh);
+    assert.equal(choose(fresh), undefined);
+  };
+  const resultMessage = (fresh: typeof snapshot) => fresh.game.question[fresh.playerId].choices[0].messages[1].contents;
+  negative((fresh) => { resultMessage(fresh).contents[1] = "foreign-investigator"; });
+  negative((fresh) => { resultMessage(fresh).contents[0][1].contents = "foreign-enemy"; });
+  negative((fresh) => { resultMessage(fresh).contents[3].contents = "foreign-enemy"; });
+  negative((fresh) => { resultMessage(fresh).contents[2].contents[0].contents = "foreign-enemy"; });
+  negative((fresh) => { resultMessage(fresh).contents[2].contents[1] = 100; });
+  negative((fresh) => { resultMessage(fresh).contents[4] = 5; });
+  negative((fresh) => { fresh.game.skillTest.investigator = "foreign-investigator"; });
+  negative((fresh) => { fresh.game.skillTest.result.tag = "FailedBy"; });
+  negative((fresh) => { fresh.game.skillTestResults.skillTestResultsSuccess = false; });
+  negative((fresh) => { delete fresh.game.enemies[fresh.game.skillTest.target.contents]; });
+});
