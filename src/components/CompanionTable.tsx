@@ -76,6 +76,7 @@ import { TableToken } from "./Tabletop";
 import { CompanionDecision } from "./CompanionDecision";
 import { useCatalog } from "./useCatalog";
 import "../companion-table.css";
+import { useCompanionMilestones } from "./Milestones";
 
 const obj = (v: unknown): NativeRecord =>
   v !== null && typeof v === "object" && !Array.isArray(v)
@@ -586,6 +587,7 @@ export function CompanionTable({
     inFlight = useRef(false),
     step = useRef(-1);
   const sessionKey = `${session.gameId}:${session.seatId || ""}`;
+  const milestone = useCompanionMilestones(snapshot, sessionKey);
   const load = useCallback(async () => {
     const version = ++generation.current;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -986,6 +988,7 @@ export function CompanionTable({
 
   return (
     <div className="in-game chronicle-companion-shell">
+      {milestone}
       <section
         className="game-page chronicle-companion-table"
         aria-label="Arkham Chronicle game table"

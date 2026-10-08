@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Arkham Chronicle — act reveal decoration</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: transparent; }
+      [data-composition-id="act-reveal"] {
+        width: 480px;
+        height: 240px;
+        position: relative;
+        overflow: hidden;
+        background: transparent;
+        color: #c7a36a;
+      }
+      .scene-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        padding: 38px 46px;
+        gap: 0;
+      }
+      .ornament { position: absolute; pointer-events: none; }
+      .rule { width: 302px; height: 1px; background: #c7a36a; left: 89px; }
+      .rule-top { top: 77px; }
+      .rule-bottom { top: 162px; }
+      .line-left { transform-origin: left center; }
+      .line-right { transform-origin: right center; }
+      .corners { inset: 41px 45px; width: 390px; height: 158px; }
+      .folio { left: 197px; top: 29px; width: 86px; height: 46px; }
+      .seal { left: 222px; top: 174px; width: 36px; height: 36px; }
+      svg { overflow: visible; fill: none; stroke: currentColor; stroke-width: 1; }
+      .paper-mark { stroke: #ddd4b9; opacity: .48; }
+      .seal-ink { stroke: #c7a36a; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-baf1" id="act-reveal" data-composition-id="act-reveal" data-start="0" data-duration="1.7" data-track-index="0" data-width="480" data-height="240" data-fps="30" aria-hidden="true">
+      <div data-hf-id="hf-thzp" id="case-file" class="scene-content">
+        <!-- No title in the video: the game owns accessible milestone text. -->
+        <svg data-hf-id="hf-bo51" class="ornament corners" viewBox="0 0 390 158" data-layout-ignore="true">
+          <path data-hf-id="hf-bx5c" class="corner corner-tl" d="M0 27V0H28 M5 20V5H21" />
+          <path data-hf-id="hf-sg33" class="corner corner-tr" d="M390 27V0H362 M385 20V5H369" />
+          <path data-hf-id="hf-o8bc" class="corner corner-bl" d="M0 131V158H28 M5 138V153H21" />
+          <path data-hf-id="hf-bvhr" class="corner corner-br" d="M390 131V158H362 M385 138V153H369" />
+        </svg>
+        <div id="brass-rule-top" data-hf-id="hf-2tzr" class="ornament rule rule-top line-left" data-layout-ignore="true"></div>
+        <div id="brass-rule-bottom" data-hf-id="hf-02q2" class="ornament rule rule-bottom line-right" data-layout-ignore="true"></div>
+        <svg data-hf-id="hf-05ma" class="ornament folio" viewBox="0 0 86 46" data-layout-ignore="true">
+          <path data-hf-id="hf-1yaf" class="folio-frame" d="M2 39H84 M13 34V8H73V34 M19 8V2H52L58 8" />
+          <path data-hf-id="hf-b6dd" class="paper-mark" d="M24 17H63 M24 23H54 M24 29H43" />
+          <path data-hf-id="hf-8dtn" class="folio-tab" d="M56 8H73V18" />
+        </svg>
+        <svg data-hf-id="hf-40jq" class="ornament seal" viewBox="0 0 36 36" data-layout-ignore="true">
+          <circle data-hf-id="hf-0bxc" class="seal-ink" cx="18" cy="18" r="15.5" />
+          <circle data-hf-id="hf-zfhj" class="seal-ink" cx="18" cy="18" r="12" stroke-dasharray="1 3" />
+          <path data-hf-id="hf-t2mi" class="seal-ink" d="M18 10L26 18L18 26L10 18Z M18 14V22 M14 18H22" />
+        </svg>
+      </div>
+    </div>
+    <script src="node_modules/gsap/dist/gsap.min.js"></script>
+    <script>
+      // Deterministic and seekable. A single finite scene.
+      const timeline = gsap.timeline({ paused: true });
+      timeline.from('.folio', { opacity: 0, y: 7, duration: .4, ease: 'power3.out' }, .12);
+      timeline.from('.corner-tl, .corner-br', { opacity: 0, scale: .9, transformOrigin: 'center', duration: .36, ease: 'circ.out' }, .18);
+      timeline.from('.corner-tr, .corner-bl', { opacity: 0, x: 3, duration: .38, ease: 'sine.out' }, .24);
+      timeline.from('#brass-rule-top', { opacity: 0, scaleX: 0, duration: .5, ease: 'power2.out' }, .26);
+      timeline.from('#brass-rule-bottom', { opacity: 0, scaleX: 0, duration: .5, ease: 'power1.out' }, .33);
+      timeline.from('.seal', { opacity: 0, scale: 1.15, rotation: -9, transformOrigin: 'center', duration: .3, ease: 'back.out(1.1)' }, .46);
+      // One quiet landing and a brief hold, with no bright flash.
+      timeline.to('#case-file', { opacity: 0, duration: .3, ease: 'power2.in' }, 1.4);
+      window.__timelines = window.__timelines || {};
+      window.__timelines['act-reveal'] = timeline;
+    </script>
+  </body>
+</html>

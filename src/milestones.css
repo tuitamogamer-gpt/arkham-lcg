@@ -1,0 +1,109 @@
+/* Brief accents for resolved milestones, with controls and rules independent. */
+.milestone-notice,
+.milestone-art-layer {
+  position: fixed;
+  z-index: 45;
+  top: max(70px, env(safe-area-inset-top));
+  left: 50%;
+  width: min(440px, calc(100vw - 28px));
+  aspect-ratio: 2;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  contain: layout style;
+  color: #ddd4b9;
+}
+.milestone-art-layer {
+  /* Blend the complete decorative group against the table, outside the
+     text/opacity group. WebKit otherwise paints the MP4's black matte. */
+  mix-blend-mode: screen;
+}
+.milestone-notice {
+  z-index: 46;
+}
+.milestone-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.milestone-art video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.milestone-art.omen-art {
+  inset: -10% 18%;
+}
+.milestone-copy {
+  position: absolute;
+  inset: 33% 15% 24%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-align: center;
+  background: radial-gradient(ellipse, #091211f2 50%, #09121100 75%);
+  text-shadow: 0 1px 3px #070e0e;
+}
+.milestone-copy strong {
+  font: 400 clamp(23px, 5.5vw, 34px)/1.1 var(--font-display);
+}
+.milestone-copy > span:not(.milestone-rule) {
+  font: 400 clamp(13px, 3.5vw, 16px)/1.2 var(--font-reading);
+  color: #c7c3af;
+}
+.milestone-rule {
+  height: 1px;
+  width: 38px;
+  background: #c7a36a80;
+  flex-shrink: 0;
+}
+.milestone-defeat .milestone-rule,
+.milestone-agenda .milestone-rule {
+  background: #9d594e99;
+}
+.milestone-notice.cinematic,
+.milestone-art-layer.cinematic {
+  animation: milestone-arrival 2.2s both;
+}
+.milestone-notice.quiet {
+  top: 76px;
+  aspect-ratio: auto;
+  height: 72px;
+}
+.milestone-notice.quiet .milestone-copy {
+  inset: 0 10%;
+  background: #091211f2;
+  border: 1px solid #c7a36a50;
+  border-radius: 3px;
+}
+.milestone-notice.quiet .milestone-copy strong {
+  font-size: 24px;
+}
+.milestone-notice.quiet .milestone-rule {
+  display: none;
+}
+@keyframes milestone-arrival {
+  0% {
+    opacity: 0;
+    translate: 0 7px;
+  }
+  14%,
+  78% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 -3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .milestone-notice {
+    animation: none !important;
+  }
+  .milestone-art-layer {
+    display: none;
+  }
+}

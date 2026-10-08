@@ -1,0 +1,113 @@
+{
+  "passed": true,
+  "tool": {
+    "name": "Tesseract",
+    "version": "0.3.1",
+    "publicRelease": "https://github.com/mirage-hq/tesseract/releases/tag/v0.3.1",
+    "telemetryEnabled": false
+  },
+  "source": {
+    "dimensions": [
+      400,
+      400
+    ],
+    "seconds": 1.8,
+    "nativeShapeLayers": 8,
+    "nativeGroupLayers": 1,
+    "animationGraphEntries": 15,
+    "flattenedDesignAssets": 0
+  },
+  "browserAsset": {
+    "codec": "VP9",
+    "alpha": true,
+    "dimensions": [
+      400,
+      400
+    ],
+    "fps": 30,
+    "durationSeconds": 1.8,
+    "audioStreams": 0
+  },
+  "browserPlayback": {
+    "passed": true,
+    "presentedFrames": 53,
+    "errors": [],
+    "liveAlphaSamples": [
+      {
+        "time": 0.1,
+        "alpha": 164
+      },
+      {
+        "time": 0.9,
+        "alpha": 255
+      },
+      {
+        "time": 1.6,
+        "alpha": 130
+      },
+      {
+        "time": 1.733,
+        "alpha": 63
+      },
+      {
+        "time": 1.767,
+        "alpha": 37
+      }
+    ]
+  },
+  "mp4Fallback": {
+    "codec": "H.264",
+    "alpha": false,
+    "requires": "mix-blend-mode: screen",
+    "audioStreams": 0
+  },
+  "nativeSoloProRes": {
+    "passed": true,
+    "backend": "external-ffmpeg-command",
+    "dimensions": [
+      266,
+      266
+    ],
+    "codec": "prores",
+    "profile": "4444",
+    "pixelFormat": "yuva444p12le",
+    "durationSeconds": 1.8,
+    "alphaExtrema": [
+      0,
+      65535
+    ]
+  },
+  "review": {
+    "readableFilmstripInspected": true,
+    "browserPlaybackFrameInspected": true,
+    "contrastingBackgroundsInspected": true,
+    "actualGameplayContextReviewedByParent": true,
+    "gameplayReviewScope": "Actual Chromium Core reducer agenda advance in the rendered game at 320 and 390 px, accessible DOM copy and control independence; controlled presentation fixture, not native whole-scenario certification."
+  },
+  "files": {
+    "AgendaOmen.tsrct": {
+      "sha256": "48361705847df0ca27b11fa7d854b16b72e5996e2716c66bb66ed293c54df90e",
+      "bytes": 75513
+    },
+    "AgendaOmen.webm": {
+      "sha256": "be5661be26a7c0998ea0fa502839ecffa560d37e7301879eba431f8b7ad56dd7",
+      "bytes": 63377
+    },
+    "AgendaOmen.mp4": {
+      "sha256": "446315a657834fb390a8400337049360b097785173171294834a88713a9c3435",
+      "bytes": 12822
+    },
+    "Previews/AgendaOmen-poster.png": {
+      "sha256": "003e2aedfb449fcaf3fd70676f572d46c9a475c7e3e9b562525f4b8c161d7d36",
+      "bytes": 20605
+    },
+    "Previews/AgendaOmen-readable-filmstrip.png": {
+      "sha256": "7dc1a7947531b623cba869af387645285ac213e8b370ffebcd07c13db2c766b4",
+      "bytes": 66774
+    },
+    "Previews/AgendaOmen-browser-playback.png": {
+      "sha256": "9bcff986aa770da61bcdb1560df96feae993e7bfc3a3f346d31c5c0326a95bad",
+      "bytes": 31805
+    }
+  }
+}

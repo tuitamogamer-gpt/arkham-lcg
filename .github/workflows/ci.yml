@@ -40,6 +40,14 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node --import tsx scripts/review-browser-check.mjs
+      - name: Significant-event motion and control independence
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node --import tsx scripts/milestone-browser-check.mjs
+      - name: Offline milestone media and lazy player
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node --import tsx scripts/milestone-offline-check.mjs
       - name: Keep screenshots when the browser check fails
         if: failure()
         uses: actions/upload-artifact@v4
@@ -48,4 +56,5 @@ jobs:
           path: |
             output/browser
             output/review
+            output/milestone-motion
           if-no-files-found: ignore

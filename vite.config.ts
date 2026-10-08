@@ -28,9 +28,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // The app shell, fonts and card data are precached; card art is cached
+        // The app shell, milestone clips, fonts and card data are precached; card art is cached
         // as it is seen, so a played scenario keeps working offline.
-        globPatterns: ["**/*.{js,css,html,svg,ttf,png,webmanifest,json}"],
+        globPatterns: [
+          "**/*.{js,css,html,svg,ttf,png,webm,mp4,webmanifest,json}",
+        ],
         globIgnores: ["**/art/**"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
@@ -62,7 +64,17 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: "card-data", test: /core-2026\.json/ },
-            { name: "vendor", test: /node_modules/ },
+            {
+              name: "milestone-remotion",
+              test: /node_modules\/(?:remotion|@remotion)\//,
+              priority: 10,
+            },
+            {
+              name: "vendor",
+              test: /node_modules/,
+              tags: ["$initial"],
+              priority: 20,
+            },
           ],
         },
       },

@@ -58,6 +58,7 @@ independent. See
 - Pointer and keyboard previews for agenda, act, investigator, assets, enemies and campaign information. Act/agenda transitions show the completed card’s reverse-side story and the new objective; previews do not reveal future story faces.
 - Encounter checkpoints show reveal, resolution and destination, including attached threats, Fire!, spawned enemies and the discard pile. Dialogs keep one accessible focus owner while inspecting cards.
 - Card dealing/playing, investigator movement, token changes, attacks, injuries, chaos-token draws, phases and story turns have contextual animations. Settings offer **Cinematic**, **Subtle**, and **Off**, and honor the device's reduced-motion preference. Animations never advance a checkpoint or spend an action.
+- Significant resolved events have short, silent accents: Hyperframes for act advances, Tesseract for agenda advances, and Remotion for investigation endings. They work offline, retain accessible text, and follow the same motion settings. Loading a save, undoing or switching investigator seats does not replay them. Editable sources and rendering instructions are in [`motion/`](motion/DESIGN.md).
 - Campaign discoveries survive save export/import, reload and event-history rollover; older saves recover what is already public. Starting a new investigation starts a fresh discovery record.
 
 ## Scope and next milestones
@@ -101,7 +102,7 @@ without the companion.
 
 The engine scripts these five fixed starter decks. Fast windows offer legal abilities from that pool, including another investigator's Wrench during a test. Windows with no available abilities need no additional pass. Event checkpoints control presentation and do not introduce extra rules windows or undo effects. Intermediate windows, ordered effects, commitments and nested resolution boundaries survive saves. All 196 card definitions have local original artwork (233 faces including reverses and the hidden Elokoss face). Downloads use the arkham.build image mirror with ArkhamDB fallback. Broken images recover to a bounded text frame. Game attributes and rules text use the original Arkham symbol font.
 
-The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **487 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
+The [September rules audit](docs/rules-audit.md) records the Grimoire v1.1 baseline and errata reconciliation. The [30 September follow-up](docs/review-2026-09-30.md) documents corrections to multiplayer skill rewards, slots, spell timing, starter-card costs, player-card doom, undo and saves. The TypeScript suite now has **501 passing tests**, including random legal play across all five Core investigators, catalog/deck validation and companion protocol regressions. Later Core scenarios and campaign upgrades use the companion; the independent TypeScript engine still covers Spreading Flames. Tests cover specified interactions; they do not certify every possible combination of cards or custom decks.
 
 ## Data sources
 
@@ -135,6 +136,7 @@ Official references:
 - `src/game/presentation.ts`: public-state changes, source-card attribution, event history and confirmation checkpoints. Hidden future draws are excluded from presentation snapshots.
 - `src/game/knowledge.ts`: shared discovery policy for the archive, card inspection and story reverses; persisted independently of the bounded journal.
 - `src/game/motion.ts` and `src/components/Motion.tsx`: presentation cues from resolved public state and cancellable table animations, independent of the rules queue.
+- `src/game/milestones.ts` and `src/components/Milestones.tsx`: significant public act/agenda/end transitions, with finite video accents and a lazy Remotion player. Decoration failures leave the table usable.
 - `src/game/data.ts`: normalized catalog, five exact starter lists, chaos bags and map connections.
 - `src/game/storage.ts`: guarded local storage, portable version 3 saves, migration of version 1 and 2 saves, per-investigation save slots with an index, and the record of closed cases.
 - `src/game/decks.ts`: printed deckbuilding filters, explicit choices, signatures, weaknesses, copy/XP restrictions, physical setup lists and ordinary upgrades. Unknown rules block validation.
@@ -168,8 +170,11 @@ node --import tsx scripts/tabletop-browser-check.mjs
 node --import tsx scripts/refinements-browser-check.mjs
 node --import tsx scripts/discovery-motion-browser-check.mjs
 node --import tsx scripts/review-browser-check.mjs
+# Significant-event presentation checks (isolated save/protocol fixtures):
+node --import tsx scripts/milestone-browser-check.mjs
 # Build and serve the production output first; set BASE_URL to its port
 node --import tsx scripts/pwa-browser-check.mjs
+BASE_URL=http://127.0.0.1:5191 node --import tsx scripts/milestone-offline-check.mjs
 # Verify the production game:
 BASE_URL=https://arkham-lcg.vercel.app node scripts/browser-check.mjs
 BASE_URL=https://arkham-lcg.vercel.app DESKTOP_ONLY=1 node --import tsx scripts/party-browser-check.mjs

@@ -1,0 +1,6 @@
+# Keep the portable native project and authoring inputs; omit renderer caches.
+.tesseract-work/*
+!.tesseract-work/author.py
+!.tesseract-work/render.py
+!.tesseract-work/edits.json
+!.tesseract-work/final-native.json

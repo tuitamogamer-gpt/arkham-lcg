@@ -27,6 +27,7 @@ import {
 } from "@phosphor-icons/react";
 import { card, CARD_ART, plain } from "../game/data";
 import { useTableMotion } from "./Motion";
+import { useCoreMilestones } from "./Milestones";
 import { ChaosDraw } from "./ChaosDraw";
 import { INVESTIGATION_ABILITIES } from "./InvestigationAbility";
 import { Introduction, PursuerStory, ResolutionPassage } from "./Story";
@@ -95,6 +96,7 @@ export function Game({
   saved?: boolean;
 }) {
   useTableMotion(s);
+  const milestone = useCoreMilestones(s);
   const roster = party(s),
     member = card(s.player.code);
   const actText = [1, 2, 3, 4].map((act) =>
@@ -188,6 +190,7 @@ export function Game({
   if (s.status === "resolution")
     return (
       <div className="resolution-page page-content">
+        {milestone}
         <div className="resolution-art" />
         <div className="resolution-content">
           <div className="eyebrow">Spreading Flames · Case closed</div>
@@ -250,6 +253,7 @@ export function Game({
     );
   return (
     <div className="game-page" data-motion-target="table">
+      {milestone}
       <div className="game-title">
         <div>
           <div className="eyebrow">Brethren of Ash / Scenario I</div>

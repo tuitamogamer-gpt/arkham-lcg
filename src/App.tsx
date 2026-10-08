@@ -211,6 +211,8 @@ export default function App() {
   const [companionTableOpen, setCompanionTableOpen] = useState(false);
   const [expandedInvestigator, setExpandedInvestigator] = useState<string>();
   const [game, setGameState] = useState<GameState | null>(readSave);
+  // Re-prime presentation hooks even when restoring a newer save of this case.
+  const [restorationSerial, setRestorationSerial] = useState(0);
   const gameRef = useRef<GameState | null>(null);
   const undoStack = useRef<GameState[]>([]);
   const [undoDepth, setUndoDepth] = useState(0);
@@ -404,6 +406,7 @@ export default function App() {
     }
     undoStack.current = [];
     setUndoDepth(0);
+    setRestorationSerial((serial) => serial + 1);
     commitGame(loaded);
     setSettings(false);
     navigate("game");
@@ -614,6 +617,7 @@ export default function App() {
         {page === "guide" && <Guide />}{" "}
         {page === "game" && game && (
           <Game
+            key={`${game.id}:${restorationSerial}`}
             game={game}
             dispatch={dispatch}
             inspect={(code, assetId) => {
@@ -1038,6 +1042,7 @@ export default function App() {
                 writeSave(decoded);
                 undoStack.current = [];
                 setUndoDepth(0);
+                setRestorationSerial((serial) => serial + 1);
                 commitGame(decoded);
                 navigate("game");
                 setSettings(false);

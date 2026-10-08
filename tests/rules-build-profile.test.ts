@@ -52,6 +52,31 @@ test("a private compilation check cannot prepare or publish runtime capabilities
     );
 });
 
+test("private toolchain bootstrap rejects source, build, test and packaging modes before restoration", async () => {
+  for (const mode of [
+    "--stage",
+    "--dependencies",
+    "--test-dependencies",
+    "--compile-only",
+    "--test",
+    "--test-built",
+    "--coordinator-tests",
+    "--incremental-native",
+    "--configure-only",
+    "--direct-objects",
+    "--native-objects-only",
+    "--link-objects",
+    "--compact-build",
+    "--prepare-only",
+    "--package-built",
+    "--publish-candidate",
+  ])
+    await rejectedBeforeRestoration(
+      ["--bootstrap-only", "--with-epic-machinations", mode],
+      /--bootstrap-only cannot combine with source staging/,
+    );
+});
+
 test(
   "Linux native builds require the compilation-only profile before restoration",
   {
@@ -81,11 +106,12 @@ test("unsupported native platforms reject before restoring source or clearing pr
         `Object.defineProperty(process, "platform", {value: ${JSON.stringify(platform)}});` +
           `Object.defineProperty(process, "arch", {value: ${JSON.stringify(arch)}});`,
       );
-    await rejectedBeforeRestoration(
-      ["--compile-only"],
-      /Native compilation supports macOS Apple Silicon and Linux x86_64/,
-      ["--import", preload],
-    );
+    for (const profile of [["--compile-only"], ["--bootstrap-only"]])
+      await rejectedBeforeRestoration(
+        profile,
+        /Native compilation supports macOS Apple Silicon and Linux x86_64/,
+        ["--import", preload],
+      );
   }
 });
 

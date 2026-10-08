@@ -17,8 +17,10 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@remotion/player": "4.0.534",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "remotion": "4.0.534"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

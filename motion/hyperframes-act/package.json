@@ -1,0 +1,13 @@
+{
+  "name": "hyperframes-act",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.141 preview",
+    "check": "npx --yes hyperframes@0.8.141 check",
+    "render": "npx --yes hyperframes@0.8.141 render --format webm --fps 30 --quality high --workers 1 --output ../../public/motion/act-reveal.webm && node export-fallback.mjs"
+  },
+  "dependencies": {
+    "gsap": "3.14.2"
+  }
+}
