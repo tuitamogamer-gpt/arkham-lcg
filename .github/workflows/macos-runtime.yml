@@ -89,7 +89,37 @@ jobs:
           curl --fail --location --retry 3 https://github.com/halogenandtoast/ArkhamHorror/releases/download/v20260904.1/ArkhamHorror-macos-arm64-v20260904.1.tar.gz -o "$native_dir/base-runtime.tar.gz"
           printf '%s  %s\n' 29061cbdb683cc7b98f56fc45cb64fbc3762e5a21796406c429a936033bacf39 "$native_dir/base-runtime.tar.gz" | shasum -a 256 --check
           tar -xzf "$native_dir/base-runtime.tar.gz" -C "$native_dir/base"
-      - name: Restore private compiler and full native dependencies
+      - name: Bootstrap and verify the actual ARM64 compiler and PostgreSQL fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --bootstrap-only 2>&1 | tee output/macos-runtime-logs/bootstrap.log
+          "$ARKHAM_RULES_TOOLCHAIN/postgres/bin/pg_config" --version | tee output/macos-runtime-logs/postgres-version.txt
+          test "$(lipo -archs "$ARKHAM_RULES_TOOLCHAIN/postgres/lib/libpq.5.dylib")" = arm64
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          import { createHash } from "node:crypto";
+          import { execFileSync } from "node:child_process";
+          import { join } from "node:path";
+          const root = process.env.ARKHAM_RULES_TOOLCHAIN;
+          const version = execFileSync(join(root, "postgres/bin/pg_config"), ["--version"], {encoding:"utf8"}).trim();
+          const config = readFileSync(join(root, "postgres/include/pg_config.h"), "utf8");
+          const source = readFileSync(join(root, "postgres-source/src/port/snprintf.c"), "utf8");
+          const library = join(root, "postgres/lib/libpq.5.dylib");
+          const symbols = execFileSync("nm", ["-u", library], {encoding:"utf8"});
+          if (process.platform !== "darwin" || process.arch !== "arm64" || version !== "PostgreSQL 14.15"
+              || !config.includes("/* #undef HAVE_STRCHRNUL */") || !source.includes("#define strchrnul pg_strchrnul")
+              || /^.*\b_strchrnul\s*$/m.test(symbols)) throw Error("The actual ARM64 PostgreSQL fallback was not verified");
+          writeFileSync("output/macos-runtime-logs/bootstrap-proof.json", JSON.stringify({
+            schema:1, passed:true, platform:process.platform, architecture:process.arch, postgresVersion:version,
+            fallbackConfigured:true, unavailableLibcSymbolUsed:false,
+            librarySha256:createHash("sha256").update(readFileSync(library)).digest("hex"),
+            privateSnprintfSha256:createHash("sha256").update(source).digest("hex"),
+            nativeAggregateTested:false, packaged:false, installed:false, gameplayCertified:false,
+            verifiedAt:new Date().toISOString()
+          }, null, 2) + "\n");
+          NODE
+      - name: Restore full native Haskell dependencies
         shell: bash
         run: |
           set -euo pipefail

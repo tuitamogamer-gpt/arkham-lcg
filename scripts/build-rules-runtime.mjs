@@ -75,7 +75,10 @@ const runtimeCandidate = resolve(
   dirname(installedRuntime),
   `.candidate-${process.pid}`,
 );
-const mode = process.argv.includes("--stage")
+const bootstrapOnly = process.argv.includes("--bootstrap-only");
+const mode = bootstrapOnly
+  ? "bootstrap"
+  : process.argv.includes("--stage")
   ? "stage"
   : process.argv.includes("--dependencies")
     ? "dependencies"
@@ -475,7 +478,7 @@ async function download(item) {
   if (linuxNative) {
     // curl honors the proxy configuration of isolated Linux build workers.
     // The build-space guard also monitors these comparatively large downloads.
-    await run("curl", ["--fail", "--location", "--retry", "3", "--output", item.path, item.url]);
+    await run("curl", ["--fail", "--location", "--retry", "3", "--output", item.path, item.url], { cwd: downloads });
     await chmod(item.path, 0o600);
   } else {
     const response = await fetch(item.url);
@@ -553,7 +556,7 @@ async function bootstrap() {
     throw new Error(
       "Native compilation supports macOS Apple Silicon and Linux x86_64; runtime packaging requires macOS Apple Silicon.",
     );
-  if (linuxNative && !dependencyOnly && !compileOnly)
+  if (linuxNative && !bootstrapOnly && !dependencyOnly && !compileOnly)
     throw new Error("Linux native builds require --compile-only; signing, installation and capability manifests require macOS Apple Silicon.");
   if (linuxNative) await mkdir(env.TMPDIR, {recursive: true});
   await mkdir(downloads, { recursive: true });
@@ -565,7 +568,7 @@ async function bootstrap() {
       sources.stack.path,
       "-C",
       resolve(toolchain, "stack-bin"),
-    ]);
+    ], { cwd: toolchain });
   }
   if (!(await exists(resolve(ghcDir, "bin/ghc")))) {
     await download(sources.ghc);
@@ -581,10 +584,10 @@ async function bootstrap() {
       "--exclude=*_p-ghc*.dylib",
       "--exclude=*/doc/*",
       "--exclude=*/share/doc/*",
-    ]);
+    ], { cwd: toolchain });
   }
-  console.log(await capture(resolve(ghcDir, "bin/ghc"), ["--version"]));
-  console.log(await capture(stack, ["--version"]));
+  console.log(await capture(resolve(ghcDir, "bin/ghc"), ["--version"], toolchain));
+  console.log(await capture(stack, ["--version"], toolchain));
   await mkdir(env.STACK_ROOT, { recursive: true });
   await writeFile(
     resolve(env.STACK_ROOT, "config.yaml"),
@@ -602,7 +605,7 @@ async function bootstrap() {
       "-C",
       pgSource,
       "--strip-components=1",
-    ]);
+    ], { cwd: toolchain });
     if (process.platform === "darwin") {
       const snprintf = resolve(pgSource, "src/port/snprintf.c");
       await writeFile(snprintf, postgresSnprintfSource(await readFile(snprintf, "utf8")));
@@ -632,7 +635,7 @@ async function bootstrap() {
       "-C",
       pcreSource,
       "--strip-components=1",
-    ]);
+    ], { cwd: toolchain });
     await run(
       "./configure",
       [
@@ -1853,13 +1856,15 @@ async function runCoordinatorTests() {
 
 try {
   // Reject packaging modes before fetching source or touching native records.
+  if (bootstrapOnly && process.argv.some((arg) => ["--stage", "--dependencies", "--test-dependencies", "--compile-only", "--test", "--test-built", "--coordinator-tests", "--incremental-native", "--configure-only", "--direct-objects", "--native-objects-only", "--link-objects", "--compact-build", "--prepare-only", "--package-built", "--publish-candidate"].includes(arg)))
+    throw new Error("--bootstrap-only cannot combine with source staging, dependencies, compilation, tests or runtime packaging.");
   if (mode !== "stage" && !supportedNativePlatform && publishCandidateIndex < 0)
     throw new Error("Native compilation supports macOS Apple Silicon and Linux x86_64; runtime packaging requires macOS Apple Silicon.");
   if (compileOnly && (packageBuilt || prepareOnly || publishCandidateIndex >= 0))
     throw new Error("--compile-only cannot prepare, recover or publish a runtime package.");
   if (coordinatorTests && (!withEpicLabyrinth || mode !== "build" || incrementalNative || testBuilt || directObjects || configureOnly || linkObjects || nativeObjectsOnly))
     throw new Error("--coordinator-tests requires an Epic extension selection and cannot combine with another native build mode.");
-  if (linuxNative && mode !== "stage" && !dependencyOnly && !compileOnly && publishCandidateIndex < 0)
+  if (linuxNative && !bootstrapOnly && mode !== "stage" && !dependencyOnly && !compileOnly && publishCandidateIndex < 0)
     throw new Error("Linux native builds require --compile-only; signing, installation and capability manifests require macOS Apple Silicon.");
   if (publishCandidateIndex >= 0) {
     const path = process.argv[publishCandidateIndex + 1];
@@ -1867,9 +1872,14 @@ try {
     await publishPreparedCandidate(path);
   } else {
     await requireBuildSpace();
-    await bootstrapSource();
-    if (mode === "stage") await stage();
-    else await build();
+    if (bootstrapOnly) {
+      await bootstrap();
+      console.log("Private compiler, PostgreSQL development files and PCRE are ready; source staging, Haskell dependencies, native compilation and runtime packaging were not started.");
+    } else {
+      await bootstrapSource();
+      if (mode === "stage") await stage();
+      else await build();
+    }
   }
 } catch (error) {
   console.error(error.message);
