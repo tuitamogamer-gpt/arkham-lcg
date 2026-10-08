@@ -1,7 +1,14 @@
 module Arkham.Homebrew.EpicLabyrinth.StoriesSpec (spec) where
 
 import Arkham.Card
+import Arkham.Asset.Cards.Standalone qualified as Assets
+import Arkham.Asset.Types (Field (AssetCardId))
 import Arkham.Card.Id (unsafeMakeCardId)
+import Arkham.Classes.HasGame (getGame)
+import Arkham.Difficulty (Difficulty (Standard))
+import Arkham.Game.Base (Game (..))
+import Arkham.Helpers.Scenario (scenarioField)
+import Arkham.Homebrew.EpicLabyrinth.Coordinator (initialEvent, replicaFor, applyRequest)
 import Arkham.Homebrew.EpicLabyrinth.Stories.ArcaneRunes qualified as Arcane
 import Arkham.Homebrew.EpicLabyrinth.Stories.EncryptedGlyphs qualified as Glyphs
 import Arkham.Homebrew.EpicLabyrinth.Stories.Shared
@@ -11,13 +18,17 @@ import Arkham.Homebrew.EpicLabyrinth.Stories.TheRift qualified as Rift
 import Arkham.Homebrew.EpicLabyrinth.Stories.TheVent qualified as Vent
 import Arkham.Homebrew.EpicLabyrinth.Types
 import Arkham.Id
+import Arkham.Investigator.Cards qualified as Investigators
+import Arkham.Matcher qualified as Matcher
 import Arkham.Message.Story
 import Arkham.Placement
 import Arkham.Projection
 import Arkham.Story.CardDefs.TheLabyrinthsOfLunacy qualified as Cards
 import Arkham.Story.Types (Field (StoryTokens), StoryAttrs (..), StoryCard)
+import Arkham.Scenario.Types (Field (ScenarioSetAsideCards), setMetaKey)
 import Arkham.Token qualified as Token
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Data.UUID qualified as UUID
 import TestImport qualified as TI
 import TestImport.New
@@ -103,6 +114,49 @@ spec = describe "Epic Labyrinth native stories" do
     fieldMap StoryTokens (Token.countTokens Token.Horror) sid `shouldReturn` 1
     run $ delivery $ SetGlyphCounters 2 1
     fieldMap StoryTokens (Token.countTokens Token.Damage) sid `shouldReturn` 2
+
+  for_ [(GroupA, Assets.rotDiagramEpicMultiplayer), (GroupB, Assets.hungerDiagramEpicMultiplayer),
+        (GroupC, Assets.decayDiagramEpicMultiplayer)] $ \(group, definition) ->
+    it ("the actual " <> show group <> " Glyph completion lets the lead award its physical diagram to another investigator")
+      . scenarioTestWithDifficulty Investigators.jennyBarnes Standard "70001" $ \self -> do
+        void $ genPlayerCard $ toCardDef $ toAttrs self
+        other <- addInvestigator Investigators.rolandBanks
+        void $ genPlayerCard $ toCardDef $ toAttrs other
+        location <- testLocation
+        void $ putStory Cards.encryptedGlyphs location
+        diagram <- genCard definition
+        let roster = Map.fromList [(table, if table == group then Set.fromList [self.id, other.id] else Set.singleton self.id)
+              | table <- allGroups]
+            initial = either (error . show) id $ initialEvent roster
+            step n origin operation state = either (error . show) id $
+              applyRequest (Request (OperationId $ UUID.fromWords 0 0 0 n) origin operation) state
+            active = step 1 GroupA (SelectStory 2 "70038") initial
+            decoded = step 3 group DecodeGlyphs $ step 2 group DecodeGlyphs active {eventDeliveries = mempty}
+            completed = step 4 group OrderGlyphs decoded
+            replica = either (error . show) id $ replicaFor group completed
+            envelopes = Map.findWithDefault [] group completed.eventDeliveries
+            native envelope = ScenarioSpecific "epicLabyrinth.delivery" $ toJSON envelope
+        overTest $ modeL %~ fmap (overAttrs $ setMetaKey "epicMultiplayer" True
+          . setMetaKey "epicLabyrinthReplica" replica)
+        run $ SetAsideCards [diagram]
+        runAll $ map native envelopes
+        checkpoint <- getGame
+        Map.elems checkpoint.gameQuestion `shouldSatisfy` \case
+          [ChooseOne choices] -> all (`elem` choices)
+            [TargetLabel (InvestigatorTarget iid) [TakeControlOfSetAsideAsset iid diagram] | iid <- [self.id, other.id]]
+          _ -> False
+        -- Delivery replay retains this exact native choice, with no second
+        -- asset or rewritten card identity, before its saved story-removal tail.
+        runAll $ map native envelopes <> [AskMap checkpoint.gameQuestion]
+        gameQuestion <$> getGame `shouldReturn` checkpoint.gameQuestion
+        chooseTarget other
+        assets <- select $ Matcher.AssetControlledBy (Matcher.InvestigatorWithId other.id) <> Matcher.assetIs definition
+        traverse (field AssetCardId) assets `shouldReturn` [toCardId diagram]
+        map toCardId <$> scenarioField ScenarioSetAsideCards `shouldReturn` []
+        assertNone $ Matcher.StoryIs "70038"
+        runAll $ map native envelopes
+        allAssets <- select $ Matcher.assetIs definition
+        traverse (field AssetCardId) allAssets `shouldReturn` [toCardId diagram]
 
   it "acknowledges a Vent receipt without duplicating the already committed cargo" . gameTest $ \self -> do
     location <- testLocation

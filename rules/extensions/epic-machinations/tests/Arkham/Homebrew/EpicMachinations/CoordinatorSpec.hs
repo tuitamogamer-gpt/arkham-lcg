@@ -98,12 +98,26 @@ spec = H.describe "Epic Machinations coordinator" do
   H.it "never heals shared boss health above its printed global maximum" do
     machinationsBossRemaining (step 1 FutureEra (HealTyrthrha 99) base) `H.shouldBe` 24
 
-  H.it "routes only the printed cross-era shipment, time, capsule and newspaper effects" do
+  H.it "routes only the printed cross-era seed, shipment, time, capsule and newspaper effects" do
     for_ legalLocationEffects $ \(origin, destination, code, token) ->
       applyMachinationsOperation origin (SendLocationToken destination code token 1) base
         `H.shouldBe` Right (base, [(destination, PlaceRemoteToken code token 1)])
     applyMachinationsOperation FutureEra (SendLocationToken PastEra "87009" Doom 1) base `H.shouldBe` Left UnauthorizedEraEffect
     applyMachinationsOperation PastEra (SendLocationToken FutureEra "87027" Shipment 2) base `H.shouldBe` Left UnauthorizedEraEffect
+
+  H.it "keeps the four completed remote location routes exact and replay-safe" do
+    for_ [(FutureEra, PastEra, "87010", Seed), (PresentEra, FutureEra, "87026", Time),
+          (FutureEra, PastEra, "87008", Time), (FutureEra, PresentEra, "87018", Shipment)] $
+      \(origin, receiver, code, token) -> do
+        let request = MachinationsRequest (identifier 42) origin $ SendLocationToken receiver code token 1
+            delivered = must $ applyMachinationsRequest request base
+        bodies receiver delivered `H.shouldBe` [PlaceRemoteToken code token 1]
+        bodies origin delivered `H.shouldBe` []
+        applyMachinationsRequest request delivered `H.shouldBe` Right delivered
+        applyMachinationsOperation receiver (SendLocationToken receiver code token 1) base `H.shouldBe` Left UnauthorizedEraEffect
+        applyMachinationsOperation origin (SendLocationToken origin code token 1) base `H.shouldBe` Left UnauthorizedEraEffect
+        applyMachinationsOperation origin (SendLocationToken receiver code Doom 1) base `H.shouldBe` Left UnauthorizedEraEffect
+        applyMachinationsOperation origin (SendLocationToken receiver code token 2) base `H.shouldBe` Left UnauthorizedEraEffect
 
   H.it "requires the Corrigan announcement before removing an anomaly in another era" do
     applyMachinationsOperation PresentEra (RemoveRemoteAnomaly PastEra "River Docks") base `H.shouldBe` Left UnauthorizedEraEffect

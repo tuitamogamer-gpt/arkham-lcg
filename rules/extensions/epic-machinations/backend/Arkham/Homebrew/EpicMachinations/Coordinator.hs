@@ -141,7 +141,10 @@ legalLocationEffects :: [(Era, Era, CardCode, Token)]
 legalLocationEffects =
   [ (PastEra, PresentEra, "87018", Shipment), (PastEra, FutureEra, "87027", Shipment)
   , (PresentEra, FutureEra, "87027", Shipment)
+  , (FutureEra, PresentEra, "87018", Shipment)
   , (PastEra, PresentEra, "87017", Time)
+  , (PresentEra, FutureEra, "87026", Time), (FutureEra, PastEra, "87008", Time)
+  , (FutureEra, PastEra, "87010", Seed)
   , (PastEra, FutureEra, "87029", TimeCapsule)
   , (FutureEra, PastEra, "87007", Newspaper), (FutureEra, PresentEra, "87016", Newspaper)
   , (FutureEra, FutureEra, "87025", Newspaper)

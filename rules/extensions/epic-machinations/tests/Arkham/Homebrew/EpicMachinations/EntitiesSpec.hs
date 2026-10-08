@@ -1,6 +1,9 @@
 module Arkham.Homebrew.EpicMachinations.EntitiesSpec (spec) where
 
 import Arkham.Asset.Cards.Standalone qualified as Assets
+import Arkham.Ability (Ability, abilityIndex, abilityLimit)
+import Arkham.Ability.Limit (AbilityLimit (GroupLimit), AbilityLimitType (PerGame, PerRound, PerTurn))
+import Arkham.Agenda.Types (Field (AgendaDoom))
 import Arkham.Asset.Cards.NightOfTheZealot qualified as PlayerAssets
 import Arkham.Asset.Types (Field (AssetDamage, AssetClues, AssetCardId, AssetPlacement, AssetTokens))
 import Arkham.Card
@@ -25,11 +28,14 @@ import Arkham.Homebrew.EpicMachinations.Transactions (nativeEraProgress)
 import Arkham.Homebrew.EpicMachinations.Types
 import Arkham.Message.Story
 import Arkham.Message.Lifted qualified as Lifted
-import Arkham.Matcher (enemyIs, assetIs, AssetMatcher (AssetWithId, AssetExhausted), EnemyMatcher (EnemyWithId))
+import Arkham.Location.CardDefs.MachinationsThroughTime qualified as Locations
+import Arkham.Location.Types (Field (LocationAbilities, LocationCardId, LocationTokens), revealedL)
+import Arkham.Matcher (enemyIs, assetIs, locationIs, AssetMatcher (AssetWithId, AssetExhausted), EnemyMatcher (EnemyWithId), LocationMatcher (LocationIs))
 import Arkham.SkillTest.Type (SkillTestType (..))
 import Arkham.Placement
 import Arkham.Projection
 import Arkham.Scenario.Types (setMetaKey)
+import Arkham.ScenarioLogKey (ScenarioLogKey (ATreeSeedHasBeenPlanted, CorriganIndustriesHasBeenFounded))
 import Arkham.Story.CardDefs.MachinationsThroughTime qualified as Stories
 import Arkham.Token qualified as Token
 import Data.Aeson qualified as Aeson
@@ -58,6 +64,19 @@ putStory definition = do
 
 pendingOperations :: TestAppT [MachinationsOperation]
 pendingOperations = map machinationsRequestOperation <$> (getScenarioMetaKeyDefault "epicMachinationsOutbox" [] :: TestAppT [MachinationsRequest])
+
+locationAbility :: Location -> Int -> TestAppT Ability
+locationAbility location index = do
+  abilities <- field LocationAbilities location.id
+  pure $ fromJustNote "printed location ability" $ find ((== index) . abilityIndex) abilities
+
+remoteLocations :: [(Era, CardDef, Int, Era, CardDef, Token.Token)]
+remoteLocations =
+  [ (FutureEra, Locations.miskatonicUniversityFuture, 1, PastEra, Locations.miskatonicUniversityPast, Token.Seed)
+  , (PresentEra, Locations.tickTockClubPresent, 1, FutureEra, Locations.tickTockClubFuture, Token.Time)
+  , (FutureEra, Locations.tickTockClubFuture, 1, PastEra, Locations.oMalleysWatchShop, Token.Time)
+  , (FutureEra, Locations.riverDocksFuture, 2, PresentEra, Locations.riverDocksPresent, Token.Shipment)
+  ]
 
 spec :: Spec
 spec = describe "Epic Machinations original entities and story actions" do
@@ -241,3 +260,233 @@ spec = describe "Epic Machinations original entities and story actions" do
     run $ nonAttackEnemyDamage (Just self.id) GameSource 2 tyr.id
     field EnemyDamage tyr.id `shouldReturn` 2
     pendingOperations `shouldReturn` []
+
+  describe "Printed cross-era location actions" do
+    for_ [(PresentEra, "87018", "Send a shipment to the Present River Docks"),
+          (FutureEra, "87027", "Send a shipment to the Future River Docks")] $ \(receiver, code, label) ->
+      it ("registers the original Past Docks runner and pays for its shipment to " <> show receiver)
+        . scenarioTest "87001" $ \self -> do
+          initializeEpic PastEra self
+          docks <- testLocationWithDef Locations.riverDocksPast (revealedL .~ True)
+          self `moveTo` docks
+          withProp @"resources" 2 self
+          ability <- locationAbility docks 1
+          abilityLimit ability `shouldBe` GroupLimit PerTurn 1
+          self `useAbility` ability
+          chooseOptionMatching "exact shipment recipient" $ \case
+            Label actual _ -> actual == label
+            _ -> False
+          self.resources `shouldReturn` 0
+          self.remainingActions `shouldReturn` 2
+          pendingOperations `shouldReturn` [SendLocationToken receiver code Token.Shipment 1]
+          selectCount (LocationIs code) `shouldReturn` 0
+
+    it "registers the original Present Docks runner and pays three resources plus an action"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic PresentEra self
+        docks <- testLocationWithDef Locations.riverDocksPresent (revealedL .~ True)
+        self `moveTo` docks
+        withProp @"resources" 3 self
+        ability <- locationAbility docks 2
+        self `useAbility` ability
+        self.resources `shouldReturn` 0
+        self.remainingActions `shouldReturn` 2
+        pendingOperations `shouldReturn` [SendLocationToken FutureEra "87027" Token.Shipment 1]
+        selectCount (locationIs Locations.riverDocksFuture) `shouldReturn` 0
+
+    for_ [(True, "Exhaust Thomas Corrigan to place a time token at the Present Tick-Tock Club"),
+          (False, "Leave Thomas Corrigan ready")] $ \(send, label) ->
+      it ("registers the original Past Watch Shop runner and " <> if send then "sends its paid optional time" else "keeps its paid skip option")
+        . scenarioTest "87001" $ \self -> do
+          initializeEpic PastEra self
+          shop <- testLocationWithDef Locations.oMalleysWatchShop (revealedL .~ True)
+          agenda <- testAgenda "87002" id
+          run $ PlaceTokens GameSource (AgendaTarget agenda.id) Token.Doom 2
+          run $ PlaceTokens GameSource (LocationTarget shop.id) Token.Time 1
+          self `moveTo` shop
+          thomas <- self `putAssetIntoPlay` Assets.thomasCorriganPast
+          run $ PlaceAsset thomas $ AtLocation shop.id
+          ability <- locationAbility shop 1
+          self `useAbility` ability
+          clickLabel label
+          self.remainingActions `shouldReturn` 2
+          field AgendaDoom agenda.id `shouldReturn` 1
+          fieldMap LocationTokens (Map.findWithDefault 0 Token.Time) shop.id `shouldReturn` 0
+          selectCount (AssetWithId thomas <> AssetExhausted) `shouldReturn` if send then 1 else 0
+          pendingOperations `shouldReturn` if send then [SendLocationToken PresentEra "87017" Token.Time 1] else []
+          selectCount (locationIs Locations.tickTockClubPresent) `shouldReturn` 0
+
+    it "registers the original Childhood Home runner and pays its printed two actions"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic PastEra self
+        home <- testLocationWithDef Locations.childhoodHome (revealedL .~ True)
+        self `moveTo` home
+        let identifier = DeliveryId "location-test:home-founding"
+        run $ ScenarioSpecific "epicMachinations.delivery" $ toJSON $
+          MachinationsEnvelope identifier $ ReceiveAnnouncement CorriganIndustriesHasBeenFounded
+        ability <- locationAbility home 2
+        abilityLimit ability `shouldBe` GroupLimit PerGame 1
+        self `useAbility` ability
+        self.remainingActions `shouldReturn` 1
+        pendingOperations `shouldReturn`
+          [AcknowledgeMachinationsDelivery identifier, SendLocationToken FutureEra "87029" Token.TimeCapsule 1]
+        selectCount (locationIs Locations.corriganIndustries) `shouldReturn` 0
+
+    for_ [(PastEra, "87007"), (PresentEra, "87016"), (FutureEra, "87025")] $ \(receiver, code) ->
+      it ("registers the original Future Advertiser runner and pays for its newspaper to " <> show receiver)
+        . scenarioTest "87001" $ \self -> do
+          initializeEpic FutureEra self
+          advertiser <- testLocationWithDef Locations.arkhamAdvertiserFuture (revealedL .~ True)
+          self `moveTo` advertiser
+          ability <- locationAbility advertiser 1
+          abilityLimit ability `shouldBe` GroupLimit PerGame 2
+          self `useAbility` ability
+          chooseOptionMatching "exact newspaper recipient" $ \case
+            Label actual _ -> actual == "Place a newspaper token in " <> tshow receiver
+            _ -> False
+          self.remainingActions `shouldReturn` 2
+          pendingOperations `shouldReturn` [SendLocationToken receiver code Token.Newspaper 1]
+          fieldMap LocationTokens (Map.findWithDefault 0 Token.Newspaper) advertiser.id `shouldReturn` 0
+
+    it "pays the Future University action and routes its seed to the absent Past University"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic FutureEra self
+        university <- testLocationWithDef Locations.miskatonicUniversityFuture (revealedL .~ True)
+        self `moveTo` university
+        mary <- self `putAssetIntoPlay` Assets.maryZielinskiFuture
+        run $ PlaceAsset mary $ AtLocation university.id
+        original <- field LocationCardId university.id
+        ability <- locationAbility university 1
+        abilityLimit ability `shouldBe` GroupLimit PerGame 1
+        self `useAbility` ability
+        self.remainingActions `shouldReturn` 2
+        pendingOperations `shouldReturn` [SendLocationToken PastEra "87010" Token.Seed 1]
+        selectCount (locationIs Locations.miskatonicUniversityPast) `shouldReturn` 0
+        field LocationCardId university.id `shouldReturn` original
+
+    for_ [(True, "Exhaust Thomas Corrigan to place a time token at the Future Tick-Tock Club"),
+          (False, "Leave Thomas Corrigan ready")] $ \(send, label) ->
+      it ("pays the Present Club's time/action/doom change and " <> if send then "sends its optional time" else "keeps Thomas ready")
+        . scenarioTest "87001" $ \self -> do
+          initializeEpic PresentEra self
+          club <- testLocationWithDef Locations.tickTockClubPresent (revealedL .~ True)
+          agenda <- testAgenda "87002" id
+          run $ PlaceTokens GameSource (AgendaTarget agenda.id) Token.Doom 2
+          run $ PlaceTokens GameSource (LocationTarget club.id) Token.Time 1
+          self `moveTo` club
+          thomas <- self `putAssetIntoPlay` Assets.thomasCorriganPresent
+          run $ PlaceAsset thomas $ AtLocation club.id
+          ability <- locationAbility club 1
+          self `useAbility` ability
+          clickLabel label
+          self.remainingActions `shouldReturn` 2
+          field AgendaDoom agenda.id `shouldReturn` 1
+          fieldMap LocationTokens (Map.findWithDefault 0 Token.Time) club.id `shouldReturn` 0
+          selectCount (AssetWithId thomas <> AssetExhausted) `shouldReturn` if send then 1 else 0
+          pendingOperations `shouldReturn` if send then [SendLocationToken FutureEra "87026" Token.Time 1] else []
+          selectCount (locationIs Locations.tickTockClubFuture) `shouldReturn` 0
+
+    it "pays Future Thomas's exhaustion and one local clue to send time to the Past Watch Shop"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic FutureEra self
+        club <- testLocationWithDef Locations.tickTockClubFuture (revealedL .~ True)
+        self `moveTo` club
+        thomas <- self `putAssetIntoPlay` Assets.thomasCorriganFuture
+        run $ PlaceAsset thomas $ AtLocation club.id
+        withProp @"clues" 1 self
+        ability <- locationAbility club 1
+        abilityLimit ability `shouldBe` GroupLimit PerGame 1
+        self `useAbility` ability
+        chooseTarget thomas
+        self.clues `shouldReturn` 0
+        self.remainingActions `shouldReturn` 2
+        selectCount (AssetWithId thomas <> AssetExhausted) `shouldReturn` 1
+        pendingOperations `shouldReturn` [SendLocationToken PastEra "87008" Token.Time 1]
+        selectCount (locationIs Locations.oMalleysWatchShop) `shouldReturn` 0
+
+    it "pays the Future Docks' three-resource alternative without spending an action"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic FutureEra self
+        docks <- testLocationWithDef Locations.riverDocksFuture (revealedL .~ True)
+        self `moveTo` docks
+        withProp @"resources" 3 self
+        ability <- locationAbility docks 2
+        abilityLimit ability `shouldBe` GroupLimit PerRound 1
+        self `useAbility` ability
+        self.resources `shouldReturn` 0
+        self.remainingActions `shouldReturn` 3
+        pendingOperations `shouldReturn` [SendLocationToken PresentEra "87018" Token.Shipment 1]
+        selectCount (locationIs Locations.riverDocksPresent) `shouldReturn` 0
+
+    it "pays the Future Docks' two distinct Scientists alternative without resources or actions"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic FutureEra self
+        docks <- testLocationWithDef Locations.riverDocksFuture (revealedL .~ True)
+        self `moveTo` docks
+        withProp @"resources" 0 self
+        thomas <- self `putAssetIntoPlay` Assets.thomasCorriganFuture
+        mary <- self `putAssetIntoPlay` Assets.maryZielinskiFuture
+        run $ PlaceAsset thomas $ AtLocation docks.id
+        run $ PlaceAsset mary $ AtLocation docks.id
+        ability <- locationAbility docks 2
+        self `useAbility` ability
+        chooseTarget thomas
+        chooseTarget mary
+        self.resources `shouldReturn` 0
+        self.remainingActions `shouldReturn` 3
+        selectCount (AssetWithId thomas <> AssetExhausted) `shouldReturn` 1
+        selectCount (AssetWithId mary <> AssetExhausted) `shouldReturn` 1
+        pendingOperations `shouldReturn` [SendLocationToken PresentEra "87018" Token.Shipment 1]
+
+    for_ remoteLocations $ \(_, _, _, receiver, definition, token) ->
+      it ("applies the physical " <> show token <> " receipt once at " <> show (toCardCode definition))
+        . scenarioTest "87001" $ \self -> do
+          initializeEpic receiver self
+          target <- testLocationWithDef definition (revealedL .~ True)
+          other <- testLocation
+          original <- field LocationCardId target.id
+          let identifier = DeliveryId $ "location-test:" <> tshow (toCardCode definition)
+              delivery = ScenarioSpecific "epicMachinations.delivery" $ toJSON $
+                MachinationsEnvelope identifier $ PlaceRemoteToken (toCardCode definition) token 1
+          run delivery
+          run delivery
+          fieldMap LocationTokens (Map.findWithDefault 0 token) target.id `shouldReturn` 1
+          fieldMap LocationTokens (Map.findWithDefault 0 token) other.id `shouldReturn` 0
+          field LocationCardId target.id `shouldReturn` original
+          pendingOperations `shouldReturn` [AcknowledgeMachinationsDelivery identifier]
+
+    it "uses the received seed through the Past University's printed two-action planting cost"
+      . scenarioTest "87001" $ \self -> do
+        initializeEpic PastEra self
+        university <- testLocationWithDef Locations.miskatonicUniversityPast (revealedL .~ True)
+        self `moveTo` university
+        thomas <- self `putAssetIntoPlay` Assets.thomasCorriganPast
+        run $ PlaceAsset thomas $ AtLocation university.id
+        withProp @"resources" 0 self
+        let identifier = DeliveryId "location-test:seed-plant"
+        run $ ScenarioSpecific "epicMachinations.delivery" $ toJSON $
+          MachinationsEnvelope identifier $ PlaceRemoteToken "87010" Token.Seed 1
+        ability <- locationAbility university 1
+        self `useAbility` ability
+        self.remainingActions `shouldReturn` 1
+        self.resources `shouldReturn` 1
+        fieldMap LocationTokens (Map.findWithDefault 0 Token.Seed) university.id `shouldReturn` 0
+        pendingOperations `shouldReturn` [AcknowledgeMachinationsDelivery identifier, Announce ATreeSeedHasBeenPlanted]
+
+    for_ remoteLocations $ \(_, origin, index, _, targetDefinition, token) ->
+      it ("retains ordinary Single Group location behavior for " <> show (toCardCode origin))
+        . gameTest $ \self -> do
+          source <- testLocationWithDef origin (revealedL .~ True)
+          target <- testLocationWithDef targetDefinition (revealedL .~ True)
+          when (toCardCode origin == "87017") do
+            agenda <- testAgenda "87002" id
+            run $ PlaceTokens GameSource (AgendaTarget agenda.id) Token.Doom 1
+            thomas <- self `putAssetIntoPlay` Assets.thomasCorriganPresent
+            run $ PlaceAsset thomas $ AtLocation source.id
+          run $ UseCardAbility self.id (LocationSource source.id) index [] NoPayment
+          when (toCardCode origin == "87017") $ chooseOptionMatching "ordinary optional Time effect" $ \case
+            Label "$label.skip" _ -> False
+            Label _ _ -> True
+            _ -> False
+          fieldMap LocationTokens (Map.findWithDefault 0 token) target.id `shouldReturn` 1
+          pendingOperations `shouldReturn` []

@@ -24,6 +24,7 @@ import Arkham.Investigator.Types (Field (InvestigatorResources, InvestigatorHand
 import Arkham.Location.CardDefs.TheLabyrinthsOfLunacy qualified as Locations
 import Arkham.Matcher
 import Arkham.Message.Lifted.Choose (chooseOneM, targets)
+import Arkham.Message.Lifted.Log (record)
 import Arkham.Message.Lifted.Story (resolveStory)
 import Arkham.Placement
 import Arkham.Projection
@@ -32,6 +33,8 @@ import Arkham.Scenario.Import.Lifted
 import Arkham.Scenario.Types (ScenarioAttrs (..))
 import Arkham.Scenario.Scenarios.TheLabyrinthsOfLunacy qualified as Native
 import Arkham.Scenarios.TheLabyrinthsOfLunacy.Meta qualified as NativeMeta
+import Arkham.Scenarios.TheLabyrinthsOfLunacy.Helpers qualified as NativeHelpers
+import Arkham.Scenarios.TheLabyrinthsOfLunacy.Key qualified as Log
 import Arkham.Story.CardDefs.TheLabyrinthsOfLunacy qualified as Stories
 import Data.Map.Strict qualified as Map
 
@@ -169,18 +172,44 @@ instance RunMessage EpicLabyrinth where
           pure $ EpicLabyrinth $ setMetaKey "epicLabyrinthIsolated" ([] :: [LocationId]) $
             setMetaKey "epicLabyrinthStage" (3 :: Int) attrs
         ScenarioResolution NoResolution -> do
-          emitOperation $ SetSurviving False
-          push R1
+          -- A native last-investigator elimination can clear the pending
+          -- resolution. Retain its exact result and do not repeat its effects.
+          push $ ScenarioResolution $ Resolution $
+            getMetaKeyDefault "epicLabyrinthResolution" 1 attrs
           pure scenario
-        ScenarioResolution (Resolution n) | n `elem` [1, 2, 3, 4] -> do
-          when (n == 1) $ emitOperation $ SetSurviving False
-          -- The booklet supplies R2/R3/R4 according to the surviving groups.
-          -- Keep the native resolution checkpoint while allowing all outcomes.
-          lead <- getLead
-          chooseOne lead [Label ("Finish Labyrinth resolution " <> tshow n) [EndOfScenario Nothing]]
-          pure scenario
+        ScenarioResolution (Resolution n) | n `elem` [1, 2, 3, 4] -> resolveEpic attrs n
         _ -> EpicLabyrinth . toAttrs <$> liftRunMessage message
           (overAttrs (const attrs) $ Native.theLabyrinthsOfLunacy attrs.difficulty)
+
+resolveEpic :: ReverseQueue m => ScenarioAttrs -> Int -> m EpicLabyrinth
+resolveEpic attrs result = NativeHelpers.scenarioI18n $ scope "resolutions" do
+  replica <- getEpicReplica
+  meta <- NativeHelpers.getMeta
+  let started = getMetaKeyDefault "epicLabyrinthResolution" Nothing attrs :: Maybe Int
+      completed = NativeMeta.completeCurrentGroup (result /= 1) meta
+      updated = setMetaKey "epicLabyrinthResolution" result
+        $ setMetaKey "playedGroups" completed.playedGroups
+        $ setMetaKey "survivedGroups" completed.survivedGroups attrs
+  when (isNothing started) do
+    -- Local R1 arrives as soon as this group fails; other surviving groups
+    -- are still playing. Successful global endings establish all outcomes.
+    for_ (filter (\(group, _) -> result /= 1 || group == replica.replicaGroup)
+      $ Map.toList replica.replicaGroups) $ \(group, state) -> do
+      let survived = state.groupSurviving && not (result == 1 && group == replica.replicaGroup)
+          outcome = if survived then Log.TheGroupEscapedTheLabyrinth else Log.TheGroupPerished
+      record $ case group of
+        GroupA -> Log.GroupA outcome
+        GroupB -> Log.GroupB outcome
+        GroupC -> Log.GroupC outcome
+    when (result == 1) do
+      emitOperation $ SetSurviving False
+      selectEach UneliminatedInvestigator $ push . InvestigatorKilled (toSource attrs)
+  -- The coordinator's survivor count already chose this printed resolution;
+  -- single-mode mini-campaign inference must not replace R3 or R4 with R2.
+  resolution $ "resolution" <> tshow result
+  when (result == 1) $ push GameOver
+  endOfScenario
+  pure $ EpicLabyrinth updated
 
 epicSetup :: ReverseQueue m => ScenarioAttrs -> m EpicLabyrinth
 epicSetup attrs = runScenarioSetup EpicLabyrinth attrs do
@@ -286,6 +315,13 @@ handleDeliveryBody attrs = \case
     pure $ EpicLabyrinth attrs {scenarioSetAsideCards = filter ((/= toCardId card) . toCardId) attrs.scenarioSetAsideCards}
   ShuffleJailor -> shuffleSetAsideIntoDeck Deck.EncounterDeck (cardIs Enemies.theJailor) >> pure (EpicLabyrinth attrs)
   SpawnPetAtRoundEnd -> pure $ EpicLabyrinth $ setMetaKey "epicLabyrinthPendingPet" True attrs
+  ChooseDiagramRecipient code -> do
+    lead <- getLead
+    investigators <- select UneliminatedInvestigator
+    let def = fromJustNote "the event only sends printed diagrams" $ lookupCardDef code
+    card <- getSetAsideCard def
+    chooseOneM lead $ targets investigators (`takeControlOfSetAsideAsset` card)
+    pure $ EpicLabyrinth attrs
   ReceiveDiagram code -> do
     lead <- getLead
     let def = fromJustNote "the event only sends printed diagrams" $ lookupCardDef code

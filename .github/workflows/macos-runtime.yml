@@ -1,0 +1,128 @@
+name: Prepare macOS ARM64 native runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - rules/extensions/**
+      - rules/tests/**
+      - scripts/build-rules-*.mjs
+      - scripts/rules-runtime-manifest.mjs
+      - scripts/rules-native-test-environment.mjs
+      - scripts/rules-build-space.mjs
+      - scripts/package-macos-runtime.*
+      - tests/package-macos-runtime.test.ts
+      - .github/workflows/macos-runtime.yml
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Apple Silicon runner (hosted builds may stop at the disk reserve)
+        type: choice
+        options: [macos-15, self-hosted]
+        default: macos-15
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chronicle-macos-native-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    name: Build, execute full native tests and export ad-hoc archive
+    runs-on: ${{ inputs.runner != 'self-hosted' && 'macos-15' || fromJSON('["self-hosted","macOS","ARM64"]') }}
+    timeout-minutes: 360
+    env:
+      ARKHAM_RULES_DISK_RESERVE_GIB: 2
+      ARKHAM_RULES_GHC_HEAP: 4G
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify actual architecture and initial resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = Darwin
+          test "$(uname -m)" = arm64
+          node -e 'if (process.platform !== "darwin" || process.arch !== "arm64") throw Error("An actual Apple Silicon Node runtime is required")'
+          memory_bytes=$(sysctl -n hw.memsize)
+          free_kib=$(df -k "$RUNNER_TEMP" | awk 'NR==2 { print $4 }')
+          test "$memory_bytes" -ge 6442450944 || { echo 'At least 6 GiB RAM is required; 16 GiB is recommended.'; exit 1; }
+          test "$free_kib" -ge 8388608 || { echo 'At least 8 GiB initially free is required; 24 GiB is recommended for a cold build.'; exit 1; }
+          xcrun --find clang
+          command -v codesign
+          command -v otool
+          command -v install_name_tool
+          command -v pkg-config
+          echo "ARKHAM_RULES_SOURCE=$RUNNER_TEMP/chronicle-native-$GITHUB_REPOSITORY_ID/source" >> "$GITHUB_ENV"
+          echo "ARKHAM_RULES_TOOLCHAIN=$RUNNER_TEMP/chronicle-native-$GITHUB_REPOSITORY_ID/toolchain" >> "$GITHUB_ENV"
+          echo "ARKHAM_RULES_BASE_RUNTIME=$RUNNER_TEMP/chronicle-native-$GITHUB_REPOSITORY_ID/base/game" >> "$GITHUB_ENV"
+      - name: Prepare GMP on the disposable hosted worker
+        if: inputs.runner != 'self-hosted'
+        run: brew install gmp
+      - name: Use the selected GMP development files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v brew > /dev/null; then
+            gmp_prefix=$(brew --prefix gmp)
+            echo "PKG_CONFIG_PATH=$gmp_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+            echo "C_INCLUDE_PATH=$gmp_prefix/include${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}" >> "$GITHUB_ENV"
+            echo "LIBRARY_PATH=$gmp_prefix/lib${LIBRARY_PATH:+:$LIBRARY_PATH}" >> "$GITHUB_ENV"
+          fi
+      - name: Verify required GMP
+        run: pkg-config --exists gmp
+      - run: npm ci
+      - name: Restore the checksum-pinned base distribution without starting a service
+        shell: bash
+        run: |
+          set -euo pipefail
+          native_dir="$RUNNER_TEMP/chronicle-native-$GITHUB_REPOSITORY_ID"
+          mkdir -p "$native_dir/base" output/macos-runtime-logs
+          curl --fail --location --retry 3 https://github.com/halogenandtoast/ArkhamHorror/releases/download/v20260904.1/ArkhamHorror-macos-arm64-v20260904.1.tar.gz -o "$native_dir/base-runtime.tar.gz"
+          printf '%s  %s\n' 29061cbdb683cc7b98f56fc45cb64fbc3762e5a21796406c429a936033bacf39 "$native_dir/base-runtime.tar.gz" | shasum -a 256 --check
+          tar -xzf "$native_dir/base-runtime.tar.gz" -C "$native_dir/base"
+      - name: Restore private compiler and full native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --dependencies 2>&1 | tee output/macos-runtime-logs/dependencies.log
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --test-dependencies 2>&1 | tee output/macos-runtime-logs/test-dependencies.log
+      - name: Compile and execute the full aggregate and prepare its candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --incremental-native --direct-objects --test --compact-build --prepare-only 2>&1 | tee output/macos-runtime-logs/native-build.log
+      - name: Export the exact tested candidate as a verified ad-hoc archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate=$(node --input-type=module -e 'import {readFileSync} from "node:fs"; const line=readFileSync("output/macos-runtime-logs/native-build.log","utf8").split("\n").find(line=>line.startsWith("Verified candidate prepared without replacing the installed runtime: ")); if (!line) throw Error("No passing prepared candidate"); process.stdout.write(line.slice("Verified candidate prepared without replacing the installed runtime: ".length));')
+          source_epoch=$(git show -s --format=%ct HEAD)
+          node scripts/package-macos-runtime.mjs --candidate "$candidate" --proof output/rules-server/rules-behavior-tests.json --base-archive "$RUNNER_TEMP/chronicle-native-$GITHUB_REPOSITORY_ID/base-runtime.tar.gz" --output output/macos-runtime --source-epoch "$source_epoch" 2>&1 | tee output/macos-runtime-logs/package.log
+      - name: Retain the completed package for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicle-macos-arm64-${{ github.sha }}
+          path: output/macos-runtime
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain actual build and acceptance records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chronicle-macos-native-evidence-${{ github.sha }}
+          path: |
+            output/macos-runtime-logs
+            output/rules-server/rules-behavior-tests.json
+            output/rules-server/rules-native-test-result.json
+            output/rules-server/rules-build-input.json
+            output/rules-server/rules-native-link.json
+            output/macos-runtime/package-failure.json
+          if-no-files-found: ignore
+          retention-days: 14

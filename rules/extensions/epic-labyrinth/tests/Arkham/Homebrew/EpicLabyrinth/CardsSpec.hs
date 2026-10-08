@@ -1,6 +1,7 @@
 module Arkham.Homebrew.EpicLabyrinth.CardsSpec (spec) where
 
 import Arkham.Asset.Cards.Standalone qualified as Assets
+import Arkham.Asset.Types (Field (AssetCardId))
 import Arkham.Action qualified as Action
 import Arkham.Agenda.Sequence qualified as Agenda
 import Arkham.Agenda.Types (Field (AgendaSequence))
@@ -23,23 +24,29 @@ import Arkham.Homebrew.EpicLabyrinth.Types qualified as Epic
 import Arkham.Homebrew.EpicLabyrinth.Treacheries.ParadoxEffect qualified as Paradox
 import Arkham.Id
 import Arkham.Game.Base (Game (..))
-import Arkham.Helpers.Scenario (getVictoryDisplay, getScenarioMetaKeyDefault)
+import Arkham.Game.State (GameState (..))
+import Arkham.Helpers.Log (getHasRecord)
+import Arkham.Helpers.Scenario (getVictoryDisplay, getScenarioMetaKeyDefault, scenarioField)
 import Arkham.Investigator.Cards qualified as Investigators
+import Arkham.Investigator.Types qualified as Investigator
 import Arkham.Location.CardDefs.TheLabyrinthsOfLunacy qualified as Locations
-import Arkham.Location.Types (Field (LocationDoom))
+import Arkham.Location.Types (LocationAttrs (..), Field (LocationDoom))
 import Arkham.Matcher qualified as Matcher
 import Arkham.Message.Story (StoryMessage (PlaceStory))
 import Arkham.Placement
 import Arkham.Phase (Phase (CampaignPhase, MythosPhase))
 import Arkham.Projection
 import Arkham.Source
-import Arkham.Scenario.Types (setMetaKey)
+import Arkham.Scenario.Types (Field (ScenarioSetAsideCards), setMetaKey)
+import Arkham.Scenarios.TheLabyrinthsOfLunacy.Key qualified as Log
+import Arkham.Scenarios.TheLabyrinthsOfLunacy.Meta qualified as NativeMeta
 import Arkham.Story.CardDefs.TheLabyrinthsOfLunacy qualified as Stories
 import Arkham.Treachery.CardDefs.TheLabyrinthsOfLunacy qualified as Treacheries
 import Arkham.Zone (OutOfPlayZone (SetAsideZone))
 import Data.UUID qualified as UUID
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
+import Data.Text qualified as Text
 import TestImport qualified as TI
 import TestImport.New
 
@@ -159,6 +166,80 @@ spec = describe "Epic Labyrinth original player interactions and encounter cards
         free = overAttrs (\a -> a {enemyPlacement = AtLocation $ LocationId UUID.nil}) builder
     any ((== 1) . (.index)) (getAbilities locked) `TI.shouldBe` True
     any ((== 1) . (.index)) (getAbilities free) `TI.shouldBe` False
+
+  for_ [(Locations.chamberOfHunger, Assets.hungerDiagram, Assets.hungerDiagramEpicMultiplayer),
+        (Locations.chamberOfDecay, Assets.decayDiagram, Assets.decayDiagramEpicMultiplayer),
+        (Locations.chamberOfRot, Assets.rotDiagram, Assets.rotDiagramEpicMultiplayer)] $
+    \(definition, singleDiagram, epicDiagram) -> for_ [False, True] $ \epic ->
+      it ("clearing chamber " <> show (toCardCode definition) <> " enables its printed diagram pickup in " <> if epic then "Epic mode" else "Single mode")
+        . scenarioTestWithDifficulty Investigators.jennyBarnes Standard "70001" $ \self -> do
+          void $ genPlayerCard $ toCardDef $ toAttrs self
+          overTest $ modeL %~ fmap (overAttrs $ setMetaKey "epicMultiplayer" epic)
+          chamber <- testLocationWithDef definition $ \attrs -> attrs {locationRevealed = True}
+          self `moveTo` chamber
+          diagram <- genCard $ if epic then epicDiagram else singleDiagram
+          run $ SetAsideCards [diagram]
+          -- Native performability checks must reject the same printed fast
+          -- action while clues remain, rather than merely expose a builder.
+          run $ PlaceClues GameSource (LocationTarget chamber.id) 1
+          let pickup = Matcher.AbilityIs (LocationSource chamber.id) 1
+                <> Matcher.PerformableAbilityBy (Matcher.InvestigatorWithId self.id) []
+          select pickup `shouldReturn` []
+          run $ RemoveClues GameSource (LocationTarget chamber.id) 1
+          abilities <- select pickup
+          length abilities `shouldBe` 1
+          case abilities of
+            [ability] -> self `useAbility` ability
+            _ -> expectationFailure "the cleared chamber must have exactly one printed pickup"
+          assets <- select $ Matcher.AssetControlledBy (Matcher.InvestigatorWithId self.id)
+            <> Matcher.assetIs (if epic then epicDiagram else singleDiagram)
+          length assets `shouldBe` 1
+          traverse (field AssetCardId) assets `shouldReturn` [toCardId diagram]
+          map toCardId <$> scenarioField ScenarioSetAsideCards `shouldReturn` []
+          select pickup `shouldReturn` []
+
+  for_ [(1, GroupA, [GroupB, GroupC]), (2, GroupB, [GroupB]),
+        (3, GroupC, [GroupA, GroupC]), (4, GroupA, allGroups)] $ \(result, group, survivors) ->
+    it ("global Labyrinth R" <> show result <> " reads its printed ending, records actual group outcomes and finishes the native game once")
+      . scenarioTestWithDifficulty Investigators.jennyBarnes Standard "70001" $ \self -> do
+        void $ genPlayerCard $ toCardDef $ toAttrs self
+        let initial = either (error . show) id $ initialEvent $ Map.fromList
+              [(table, Set.singleton self.id) | table <- allGroups]
+            state = initial {Epic.eventGroups = Map.mapWithKey
+              (\table entry -> entry {Epic.groupSurviving = table `elem` survivors}) initial.eventGroups}
+            replica = either (error . show) id $ replicaFor group state
+            receipt = ScenarioSpecific "epicLabyrinth.delivery" $ toJSON $
+              Epic.DeliveryEnvelope (Epic.DeliveryId "native-labyrinth:resolution") (Epic.ResolveTogether result)
+        overTest $ modeL %~ fmap (overAttrs $ setMetaKey "epicMultiplayer" True
+          . setMetaKey "epicLabyrinthReplica" replica)
+        run PreScenarioSetup
+        -- R1 starts with a genuinely live investigator, so its native kill
+        -- and possible last-investigator queue transition execute here.
+        Investigator.investigatorKilled . toAttrs <$> getInvestigator self.id `shouldReturn` False
+        run receipt
+        reading <- getGame
+        tshow (toJSON reading.gameQuestion) `shouldSatisfy` Text.isInfixOf
+          ("$standalone.theLabyrinthsOfLunacy.resolutions.resolution" <> tshow result <> ".title")
+        reading.gameGameState `shouldBe` IsActive
+        Investigator.investigatorKilled . toAttrs <$> getInvestigator self.id `shouldReturn` (result == 1)
+        for_ allGroups $ \table -> do
+          let outcome = if table `elem` survivors then Log.TheGroupEscapedTheLabyrinth else Log.TheGroupPerished
+          getHasRecord (case table of GroupA -> Log.GroupA outcome; GroupB -> Log.GroupB outcome; GroupC -> Log.GroupC outcome)
+            `shouldReturn` (result /= 1 || table == group)
+        let nativeGroup = case group of GroupA -> NativeMeta.GroupA; GroupB -> NativeMeta.GroupB; GroupC -> NativeMeta.GroupC
+        getScenarioMetaKeyDefault "playedGroups" ([] :: [NativeMeta.Group]) `shouldReturn` [nativeGroup]
+        getScenarioMetaKeyDefault "survivedGroups" ([] :: [NativeMeta.Group]) `shouldReturn`
+          [nativeGroup | result /= 1]
+        getScenarioMetaKeyDefault "epicLabyrinthResolution" (0 :: Int) `shouldReturn` result
+        before <- getScenarioMetaKeyDefault "epicLabyrinthOutbox" [] :: TestAppT [Epic.Request]
+        length (filter ((== Epic.SetSurviving False) . Epic.requestOperation) before) `shouldBe` if result == 1 then 1 else 0
+        runAll [receipt, AskMap reading.gameQuestion]
+        replayed <- getGame
+        replayed.gameQuestion `shouldBe` reading.gameQuestion
+        getScenarioMetaKeyDefault "epicLabyrinthOutbox" [] `shouldReturn` before
+        Investigator.investigatorKilled . toAttrs <$> getInvestigator self.id `shouldReturn` (result == 1)
+        chooseFirstOption "continue the printed Labyrinth resolution"
+        gameGameState <$> getGame `shouldReturn` IsOver
 
   it "Rot Diagram adds one doom and flips exactly the selected number of clues" . gameTest $ \self -> do
     chamber <- testLocationWithDef Locations.chamberOfDecay id
