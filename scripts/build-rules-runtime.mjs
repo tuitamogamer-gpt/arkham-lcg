@@ -7,8 +7,8 @@ import {
   chmod,
   copyFile,
   mkdir,
-  open,
   readFile,
+  realpath,
   readdir,
   rename,
   rm,
@@ -24,6 +24,7 @@ import { verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
 import { createBuildSpaceGuard, runWithBuildSpace } from "./rules-build-space.mjs";
 import { nativeTestEnvironment } from "./rules-native-test-environment.mjs";
 import { postgresConfigureEnvironment, postgresSnprintfSource } from "./rules-native-postgres.mjs";
+import { rewriteRuntimeLoadPaths } from "./rules-native-load-paths.mjs";
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const upstreamRevision = "03a7f1e74925744f021f6e8fe0e39945d2c3a833";
@@ -1408,14 +1409,30 @@ async function packageRuntime(binary, buildSourceHash) {
         "dir",
       );
   }
+  const toolchainRoots = [...new Set([toolchain, await realpath(toolchain)])];
+  const rpathRoots = [...new Set([toolchain, source, baseRuntime,
+    ...await Promise.all([toolchain, source, baseRuntime].map(path => realpath(path)))])];
+  const candidateBinary = resolve(derivedRuntime, "bin/arkham-api");
   const linked = await capture("otool", [
     "-L",
-    resolve(derivedRuntime, "bin/arkham-api"),
+    candidateBinary,
   ]);
+  const loadCommands = await capture("otool", ["-l", candidateBinary]);
+  const loadPathReport = {
+    schema: 1, nativeTestsPassed: Boolean(behavior),
+    status: behavior ? "native tests passed; path rewrite and signing pending"
+      : "engine compiled; native tests not run; path rewrite and signing pending",
+    extensionSourceSha256: buildSourceHash, nativeEngineSha256,
+    candidateBinarySha256BeforeRewrite: await sha256(candidateBinary),
+    toolchainRoots, rpathRoots, otoolDependenciesBeforeRewrite: linked,
+    otoolLoadCommandsBeforeRewrite: loadCommands,
+  };
+  const loadPathReportPath = resolve(project, "output/rules-server/rules-native-load-paths.json");
+  await writeFile(loadPathReportPath, JSON.stringify(loadPathReport, null, 2) + "\n", { mode: 0o600 });
   for (const line of linked.split("\n").slice(1)) {
     const dependency = line.trim().split(" (")[0];
     if (
-      (dependency.startsWith(toolchain) ||
+      (toolchainRoots.some(root => dependency === resolve(root, "postgres/lib/libpq.5.dylib")) ||
         dependency === "@rpath/libpq.5.dylib") &&
       dependency.endsWith("/libpq.5.dylib")
     ) {
@@ -1429,10 +1446,6 @@ async function packageRuntime(binary, buildSourceHash) {
       );
     }
   }
-  const loadCommands = await capture("otool", [
-    "-l",
-    resolve(derivedRuntime, "bin/arkham-api"),
-  ]);
   const temporaryRpaths = [
     ...loadCommands.matchAll(
       /cmd LC_RPATH[\s\S]*?\n\s*path ([^\n]+?) \(offset \d+\)/g,
@@ -1441,9 +1454,7 @@ async function packageRuntime(binary, buildSourceHash) {
     .map((match) => match[1])
     .filter(
       (path) =>
-        path.startsWith(toolchain) ||
-        path.startsWith("/private/tmp/") ||
-        path.startsWith("/tmp/"),
+        rpathRoots.some(root => path === root || path.startsWith(root + "/")),
     );
   const relativeDependencies = linked
     .split("\n")
@@ -1462,7 +1473,12 @@ async function packageRuntime(binary, buildSourceHash) {
         );
     }
   }
-  await rewriteRuntimeLoadPaths(resolve(derivedRuntime, "bin/arkham-api"));
+  const loadPathPlan = await rewriteRuntimeLoadPaths(candidateBinary, { toolchainRoots, rpathRoots });
+  await writeFile(loadPathReportPath, JSON.stringify({ ...loadPathReport,
+    status: "fixed-size path rewrite completed; signing and packaging pending",
+    candidateBinarySha256AfterRewrite: await sha256(candidateBinary), edits: loadPathPlan.edits,
+  }, null, 2) + "\n", { mode: 0o600 });
+  console.log(`Rewrote ${loadPathPlan.edits.length} fixed-size Mach-O path slots to persistent runtime libraries.`);
   const verifiedLoads = await capture("otool", [
     "-L",
     resolve(derivedRuntime, "bin/arkham-api"),
@@ -1668,87 +1684,6 @@ async function publishPreparedCandidate(path) {
   console.log(`Verified runtime installed: ${installedRuntime}`);
 }
 
-async function rewriteRuntimeLoadPaths(path) {
-  // Apple's SDK mach-o/loader.h defines this 32-byte little-endian header and
-  // string offsets for LC_LOAD_DYLIB/LC_RPATH. Shorter replacements fit existing
-  // slots: no command/segment offsets move and no whole-file temporary copy is
-  // needed. codesign below regenerates the signature after these header edits.
-  const handle = await open(path, "r+");
-  try {
-    const header = Buffer.alloc(32);
-    if (
-      (await handle.read(header, 0, 32, 0)).bytesRead !== 32 ||
-      header.readUInt32LE(0) !== 0xfeedfacf ||
-      header.readUInt32LE(4) !== 0x0100000c
-    )
-      throw new Error("Expected a little-endian arm64 Mach-O executable.");
-    const count = header.readUInt32LE(16);
-    const bytes = header.readUInt32LE(20);
-    if (count < 1 || count > 4096 || bytes < 8 || bytes > 1024 * 1024)
-      throw new Error("Invalid Mach-O load command bounds.");
-    const commands = Buffer.alloc(bytes);
-    if ((await handle.read(commands, 0, bytes, 32)).bytesRead !== bytes)
-      throw new Error("Truncated Mach-O load commands.");
-    let offset = 0;
-    let pq = 0;
-    const edits = [];
-    for (let index = 0; index < count; index++) {
-      if (offset + 8 > bytes) throw new Error("Truncated Mach-O command.");
-      const kind = commands.readUInt32LE(offset);
-      const size = commands.readUInt32LE(offset + 4);
-      if (size < 8 || size % 8 !== 0 || offset + size > bytes)
-        throw new Error("Invalid Mach-O command size.");
-      if (kind === 0xc || kind === 0x8000001c) {
-        if (size < 16) throw new Error("Invalid Mach-O path command.");
-        const relative = commands.readUInt32LE(offset + 8);
-        const start = offset + relative;
-        const end = offset + size;
-        if (relative < 12 || start >= end)
-          throw new Error("Invalid Mach-O path offset.");
-        const zero = commands.indexOf(0, start);
-        if (zero < start || zero >= end)
-          throw new Error("Unterminated Mach-O path.");
-        const original = commands.toString("utf8", start, zero);
-        const temporary =
-          original.startsWith("/private/tmp/") || original.startsWith("/tmp/");
-        let replacement;
-        if (
-          kind === 0xc &&
-          (temporary || original.startsWith("@rpath/")) &&
-          original.endsWith("/libpq.5.dylib")
-        ) {
-          replacement = "@loader_path/../lib/libpq.5.dylib";
-          pq++;
-        } else if (kind === 0x8000001c && temporary)
-          replacement = "@loader_path/../lib";
-        if (replacement) {
-          if (Buffer.byteLength(replacement) + 1 > end - start)
-            throw new Error(
-              "A persistent Mach-O path does not fit its original slot.",
-            );
-          commands.fill(0, start, end);
-          commands.write(replacement, start, "utf8");
-          edits.push([start, end - start]);
-        }
-      }
-      offset += size;
-    }
-    if (offset !== bytes || pq !== 1)
-      throw new Error("Unexpected Mach-O libpq registration.");
-    for (const [start, length] of edits)
-      if (
-        (await handle.write(commands, start, length, 32 + start))
-          .bytesWritten !== length
-      )
-        throw new Error("Incomplete Mach-O path write.");
-    await handle.sync();
-    console.log(
-      `Rewrote ${edits.length} fixed-size Mach-O path slots to persistent runtime libraries.`,
-    );
-  } finally {
-    await handle.close();
-  }
-}
 
 async function runFocusedTests() {
   const testBinary = resolve(buildOutput, "barkham-spec/barkham-spec");

@@ -11,6 +11,9 @@ on:
       - scripts/rules-native-test-environment.mjs
       - scripts/rules-native-postgres.*
       - tests/rules-native-postgres.test.ts
+      - scripts/rules-native-load-paths.*
+      - tests/rules-native-load-paths.test.ts
+      - tests/fixtures/macos-pinned-psql-load-commands.json
       - scripts/rules-build-space.mjs
       - scripts/package-macos-runtime.*
       - tests/package-macos-runtime.test.ts
@@ -119,6 +122,29 @@ jobs:
             verifiedAt:new Date().toISOString()
           }, null, 2) + "\n");
           NODE
+      - name: Record actual compiler and PostgreSQL dynamic imports before the full build
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="$RUNNER_TEMP/chronicle-linker-probe-$GITHUB_REPOSITORY_ID"
+          mkdir -p "$probe"
+          cat > "$probe/Main.hs" <<'HASKELL'
+          main :: IO ()
+          main = print (product [1 .. 200 :: Integer])
+          HASKELL
+          "$ARKHAM_RULES_TOOLCHAIN/ghc/bin/ghc" -static -threaded -rtsopts -optl-Wl,-S,-x "$probe/Main.hs" -o "$probe/integer-probe" 2>&1 | tee output/macos-runtime-logs/compiler-link-probe.log
+          "$probe/integer-probe" >> output/macos-runtime-logs/compiler-link-probe.log
+          otool -L "$probe/integer-probe" >> output/macos-runtime-logs/compiler-link-probe.log
+          otool -l "$probe/integer-probe" >> output/macos-runtime-logs/compiler-link-probe.log
+          cat > "$probe/postgres.c" <<'C'
+          #include <libpq-fe.h>
+          #include <stdio.h>
+          int main(void) { printf("%d\n", PQlibVersion()); return PQlibVersion() == 140015 ? 0 : 1; }
+          C
+          cc -I "$ARKHAM_RULES_TOOLCHAIN/postgres/include" -L "$ARKHAM_RULES_TOOLCHAIN/postgres/lib" "$probe/postgres.c" -lpq -o "$probe/postgres-probe" 2>&1 | tee output/macos-runtime-logs/postgres-link-probe.log
+          "$probe/postgres-probe" >> output/macos-runtime-logs/postgres-link-probe.log
+          otool -L "$probe/postgres-probe" >> output/macos-runtime-logs/postgres-link-probe.log
+          otool -l "$probe/postgres-probe" >> output/macos-runtime-logs/postgres-link-probe.log
       - name: Restore full native Haskell dependencies
         shell: bash
         run: |
@@ -155,6 +181,7 @@ jobs:
             output/rules-server/rules-native-test-result.json
             output/rules-server/rules-build-input.json
             output/rules-server/rules-native-link.json
+            output/rules-server/rules-native-load-paths.json
             output/macos-runtime/package-failure.json
           if-no-files-found: ignore
           retention-days: 14
