@@ -98,6 +98,27 @@ test("an enemy's stored location must belong to the scenario", () => {
   assert.ok(validSave(s));
 });
 
+test("decision descriptions accept optional text and reject malformed rendered values", () => {
+  const saved = createGame("standard", 39);
+  saved.decision = {
+    title: "Choose a path",
+    description: "The investigation continues.",
+    choices: [{ id: "continue", label: "Continue", effects: [] }],
+  };
+  for (const detail of [undefined, "", "Spend one clue."]) {
+    saved.decision.choices[0].detail = detail;
+    const restored = decodeSave(JSON.parse(JSON.stringify(saved)));
+    assert.ok(restored);
+    assert.equal(restored.decision?.choices[0].detail, detail);
+  }
+  for (const detail of [{ broken: true }, [], null, 1, true]) {
+    const malformed = JSON.parse(JSON.stringify(saved));
+    malformed.decision.choices[0].detail = detail;
+    assert.equal(validSave(malformed), false);
+    assert.equal(decodeSave(malformed), null);
+  }
+});
+
 test("player-card doom survives a save while omitted legacy doom remains valid", () => {
   const s = createGame("standard", 38);
   assert.ok(validSave(s));

@@ -64,6 +64,7 @@ import {
   nativeEpicSetupComplete,
   type EpicReadyState,
 } from "../game/epicReady";
+import { createCompanionSync } from "../game/companionSync";
 import {
   Button,
   CardFace,
@@ -582,83 +583,75 @@ export function CompanionTable({
   const [view, setView] = useState<
     "bag" | "discard" | "victory" | "hand" | "log" | null
   >(null);
-  const generation = useRef(0),
-    mounted = useRef(false),
-    inFlight = useRef(false),
-    step = useRef(-1);
+  const sync = useRef<{
+    sessionKey: string;
+    controller: ReturnType<typeof createCompanionSync>;
+  } | null>(null);
   const sessionKey = `${session.gameId}:${session.seatId || ""}`;
   const milestone = useCompanionMilestones(snapshot, sessionKey);
-  const load = useCallback(async () => {
-    const version = ++generation.current;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const before = await getCompanionGameStep(session);
-      const raw = await getCompanionGame(session);
-      const after = await getCompanionGameStep(session);
-      if (!mounted.current || version !== generation.current) return;
-      if (before.step !== after.step && attempt < 2) continue;
-      // Keep the earlier revision when another seat changed the game during
-      // the final read. The next poll must still detect that newer revision.
-      step.current = before.step;
-      const loaded = companionSnapshot(raw);
-      latestEpicGame.current = loaded.game;
-      setSnapshot(loaded);
-      setSolo(obj(raw).multiplayerMode === "Solo");
-      setError("");
-      return;
-    }
-  }, [session.gameId, session.seatId]);
+  const load = useCallback(
+    () =>
+      sync.current?.sessionKey === sessionKey
+        ? sync.current.controller.refresh()
+        : Promise.resolve(),
+    [sessionKey],
+  );
   useEffect(() => {
-    mounted.current = true;
-    step.current = -1;
+    let disposed = false;
     setSnapshot(null);
+    setBusy(false);
+    setError("");
     setSelected("");
     setNativeInspection(null);
-    void load().catch(
-      (cause) =>
-        mounted.current &&
+    const controller = createCompanionSync({
+      readStep: () => getCompanionGameStep(session),
+      readGame: () => getCompanionGame(session),
+      change: (raw) => {
+        const loaded = companionSnapshot(raw);
+        latestEpicGame.current = loaded.game;
+        setSnapshot(loaded);
+        setSolo(obj(raw).multiplayerMode === "Solo");
+        setError("");
+      },
+      error: (cause, operation) =>
         setError(
           cause instanceof Error
             ? cause.message
-            : "Could not load this investigation.",
+            : operation === "action"
+              ? "Could not complete this choice."
+              : operation === "poll"
+                ? "Connection interrupted. Your game is saved."
+                : "Could not load this investigation.",
         ),
-    );
+      busy: (value) => {
+        setBusy(value);
+        if (value) setError("");
+      },
+    });
+    sync.current = { sessionKey, controller };
+    void controller.refresh();
     void getCompanionPlayOptions()
-      .then((value) => mounted.current && setOptions(value))
+      .then((value) => !disposed && setOptions(value))
       .catch(() => {});
     void getCompanionPresentation()
-      .then((value) => mounted.current && setPresentation(value))
+      .then((value) => !disposed && setPresentation(value))
       .catch(() => {});
     void getCompanionCardDefinitions()
-      .then((value) => mounted.current && setNativeDefinitions(value))
+      .then((value) => !disposed && setNativeDefinitions(value))
       .catch(() => {});
-    const poll = async () => {
-      if (document.hidden || inFlight.current) return;
-      try {
-        const current = await getCompanionGameStep(session);
-        if (!inFlight.current && current.step !== step.current) await load();
-      } catch (cause) {
-        if (mounted.current)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "Connection interrupted. Your game is saved.",
-          );
-      }
+    const poll = () => {
+      if (!document.hidden) void controller.poll();
     };
-    const timer = window.setInterval(() => {
-      void poll();
-    }, 2500);
-    const resume = () => {
-      if (!document.hidden) void poll();
-    };
-    document.addEventListener("visibilitychange", resume);
+    const timer = window.setInterval(poll, 2500);
+    document.addEventListener("visibilitychange", poll);
     return () => {
-      mounted.current = false;
-      generation.current++;
+      disposed = true;
+      controller.dispose();
+      if (sync.current?.controller === controller) sync.current = null;
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", resume);
+      document.removeEventListener("visibilitychange", poll);
     };
-  }, [sessionKey, load]);
+  }, [sessionKey]);
   useEffect(() => {
     setEpicReady(null);
     latestEpicGame.current = null;
@@ -697,28 +690,10 @@ export function CompanionTable({
         throw new Error(
           "Wait for all three groups to finish setup before continuing.",
         );
-      if (inFlight.current) return;
-      inFlight.current = true;
-      generation.current++;
-      setBusy(true);
-      setError("");
-      try {
-        await action();
-        await load();
-      } catch (cause) {
-        if (mounted.current)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "Could not complete this choice.",
-          );
-        throw cause;
-      } finally {
-        inFlight.current = false;
-        if (mounted.current) setBusy(false);
-      }
+      if (sync.current?.sessionKey === sessionKey)
+        await sync.current.controller.perform(action);
     },
-    [load, epicBlocked],
+    [sessionKey, epicBlocked],
   );
   const submit = (reply: CompanionAnswer) =>
     perform(() => answerCompanionGame(session, reply));
@@ -1035,7 +1010,7 @@ export function CompanionTable({
               secondary
               onClick={() => {
                 if (catalogError) retryCatalog();
-                void load().catch((cause) => setError(String(cause)));
+                void load();
               }}
             >
               Reconnect

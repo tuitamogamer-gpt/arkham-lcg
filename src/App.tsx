@@ -18,6 +18,7 @@ import {
   Gear,
   GraduationCap,
   House,
+  Info,
   MoonStars,
   Play,
   SpeakerHigh,
@@ -62,7 +63,15 @@ const ExpandedPlay = lazy(() =>
   })),
 );
 import { catalog } from "./game/catalog";
-import { Button, CardDetail, Modal, Sigil } from "./components/Common";
+import {
+  Button,
+  CardDetail,
+  Modal,
+  Sigil,
+  topDialog,
+} from "./components/Common";
+import { PageBoundary } from "./components/PageBoundary";
+import "./app-refinements.css";
 import { ChaosBagPreview } from "./components/ChaosBagPreview";
 import { CardPreviewLayer } from "./components/Previews";
 import { InvestigationAbility } from "./components/InvestigationAbility";
@@ -74,7 +83,8 @@ import {
   readMotionPreference,
   type MotionPreference,
 } from "./components/Motion";
-type Page = "home" | "investigators" | "archive" | "guide" | "game" | "expanded";
+type Page =
+  "home" | "investigators" | "archive" | "guide" | "game" | "expanded";
 function readTempoPreference(): Tempo {
   try {
     const value = localStorage.getItem("arkham-chronicle:tempo");
@@ -109,7 +119,7 @@ function PageLoading() {
     </div>
   );
 }
-function Guide() {
+function Guide({ onExpanded }: { onExpanded: () => void }) {
   return (
     <div className="page-content guide-page">
       <div className="eyebrow">A field guide to the unknown</div>
@@ -160,7 +170,7 @@ function Guide() {
       <section className="coverage-note">
         <CheckCircle size={21} />
         <div>
-          <h3>What you can play in this first build</h3>
+          <h3>Your first case — and what comes next</h3>
           <p>
             Spreading Flames with 1–3 investigators, all controlled by you.
             Choose from Joe Diamond, Daniela Reyes, Trish Scarborough, Dexter
@@ -174,9 +184,18 @@ function Guide() {
             a different ready investigator before taking your first action. At
             the same location, teammates can each commit one card to your test.
             The shared scenario scales with the original party size, even after
-            an investigator is eliminated. Later scenarios, custom decks and
-            campaign upgrades remain in development.
+            an investigator is eliminated.
           </p>
+          <p>
+            Expansions & campaigns opens the separate companion mode for later
+            scenarios, custom decks and campaign upgrades. It requires the local
+            rules server; available content and Alpha/Beta labels follow the
+            connected engine. Spreading Flames works independently, including
+            offline once the app is cached.
+          </p>
+          <Button secondary onClick={onExpanded}>
+            Explore expansions & campaigns <ArrowRight size={17} />
+          </Button>
         </div>
       </section>
       <div className="source-links">
@@ -207,7 +226,29 @@ export default function App() {
     getUpdateAvailable,
     () => false,
   );
-  const [page, setPage] = useState<Page>(() => window.location.hash.startsWith("#investigation=") ? "expanded" : "home");
+  const [page, setPage] = useState<Page>(() =>
+    window.location.hash.startsWith("#investigation=") ? "expanded" : "home",
+  );
+  const mainContent = useRef<HTMLElement>(null);
+  const previousPage = useRef(page);
+  useEffect(() => {
+    const names: Record<Page, string> = {
+      home: "Campaigns",
+      game: "Your investigation",
+      archive: "Card archive",
+      investigators: "Investigator files",
+      guide: "Field guide",
+      expanded: "Expansions & campaigns",
+    };
+    document.title = `${names[page]} · Arkham Chronicle`;
+    if (previousPage.current !== page) {
+      previousPage.current = page;
+      const frame = requestAnimationFrame(() => {
+        if (!topDialog()) mainContent.current?.focus({ preventScroll: true });
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [page]);
   const [companionTableOpen, setCompanionTableOpen] = useState(false);
   const [expandedInvestigator, setExpandedInvestigator] = useState<string>();
   const [game, setGameState] = useState<GameState | null>(readSave);
@@ -278,10 +319,23 @@ export default function App() {
   }, [motion]);
   const [notice, setNotice] = useState("");
   const [saveFailed, setSaveFailed] = useState(false);
+  useEffect(() => {
+    if (!saveFailed) return;
+    const protectUnsavedGame = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", protectUnsavedGame);
+    return () => window.removeEventListener("beforeunload", protectUnsavedGame);
+  }, [saveFailed]);
   const input = useRef<HTMLInputElement>(null);
   const navigate = (p: Page) => {
     if (p !== "expanded" && window.location.hash.startsWith("#investigation="))
-      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}`,
+      );
     setPage(p);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -355,14 +409,18 @@ export default function App() {
           investigatorVersions: catalog.counts.investigatorCount,
         },
         ...(page === "expanded"
-          ? { status: "companion rules table", available: "Content availability follows the connected rules engine" }
-          : game
-          ? gameSummary(game)
-          : {
-              status: "campaign selection",
+          ? {
+              status: "companion rules table",
               available:
-                "Spreading Flames · 1–3 investigators · Joe, Daniela, Trish, Dexter, Isabelle",
-            }),
+                "Content availability follows the connected rules engine",
+            }
+          : game
+            ? gameSummary(game)
+            : {
+                status: "campaign selection",
+                available:
+                  "Spreading Flames · 1–3 investigators · Joe, Daniela, Trish, Dexter, Isabelle",
+              }),
       });
     window.advanceTime = async () => {};
   }, [game, page]);
@@ -412,10 +470,20 @@ export default function App() {
     navigate("game");
   };
   const removeSave = (id: string) => {
-    deleteSave(id);
+    try {
+      deleteSave(id);
+    } catch {
+      setNotice(
+        "This investigation could not be deleted. Your saved copy has been kept; please try again.",
+      );
+      return;
+    }
     setConfirmDelete(null);
     setSaves(listSaves());
     if (game?.id === id) {
+      undoStack.current = [];
+      setUndoDepth(0);
+      setSaveFailed(false);
       commitGame(null);
       navigate("home");
     }
@@ -449,7 +517,19 @@ export default function App() {
     ["guide", "Field guide", BookOpenText],
   ];
   return (
-    <div className={`app ${page === "game" || page === "expanded" && companionTableOpen ? "in-game" : ""}`}>
+    <div
+      className={`app ${page === "game" || (page === "expanded" && companionTableOpen) ? "in-game" : ""}`}
+    >
+      <a
+        className="skip-navigation"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          mainContent.current?.focus();
+        }}
+      >
+        Skip to content
+      </a>
       <CardPreviewLayer game={game} page={page} dispatch={dispatch} />
       <aside className="sidebar">
         <button
@@ -465,12 +545,13 @@ export default function App() {
         <div className="sidebar-rule">
           <span>THE CARD GAME</span>
         </div>
-        <nav>
+        <nav aria-label="Main navigation">
           {navItems.map(([id, label, Icon]) => (
             <button
               className={page === id ? "active" : ""}
               key={id}
               aria-label={label}
+              aria-current={page === id ? "page" : undefined}
               onClick={() => navigate(id)}
             >
               <Icon size={20} weight="light" />
@@ -486,6 +567,7 @@ export default function App() {
                 page === "game" ? "active continue-nav" : "continue-nav"
               }
               aria-label="Current investigation"
+              aria-current={page === "game" ? "page" : undefined}
               onClick={() => navigate("game")}
             >
               <FolderOpen size={20} weight="light" />
@@ -506,6 +588,7 @@ export default function App() {
           <button
             className="sidebar-control"
             aria-label="Toggle ambient sound"
+            aria-pressed={ambience}
             onClick={toggleSound}
           >
             {ambience ? (
@@ -517,12 +600,18 @@ export default function App() {
             <i className={ambience ? "on" : ""} />
           </button>
           <button
-            className="sidebar-control"
+            className={`sidebar-control ${updateAvailable ? "has-update" : ""}`}
             aria-label="Settings & saves"
+            title={
+              updateAvailable
+                ? "An app update is ready in Settings & saves"
+                : "Settings & saves"
+            }
             onClick={() => setSettings(true)}
           >
             <Gear size={18} weight="light" />
             <span>Settings & saves</span>
+            {updateAvailable && <i className="update-dot" aria-hidden="true" />}
           </button>
           <div className="sidebar-foot">
             THE UNKNOWN AWAITS <span>✧</span>
@@ -541,11 +630,11 @@ export default function App() {
                   ? "Your investigation"
                   : page === "archive"
                     ? "Card archive"
-                : page === "guide"
+                    : page === "guide"
                       ? "Field guide"
                       : page === "expanded"
                         ? "Expansions & campaigns"
-                      : "Investigator files"}
+                        : "Investigator files"}
             </span>
           </div>
           <div className="topbar-right">
@@ -569,69 +658,91 @@ export default function App() {
             </div>
           </div>
         </header>
-        {page === "home" && (
-          <Home
-            game={game}
-            onStart={onStart}
-            onResume={() => navigate("game")}
-            onFiles={() => navigate("investigators")}
-            onGuide={() => navigate("guide")}
-            onScenario={(n) =>
-              n === 0 ? (game ? navigate("game") : onStart()) : setScenario(n)
-            }
-          />
-        )}{" "}
-        {page === "archive" && (
-          <Suspense fallback={<PageLoading />}>
-            <Archive
+        <main
+          id="main-content"
+          className="page-content-root"
+          ref={mainContent}
+          tabIndex={-1}
+        >
+          {page === "home" && (
+            <Home
               game={game}
-              inspect={(code, spoilers = false) => {
-                setInspectCatalog(spoilers);
-                setInspect(code);
+              onStart={onStart}
+              onResume={() => navigate("game")}
+              onFiles={() => navigate("investigators")}
+              onGuide={() => navigate("guide")}
+              onExpanded={() => navigate("expanded")}
+            onSaves={() => setSettings(true)}
+            savedCount={saves.length}
+              onScenario={(n) =>
+                n === 0 ? (game ? navigate("game") : onStart()) : setScenario(n)
+              }
+            />
+          )}{" "}
+          {page === "archive" && (
+            <PageBoundary
+              title="The card archive"
+              onHome={() => navigate("home")}
+            >
+              <Suspense fallback={<PageLoading />}>
+                <Archive
+                  game={game}
+                  inspect={(code, spoilers = false) => {
+                    setInspectCatalog(spoilers);
+                    setInspect(code);
+                  }}
+                />
+              </Suspense>
+            </PageBoundary>
+          )}{" "}
+          {page === "investigators" && (
+            <InvestigatorLibrary
+              inspect={setInspect}
+              onExpandedPlay={(code) => {
+                setExpandedInvestigator(code);
+                navigate("expanded");
+              }}
+              onStart={(code) => {
+                if (code) setSelectedInvestigators([code]);
+                onStart();
               }}
             />
-          </Suspense>
-        )}{" "}
-        {page === "investigators" && (
-          <InvestigatorLibrary
-            inspect={setInspect}
-            onExpandedPlay={(code) => {
-              setExpandedInvestigator(code);
-              navigate("expanded");
-            }}
-            onStart={(code) => {
-              if (code) setSelectedInvestigators([code]);
-              onStart();
-            }}
-          />
-        )}{" "}
-        {page === "expanded" && (
-          <Suspense fallback={<PageLoading />}>
-            <ExpandedPlay
-              investigatorCode={expandedInvestigator}
-              inspect={setInspect}
-              onTableOpen={setCompanionTableOpen}
+          )}{" "}
+          {page === "expanded" && (
+            <PageBoundary
+              title="Expansions & campaigns"
+              onHome={() => navigate("home")}
+            >
+              <Suspense fallback={<PageLoading />}>
+                <ExpandedPlay
+                  investigatorCode={expandedInvestigator}
+                  inspect={setInspect}
+                  onTableOpen={setCompanionTableOpen}
+                />
+              </Suspense>
+            </PageBoundary>
+          )}
+          {page === "guide" && (
+            <Guide onExpanded={() => navigate("expanded")} />
+          )}{" "}
+          {page === "game" && game && (
+            <Game
+              key={`${game.id}:${restorationSerial}`}
+              game={game}
+              dispatch={dispatch}
+              inspect={(code, assetId) => {
+                setInspect(code);
+                setInspectAssetId(assetId || null);
+              }}
+              onHome={() => navigate("home")}
+              onExport={() => exportSave(game)}
+              onHistory={() => setHistoryOpen(true)}
+              canUndo={undoDepth > 0}
+              onUndo={undo}
+              saved={!saveFailed}
             />
-          </Suspense>
-        )}
-        {page === "guide" && <Guide />}{" "}
-        {page === "game" && game && (
-          <Game
-            key={`${game.id}:${restorationSerial}`}
-            game={game}
-            dispatch={dispatch}
-            inspect={(code, assetId) => {
-              setInspect(code);
-              setInspectAssetId(assetId || null);
-            }}
-            onHome={() => navigate("home")}
-            onExport={() => exportSave(game)}
-            onHistory={() => setHistoryOpen(true)}
-            canUndo={undoDepth > 0}
-            onUndo={undo}
-            saved={!saveFailed}
-          />
-        )}
+          )}
+        </main>
       </div>
       {page === "game" && game && (
         <EventController
@@ -862,6 +973,37 @@ export default function App() {
             </p>
           </div>
           <div className="settings-actions">
+            {saveFailed && game && (
+              <section className="save-health" role="alert">
+                <strong>Your latest changes are not saved.</strong>
+                <p>
+                  Export this investigation to keep a copy, or retry after
+                  freeing browser storage.
+                </p>
+                <div className="save-health-actions">
+                  <Button secondary onClick={() => exportSave(game)}>
+                    Export current investigation
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      try {
+                        writeSave(game);
+                        if (game.status === "resolution") recordResult(game);
+                        setSaveFailed(false);
+                        setSaves(listSaves());
+                        setNotice("Investigation saved successfully.");
+                      } catch {
+                        setNotice(
+                          "Your browser still could not save this investigation. Export a copy to keep your latest changes.",
+                        );
+                      }
+                    }}
+                  >
+                    Retry saving
+                  </Button>
+                </div>
+              </section>
+            )}
             {updateAvailable && (
               <section className="app-update" aria-label="App update">
                 <strong>A new edition is ready.</strong>
@@ -975,7 +1117,9 @@ export default function App() {
                             ? "Opening hands"
                             : `Round ${v.round} · Act ${v.act}`}{" "}
                         · {v.difficulty} ·{" "}
-                        {new Date(v.updatedAt).toLocaleDateString()}
+                        {Date.parse(v.updatedAt) === 0
+                          ? "Recovered save · date unknown"
+                          : new Date(v.updatedAt).toLocaleDateString()}
                       </small>
                     </div>
                     <div className="save-slot-actions">
@@ -996,12 +1140,17 @@ export default function App() {
                         <FolderOpen size={14} /> Export
                       </button>
                       {confirmDelete === v.id ? (
-                        <button
-                          className="danger"
-                          onClick={() => removeSave(v.id)}
-                        >
-                          <Trash size={14} /> Confirm delete
-                        </button>
+                        <>
+                          <button
+                            className="danger"
+                            onClick={() => removeSave(v.id)}
+                          >
+                            <Trash size={14} /> Confirm delete
+                          </button>
+                          <button onClick={() => setConfirmDelete(null)}>
+                            Cancel
+                          </button>
+                        </>
                       ) : (
                         <button onClick={() => setConfirmDelete(v.id)}>
                           <Trash size={14} /> Delete
@@ -1110,7 +1259,7 @@ export default function App() {
       )}{" "}
       {notice && (
         <div role="status" className="toast">
-          <CheckCircle size={18} />
+          <Info size={18} aria-hidden="true" />
           {notice}
           <button
             onClick={() => setNotice("")}

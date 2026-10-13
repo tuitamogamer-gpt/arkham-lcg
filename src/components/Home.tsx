@@ -2,22 +2,162 @@ import {
   ArrowUpRight,
   ArrowRight,
   BookOpenText,
+  Books,
   LockKey,
   StarFour,
   UsersThree,
   FloppyDisk,
 } from "@phosphor-icons/react";
 import type { GameState } from "../game/types";
-import {
-  card,
-  CARD_ART,
-  PLAYABLE_INVESTIGATORS,
-  thumbArt,
-} from "../game/data";
+import { card, CARD_ART, PLAYABLE_INVESTIGATORS, thumbArt } from "../game/data";
 import { party } from "../game/engine";
 import { readRecord } from "../game/storage";
 import { Button, HoverPreview } from "./Common";
 import { Embers } from "./Motion";
+import "../home-refinements.css";
+
+const phaseLabels: Record<GameState["phase"], string> = {
+  investigation: "Investigation phase",
+  enemy: "Enemy phase",
+  upkeep: "Upkeep phase",
+  mythos: "Mythos phase",
+  roundEnd: "End of round",
+};
+
+function resumeContext(game: GameState): string {
+  if (game.status === "resolution")
+    return "Review the outcome, campaign notes, and experience your party earned.";
+  if (game.introduction && game.introduction !== "complete")
+    return "Continue the introduction, then prepare your investigators.";
+  if (game.status === "mulligan")
+    return "Choose your opening hands before the investigation begins.";
+  if (game.event) return "A table event is waiting for you to continue.";
+  if (game.decision) return "A decision is waiting for your party.";
+  if (game.test)
+    return game.test.stage === "revealed"
+      ? "The chaos token has been drawn. Your skill test is ready to resolve."
+      : "A skill test is in progress. Commit your cards and draw a chaos token.";
+  if (game.window)
+    return "A player window is open. Play an ability or continue.";
+  const current = party(game).find(
+    (member) => member.code === game.turnInvestigator,
+  );
+  if (game.phase === "investigation" && current?.status === "active")
+    return `Return to ${card(current.code).name}’s turn.`;
+  return `${phaseLabels[game.phase]}. Return to the table to continue.`;
+}
+
+function CurrentInvestigation({
+  game,
+  onResume,
+  onFiles,
+  onGuide,
+  onSaves,
+  savedCount,
+}: {
+  game: GameState;
+  onResume: () => void;
+  onFiles: () => void;
+  onGuide: () => void;
+  onSaves?: () => void;
+  savedCount: number;
+}) {
+  const closed = game.status === "resolution";
+  const preparing = game.status === "mulligan";
+  return (
+    <section className="home-session" aria-labelledby="home-session-title">
+      <div className="home-session-main">
+        <div className="home-session-heading">
+          <span className="eyebrow">
+            {closed ? "YOUR LATEST CASE" : "PICK UP THE THREAD"}
+          </span>
+          <span className={`home-session-status ${closed ? "closed" : ""}`}>
+            <span aria-hidden="true" />
+            {closed
+              ? "Case closed"
+              : preparing
+                ? "Preparing your party"
+                : "In progress"}
+          </span>
+        </div>
+        <h2 id="home-session-title">Spreading Flames</h2>
+        <p className="home-session-context">{resumeContext(game)}</p>
+        <dl className="home-session-progress">
+          <div>
+            <dt>Round</dt>
+            <dd>{game.round}</dd>
+          </div>
+          <div>
+            <dt>Difficulty</dt>
+            <dd>{game.difficulty}</dd>
+          </div>
+          {closed ? (
+            <div>
+              <dt>Experience</dt>
+              <dd>{game.campaign.xp} XP</dd>
+            </div>
+          ) : (
+            <>
+              <div>
+                <dt>Act</dt>
+                <dd>{game.act}</dd>
+              </div>
+              <div>
+                <dt>Agenda</dt>
+                <dd>{game.agenda}</dd>
+              </div>
+            </>
+          )}
+        </dl>
+        <ul className="home-session-party" aria-label="Your investigator party">
+          {party(game).map((member) => (
+            <li key={member.code}>
+              <img
+                src={thumbArt(CARD_ART[member.code])}
+                alt=""
+                width={36}
+                height={44}
+                loading="lazy"
+              />
+              <span>
+                <strong>{card(member.code).name}</strong>
+                <small>
+                  {member.status === "defeated"
+                    ? "Defeated"
+                    : member.status === "resigned"
+                      ? "Resigned"
+                      : closed
+                        ? "Survived"
+                        : member.code === game.leadInvestigator
+                          ? "Lead investigator"
+                          : "Investigator"}
+                </small>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="home-session-actions">
+        <Button onClick={onResume} arrow>
+          {closed ? "Review the outcome" : "Return to the table"}
+        </Button>
+        <button className="night-text-link" onClick={onFiles}>
+          Investigator dossiers <ArrowUpRight size={15} aria-hidden="true" />
+        </button>
+        <button className="night-text-link" onClick={onGuide}>
+          Field guide <BookOpenText size={16} aria-hidden="true" />
+        </button>
+        {onSaves && savedCount > 0 && (
+          <button className="night-text-link" onClick={onSaves}>
+            Saved investigations ({savedCount}){" "}
+            <FloppyDisk size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function Record() {
   const record = readRecord();
   if (!record.length) return null;
@@ -80,6 +220,9 @@ export function Home({
   onFiles,
   onGuide,
   onScenario,
+  onExpanded,
+  onSaves,
+  savedCount = 0,
 }: {
   game: GameState | null;
   onStart: () => void;
@@ -87,6 +230,9 @@ export function Home({
   onFiles: () => void;
   onGuide: () => void;
   onScenario: (n: number) => void;
+  onExpanded?: () => void;
+  onSaves?: () => void;
+  savedCount?: number;
 }) {
   return (
     <div className="night-home">
@@ -163,13 +309,20 @@ export function Home({
               <span>CHAPTER I</span>
               <strong>Spreading Flames</strong>
               <span className="case-ready">
-                {game
-                  ? `SAVED · ROUND ${String(game.round).padStart(2, "0")}`
-                  : "READY TO INVESTIGATE"}
+                {game?.status === "resolution"
+                  ? "CASE CLOSED · RECORD AVAILABLE"
+                  : game?.status === "mulligan"
+                    ? "PARTY ASSEMBLED · PREPARING"
+                    : game
+                      ? `IN PROGRESS · ROUND ${String(game.round).padStart(2, "0")}`
+                      : "READY TO INVESTIGATE"}
               </span>
             </div>
             <button className="case-open" onClick={game ? onResume : onStart}>
-              Open the case file <ArrowRight size={18} />
+              {game?.status === "resolution"
+                ? "Review the case file"
+                : "Open the case file"}{" "}
+              <ArrowRight size={18} />
             </button>
           </aside>
         </HoverPreview>
@@ -180,6 +333,29 @@ export function Home({
         </div>
       </section>
       <section className="night-desk">
+        {game && (
+          <CurrentInvestigation
+            game={game}
+            onResume={onResume}
+            onFiles={onFiles}
+            onGuide={onGuide}
+            onSaves={onSaves}
+            savedCount={savedCount}
+          />
+        )}
+        {!game && onSaves && savedCount > 0 && (
+          <section className="home-saves" aria-labelledby="home-saves-title">
+            <FloppyDisk size={26} aria-hidden="true" />
+            <div>
+              <span className="eyebrow">YOUR CASE FILES</span>
+              <h2 id="home-saves-title">Pick up a saved investigation.</h2>
+              <p>Your previous cases are ready to open on this device.</p>
+            </div>
+            <Button secondary onClick={onSaves} arrow>
+              Saved investigations ({savedCount})
+            </Button>
+          </section>
+        )}
         <div className="night-section-title">
           <div>
             <span className="eyebrow">FOLLOW THE THREAD</span>
@@ -236,6 +412,25 @@ export function Home({
             </button>
           ))}
         </div>
+        {onExpanded && (
+          <section
+            className="home-expansions"
+            aria-labelledby="home-expansions-title"
+          >
+            <Books size={28} aria-hidden="true" />
+            <div>
+              <span className="eyebrow">BEYOND THE CORE SET</span>
+              <h2 id="home-expansions-title">Expansions &amp; campaigns</h2>
+              <p>
+                Choose another campaign, bring an investigator deck, or return
+                to a saved expansion game.
+              </p>
+            </div>
+            <Button secondary onClick={onExpanded} arrow>
+              Explore expansions
+            </Button>
+          </section>
+        )}
         <div className="night-investigators">
           <div className="night-party-intro">
             <span className="eyebrow">YOU DON’T HAVE TO GO ALONE</span>
@@ -244,9 +439,9 @@ export function Home({
               One investigation.
             </h2>
             <p>
-              Lead a lone investigator or control a party of two or three
-              from the five core-set investigators. Switch seats, combine
-              strengths, and face the darkness together.
+              Lead a lone investigator or control a party of two or three from
+              the five core-set investigators. Switch seats, combine strengths,
+              and face the darkness together.
             </p>
             <Button secondary onClick={onStart} arrow>
               {game ? "Start a new investigation" : "Assemble your party"}
@@ -294,7 +489,10 @@ export function Home({
         {game && (
           <div className="night-saved">
             <FloppyDisk size={14} />
-            Saved locally ·{" "}
+            Current{" "}
+            {game.status === "resolution"
+              ? "case record"
+              : "investigation"} ·{" "}
             {party(game)
               .map((p) => card(p.code).name)
               .join(" / ")}{" "}

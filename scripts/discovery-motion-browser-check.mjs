@@ -102,7 +102,7 @@ assert.doesNotMatch(
   /^(Servant of Flame|Dr\. Henry Armitage|Elokoss|Past Curfew)$/m,
 );
 // Player spells may mention a name; the hidden encounter identity itself is sealed.
-await page.getByRole("textbox", { name: "Search cards" }).fill("12179");
+await page.getByRole("searchbox", { name: "Search cards" }).fill("12179");
 assert.equal(await page.locator(".archive-grid .card-face").count(), 0);
 await shot("03-sealed-search");
 
@@ -203,10 +203,10 @@ await page.getByRole("button", { name: "Close dialog" }).click();
 await acknowledgeEvents(page);
 // The new map has unexplored locations: neither the archive nor summary exposes their face.
 await page.getByRole("button", { name: /^Card archive/ }).click();
-await page.getByRole("textbox", { name: "Search cards" }).fill("Dormitories");
+await page.getByRole("searchbox", { name: "Search cards" }).fill("Dormitories");
 assert.equal(await page.locator(".archive-grid .card-face").count(), 0);
 await page
-  .getByRole("textbox", { name: "Search cards" })
+  .getByRole("searchbox", { name: "Search cards" })
   .fill("Where There's Smoke");
 await page.locator(".archive-grid .card-face").click();
 await page.getByText("Reverse side", { exact: true }).click();
@@ -225,7 +225,7 @@ assert.ok(
 );
 await shot("11-explored-location", 850, true);
 await page.getByRole("button", { name: /^Card archive/ }).click();
-await page.getByRole("textbox", { name: "Search cards" }).fill("Dormitories");
+await page.getByRole("searchbox", { name: "Search cards" }).fill("Dormitories");
 assert.equal(await page.locator(".archive-grid .card-face").count(), 1);
 
 const encounter = ready();
@@ -245,11 +245,11 @@ await page
   .click();
 await page.getByRole("button", { name: /^Card archive/ }).click();
 await page
-  .getByRole("textbox", { name: "Search cards" })
+  .getByRole("searchbox", { name: "Search cards" })
   .fill("Unspeakable Truths");
 assert.equal(await page.locator(".archive-grid .card-face").count(), 1);
 await page
-  .getByRole("textbox", { name: "Search cards" })
+  .getByRole("searchbox", { name: "Search cards" })
   .fill("Forbidden Secrets");
 assert.equal(await page.locator(".archive-grid .card-face").count(), 0);
 
