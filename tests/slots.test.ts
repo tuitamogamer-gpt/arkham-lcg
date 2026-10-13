@@ -5,6 +5,7 @@ import {
   SAVE_KEY,
   MAX_SLOTS,
   readSave,
+  readSaveSnapshot,
   writeSave,
   listSaves,
   loadSave,
@@ -13,6 +14,7 @@ import {
   recordResult,
   readRecord,
 } from "../src/game/storage";
+import { createSaveSession } from "../src/game/saveSession";
 
 // A minimal Web Storage shim for the Node test runner.
 function installStorage() {
@@ -30,21 +32,26 @@ function installStorage() {
   return store;
 }
 
-test("the legacy single save migrates into a slot and stays active", () => {
+test("the legacy single save migrates on a guarded save, without writing during load", async () => {
   const store = installStorage();
   const s = createGame("standard", 11, ["12004"]);
   store.set(SAVE_KEY, JSON.stringify(s));
   const restored = readSave();
   assert.equal(restored?.id, s.id);
+  assert.equal(store.has(SAVE_KEY), true, "loading leaves its source untouched");
+  assert.equal(listSaves().length, 0);
+  const snapshot = readSaveSnapshot()!;
+  await createSaveSession(snapshot).save(snapshot.game);
   assert.equal(store.has(SAVE_KEY), false, "the legacy key is retired");
   assert.deepEqual(
     listSaves().map((v) => v.id),
     [s.id],
   );
-  // A newer legacy write for the same investigation replaces the slot.
+  // Legacy writes have no timestamp proving they are newer than the slot.
   const progressed = reduceGame(s, { type: "mulligan", ids: [] });
   store.set(SAVE_KEY, JSON.stringify(progressed));
-  assert.equal(readSave()?.status, "playing");
+  assert.equal(readSave()?.status, "mulligan");
+  assert.equal(store.get(SAVE_KEY), JSON.stringify(progressed));
   assert.equal(listSaves().length, 1);
 });
 
@@ -171,6 +178,36 @@ test("whole-index recovery ignores corrupt, foreign and mismatched payloads", ()
   );
 });
 
+test("a healthy but incomplete index recovers orphaned payloads without changing active or recency", () => {
+  const store = installStorage();
+  const active = createGame("standard", 307);
+  const orphan = createGame("hard", 308);
+  writeSave(active);
+  const originalSummary = listSaves()[0];
+  store.set(`arkham-chronicle:save:${orphan.id}`, JSON.stringify(orphan));
+  const before = new Map(store);
+  assert.deepEqual(listSaves().find((s) => s.id === active.id), originalSummary);
+  assert.equal(
+    listSaves().find((s) => s.id === orphan.id)?.updatedAt,
+    new Date(0).toISOString(),
+  );
+  assert.equal(readSave()?.id, active.id);
+  assert.deepEqual(store, before, "recovery is read-only");
+  writeSave(reduceGame(active, { type: "mulligan", ids: [] }));
+  assert.equal(listSaves().length, 2, "the next publication includes the orphan");
+});
+
+test("orphaned investigations count toward capacity even with a healthy empty index", () => {
+  const store = installStorage();
+  store.set("arkham-chronicle:saves", JSON.stringify({ active: null, slots: [] }));
+  for (let i = 0; i < MAX_SLOTS; i++) {
+    const game = createGame("easy", 350 + i);
+    store.set(`arkham-chronicle:save:${game.id}`, JSON.stringify(game));
+  }
+  assert.throws(() => writeSave(createGame("expert", 398)), /slots/);
+  assert.equal(listSaves().length, MAX_SLOTS);
+});
+
 test("saving after whole-index recovery preserves existing investigations and the slot limit", () => {
   const store = installStorage();
   const saved = Array.from({ length: MAX_SLOTS }, (_, i) =>
@@ -200,12 +237,15 @@ test("invalid legacy data does not hide an active investigation", () => {
   }
 });
 
-test("a legacy investigation remains resumable when migration cannot add a slot", () => {
+test("a legacy investigation remains resumable when migration cannot add a slot", async () => {
   const store = installStorage();
   for (let i = 0; i < MAX_SLOTS; i++) writeSave(createGame("easy", 400 + i));
   const legacy = createGame("expert", 499);
   store.set(SAVE_KEY, JSON.stringify(legacy));
   assert.equal(readSave()?.id, legacy.id);
+  const snapshot = readSaveSnapshot()!;
+  const session = createSaveSession(snapshot);
+  await assert.rejects(session.save(snapshot.game), /slots/);
   assert.equal(listSaves().length, MAX_SLOTS);
   assert.equal(
     store.has(SAVE_KEY),
@@ -214,6 +254,7 @@ test("a legacy investigation remains resumable when migration cannot add a slot"
   );
   deleteSave(listSaves()[0].id);
   assert.equal(readSave()?.id, legacy.id);
+  await session.save(snapshot.game);
   assert.equal(
     store.has(SAVE_KEY),
     false,

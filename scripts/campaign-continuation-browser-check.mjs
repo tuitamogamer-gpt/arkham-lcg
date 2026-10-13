@@ -11,7 +11,7 @@ const port = Number(process.env.QA_BRIDGE_PORT || 5197);
 const out = resolve(process.env.QA_OUT || "output/campaign-continuation");
 const seat = "campaign-continuation-qa-seat";
 const ids = Array.from(
-  { length: 5 },
+  { length: 6 },
   (_, n) => `00000000-0000-4000-8000-${String(n + 31).padStart(12, "0")}`,
 );
 const scenarioOptions = {
@@ -27,6 +27,7 @@ const steps = [
   { tag: "InterludeStep", contents: [2, null] },
   { tag: "ScenarioStep", contents: "c02062" },
   { tag: "ScenarioStep", contents: "c53017" },
+  { tag: "ScenarioStepWithOptions", contents: ["c02062", scenarioOptions] },
 ];
 const original = steps.map((nextStep, i) => ({
   playerId: seat,
@@ -42,11 +43,15 @@ const original = steps.map((nextStep, i) => ({
       "01001": {
         id: "01001",
         cardCode: "01001",
+        playerId: seat,
+        xp: 5,
         name: { title: "Roland Banks" },
       },
       "01002": {
         id: "01002",
         cardCode: "01002",
+        playerId: seat,
+        xp: 5,
         name: { title: "Daisy Walker" },
       },
     },
@@ -54,13 +59,15 @@ const original = steps.map((nextStep, i) => ({
       id: i === 1 ? "09" : "04",
       name: "The Forgotten Age",
       meta: { expeditionLeader: "01002" },
-      completedSteps: [],
+      completedSteps:
+        i === 5 ? [{ tag: "ScenarioStep", contents: "c02001" }] : [],
       step: {
         tag: "ContinueCampaignStep",
         contents: {
           nextStep,
-          canUpgradeDecks: false,
+          canUpgradeDecks: i === 5,
           canChooseSideStory: false,
+          ...(i === 5 ? { chooseSideStory: false, lead: "01002" } : {}),
         },
       },
     },
@@ -69,8 +76,10 @@ const original = steps.map((nextStep, i) => ({
 }));
 let snapshots = structuredClone(original);
 const answers = [],
+  upgrades = [],
   errors = [],
   checks = [];
+let upgradedInvestigators = new Set();
 let rejectNext = false;
 const options = JSON.parse(
   await readFile("scripts/data/native-play-options.json", "utf8"),
@@ -100,6 +109,38 @@ const server = createServer(async (req, res) => {
   if (req.method === "POST") {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
+    if (index === 5 && path.endsWith("/upgrade-deck")) {
+      const request = JSON.parse(Buffer.concat(chunks).toString());
+      const game = snapshots[index].game;
+      if (
+        game.campaign.step.tag !== "UpgradeDeckStep" ||
+        !game.investigators[request.investigatorId] ||
+        upgradedInvestigators.has(request.investigatorId)
+      ) {
+        send(409, { error: "This investigator is not waiting to upgrade." });
+        return;
+      }
+      upgrades.push(request);
+      upgradedInvestigators.add(request.investigatorId);
+      game.scenarioSteps++;
+      if (upgradedInvestigators.size === 2) {
+        // Fixture equivalent of FinishedUpgradingDecks: return to the exact
+        // serialized continuation, with native CampaignStep decoder defaults.
+        const continuation = game.campaign.step.contents;
+        game.campaign.step = {
+          ...continuation,
+          contents: {
+            chooseSideStory: false,
+            lead: null,
+            canChooseSideStory: true,
+            ...continuation.contents,
+          },
+        };
+        game.question[seat] = { tag: "ContinueCampaign" };
+      }
+      send(200, {});
+      return;
+    }
     if (index < 0 || !path.endsWith("/answer")) {
       send(404, {});
       return;
@@ -112,6 +153,12 @@ const server = createServer(async (req, res) => {
       return;
     }
     snapshots[index].game.scenarioSteps++;
+    if (index === 5 && answer.contents?.tag === "UpgradeDeckStep") {
+      snapshots[index].game.campaign.step = structuredClone(answer.contents);
+      snapshots[index].game.question[seat] = { tag: "ChooseUpgradeDeck" };
+      send(200, {});
+      return;
+    }
     snapshots[index].game.question[seat] = {
       tag: "ChooseOne",
       choices: [
@@ -126,7 +173,12 @@ const server = createServer(async (req, res) => {
   else if (index >= 0) send(200, snapshots[index]);
   else if (path.endsWith("/options")) send(200, options);
   else if (path.endsWith("/presentation"))
-    send(200, { strings: {}, scenarioSettings: {}, campaignSettings: {} });
+    send(200, {
+      strings: {},
+      scenarioSettings: {},
+      campaignSettings: {},
+      sideStories: [{ id: "81001", name: "Curse of the Rougarou", xp: 1 }],
+    });
   else if (path.endsWith("/status"))
     send(200, {
       ready: true,
@@ -151,6 +203,7 @@ try {
         ];
   for (const [engine, type] of engines) {
     snapshots = structuredClone(original);
+    upgradedInvestigators = new Set();
     const browser = await type.launch({ headless: true });
     browsers.push(browser);
     const page = await browser.newPage({
@@ -164,7 +217,7 @@ try {
         message.type() === "error" &&
         !message.text().includes("409 (Conflict)")
       )
-        errors.push(`${engine}: ${message.text()}`);
+        errors.push(`${engine}: ${message.text()} (${message.location().url})`);
     });
     const panel = page.locator(".companion-checkpoint");
     const open = async (index) => {
@@ -315,6 +368,85 @@ try {
     checks.push(
       `${engine}: Return to The Forgotten Age keeps mandatory expedition leader`,
     );
+
+    await open(5);
+    assert.equal(
+      await panel.getByRole("group", { name: "Add a side story" }).count(),
+      0,
+    );
+    await panel
+      .getByRole("button", { name: "Upgrade decks first", exact: true })
+      .click();
+    await panel
+      .getByRole("button", {
+        name: "Keep this investigator’s current deck",
+        exact: true,
+      })
+      .waitFor();
+    assert.deepEqual(answers.at(-1).answer, {
+      tag: "CampaignStepAnswer",
+      contents: {
+        tag: "UpgradeDeckStep",
+        contents: original[5].game.campaign.step,
+      },
+    });
+    await page.reload();
+    const keepDeck = panel.getByRole("button", {
+      name: "Keep this investigator’s current deck",
+      exact: true,
+    });
+    await keepDeck.waitFor();
+    const upgradesBefore = upgrades.length;
+    for (const investigator of ["01001", "01002"]) {
+      await panel
+        .getByRole("combobox", { name: "Investigator", exact: true })
+        .selectOption(investigator);
+      await keepDeck.click();
+      if (investigator === "01001")
+        await page.waitForFunction(
+          () =>
+            document.querySelector(".companion-decision select")?.value === "",
+        );
+      else
+        await panel
+          .getByRole("heading", { name: "Continue the campaign", exact: true })
+          .waitFor();
+    }
+    assert.deepEqual(upgrades.slice(upgradesBefore), [
+      { investigatorId: "01001" },
+      { investigatorId: "01002" },
+    ]);
+    await panel
+      .getByRole("heading", { name: "Continue the campaign", exact: true })
+      .waitFor();
+    assert.deepEqual(
+      snapshots[5].game.campaign.step,
+      original[5].game.campaign.step,
+    );
+    assert.equal(
+      await panel.getByRole("group", { name: "Add a side story" }).count(),
+      0,
+    );
+    await page.reload();
+    await continueButton.waitFor();
+    assert.equal(
+      await panel.getByRole("group", { name: "Add a side story" }).count(),
+      0,
+    );
+    assert.equal(
+      await lead.inputValue(),
+      "01001",
+      "existing scenario lead survives deck upgrades",
+    );
+    await continueButton.click();
+    await received();
+    assert.deepEqual(answers.at(-1).answer, {
+      tag: "CampaignStepAnswer",
+      contents: steps[5],
+    });
+    checks.push(
+      `${engine}: deck upgrades preserve restricted side stories, lead and scenario options through both investigators and reloads`,
+    );
     await browser.close();
   }
   assert.deepEqual(errors, []);
@@ -325,6 +457,7 @@ try {
         passed: true,
         checks,
         answers,
+        upgrades,
         errors,
         evidence:
           "Pinned native-shaped protocol fixtures through Chronicle UI; no native campaign playthrough or private-save mutation.",
@@ -338,7 +471,14 @@ try {
   await writeFile(
     resolve(out, "report.json"),
     JSON.stringify(
-      { passed: false, checks, answers, errors, failure: error.message },
+      {
+        passed: false,
+        checks,
+        answers,
+        upgrades,
+        errors,
+        failure: error.message,
+      },
       null,
       2,
     ),

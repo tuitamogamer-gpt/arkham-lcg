@@ -34,16 +34,19 @@ import { isUndoBarrier } from "./game/undo";
 import type { Tempo } from "./game/presentation";
 import {
   MAX_SLOTS,
-  deleteSave,
   exportSave,
   listSaves,
   loadSave,
-  readSave,
-  recordResult,
   decodeSave,
-  writeSave,
-  type SaveSummary,
 } from "./game/storage";
+import {
+  createSaveDeletion,
+  createSaveSession,
+  loadSaveSnapshot,
+  SaveConflictError,
+  type SaveSnapshot,
+} from "./game/saveSession";
+import { useInvestigationSave } from "./useInvestigationSave";
 import type { Action, Difficulty, GameState } from "./game/types";
 import { audio, readAudioPreference } from "./audio";
 import {
@@ -251,26 +254,40 @@ export default function App() {
   }, [page]);
   const [companionTableOpen, setCompanionTableOpen] = useState(false);
   const [expandedInvestigator, setExpandedInvestigator] = useState<string>();
-  const [game, setGameState] = useState<GameState | null>(readSave);
+  const {
+    game,
+    gameRef,
+    sessionRef,
+    commitGame,
+    restoreGame,
+    persist,
+    status: saveStatus,
+    error: saveError,
+    saves,
+    setSaves,
+  } = useInvestigationSave();
+  const saveFailed = saveStatus === "failed" || saveStatus === "conflict";
+  const transitionPending = useRef(false);
   // Re-prime presentation hooks even when restoring a newer save of this case.
   const [restorationSerial, setRestorationSerial] = useState(0);
-  const gameRef = useRef<GameState | null>(null);
   const undoStack = useRef<GameState[]>([]);
   const [undoDepth, setUndoDepth] = useState(0);
   const [tempo, setTempo] = useState<Tempo>(readTempoPreference);
   const tempoRef = useRef(tempo);
   tempoRef.current = tempo;
-  const [saves, setSaves] = useState<SaveSummary[]>(listSaves);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const deleteSession = useRef<ReturnType<typeof createSaveDeletion> | null>(
+    null,
+  );
+  const [confirmReload, setConfirmReload] = useState(false);
+  const [reloadCandidate, setReloadCandidate] = useState<SaveSnapshot | null>(
+    null,
+  );
   const [ambience, setAmbience] = useState(() =>
     readAudioPreference("ambience"),
   );
   const [effects, setEffects] = useState(() => readAudioPreference("effects"));
   const [tutorial, setTutorial] = useState(tutorialPending);
-  const commitGame = useCallback((next: GameState | null) => {
-    gameRef.current = next;
-    setGameState(next);
-  }, []);
   useEffect(() => {
     try {
       localStorage.setItem("arkham-chronicle:tempo", tempo);
@@ -318,16 +335,16 @@ export default function App() {
     if (motion !== "full") document.getAnimations().forEach((a) => a.cancel());
   }, [motion]);
   const [notice, setNotice] = useState("");
-  const [saveFailed, setSaveFailed] = useState(false);
   useEffect(() => {
-    if (!saveFailed) return;
-    const protectUnsavedGame = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", protectUnsavedGame);
-    return () => window.removeEventListener("beforeunload", protectUnsavedGame);
-  }, [saveFailed]);
+    if (!saveError) return;
+    setNotice(
+      saveError instanceof SaveConflictError
+        ? "This investigation changed in another tab. Your open version is kept here; choose which version to continue in Settings & saves."
+        : saveError instanceof Error && saveError.message === "slots"
+          ? `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves so this one can be saved.`
+          : "Your browser could not save this game. Use Export save in settings to keep a copy.",
+    );
+  }, [saveError]);
   const input = useRef<HTMLInputElement>(null);
   const navigate = (p: Page) => {
     if (p !== "expanded" && window.location.hash.startsWith("#investigation="))
@@ -342,7 +359,7 @@ export default function App() {
   const dispatch = useCallback(
     (a: Action) => {
       const s = gameRef.current;
-      if (!s) return;
+      if (!s || transitionPending.current) return;
       const next = reduceGame(s, a, { tempo: tempoRef.current });
       if (next === s) return;
       const barrier = isUndoBarrier(s, next, a);
@@ -355,28 +372,12 @@ export default function App() {
     [commitGame],
   );
   const undo = useCallback(() => {
+    if (transitionPending.current) return;
     const previous = undoStack.current.pop();
     if (!previous) return;
     setUndoDepth(undoStack.current.length);
     commitGame(previous);
   }, [commitGame]);
-  useEffect(() => {
-    gameRef.current = game;
-    if (!game) return;
-    try {
-      writeSave(game);
-      setSaveFailed(false);
-      if (game.status === "resolution") recordResult(game);
-      setSaves(listSaves());
-    } catch (error) {
-      setSaveFailed(true);
-      setNotice(
-        error instanceof Error && error.message === "slots"
-          ? `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves so this one can be saved.`
-          : "Your browser could not save this game. Use Export save in settings to keep a copy.",
-      );
-    }
-  }, [game]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (
@@ -456,58 +457,121 @@ export default function App() {
       setNotice("Ambient sound is unavailable in this browser.");
   };
   const toggleEffects = () => setEffects((value) => !value);
-  const openSave = (id: string) => {
-    const loaded = loadSave(id);
-    if (!loaded) {
-      setNotice("This saved investigation could not be read.");
-      return;
+  const transition = async (work: () => Promise<void>) => {
+    if (transitionPending.current) return;
+    transitionPending.current = true;
+    try {
+      await work();
+    } finally {
+      transitionPending.current = false;
     }
+  };
+  const preserveBeforeSwitch = async () => {
+    if (await persist()) return true;
+    setSetup(false);
+    setSettings(true);
+    return false;
+  };
+  const openSnapshot = (snapshot: SaveSnapshot) => {
     undoStack.current = [];
     setUndoDepth(0);
     setRestorationSerial((serial) => serial + 1);
-    commitGame(loaded);
+    restoreGame(snapshot);
     setSettings(false);
     navigate("game");
   };
-  const removeSave = (id: string) => {
+  const openSave = (id: string) =>
+    transition(async () => {
+      if (!(await preserveBeforeSwitch())) return;
+      const snapshot = loadSaveSnapshot(id);
+      if (!snapshot) {
+        setNotice("This saved investigation could not be read.");
+        return;
+      }
+      openSnapshot(snapshot);
+    });
+  const prepareDelete = (id: string) => {
     try {
-      deleteSave(id);
+      deleteSession.current = createSaveDeletion(id);
+      setConfirmDelete(id);
     } catch {
       setNotice(
-        "This investigation could not be deleted. Your saved copy has been kept; please try again.",
+        "Your browser could not read this investigation. Its stored data has been kept.",
       );
-      return;
     }
-    setConfirmDelete(null);
-    setSaves(listSaves());
-    if (game?.id === id) {
+  };
+  const removeSave = (id: string) =>
+    transition(async () => {
+      try {
+        if (id === gameRef.current?.id) {
+          if (!(await preserveBeforeSwitch())) return;
+          await sessionRef.current?.delete();
+        } else {
+          if (!deleteSession.current || confirmDelete !== id) return;
+          await deleteSession.current.delete();
+        }
+      } catch (error) {
+        setNotice(
+          error instanceof SaveConflictError
+            ? "This investigation changed after you selected it. Its saved copy has been kept; review it before deleting."
+            : "This investigation could not be deleted. Your saved copy has been kept; please try again.",
+        );
+        setConfirmDelete(null);
+        return;
+      }
+      setConfirmDelete(null);
+      setSaves(listSaves());
+      if (game?.id === id) {
+        undoStack.current = [];
+        setUndoDepth(0);
+        commitGame(null);
+        navigate("home");
+      }
+      setNotice("Saved investigation deleted.");
+    });
+  const saveSeparateCopy = () =>
+    transition(async () => {
+      const current = gameRef.current;
+      if (!current) return;
+      const copy = { ...structuredClone(current), id: crypto.randomUUID() };
+      try {
+        await createSaveSession({ game: copy, revision: null }).save(copy);
+        const snapshot = loadSaveSnapshot(copy.id);
+        if (!snapshot) throw new Error("unreadable copy");
+        openSnapshot(snapshot);
+        setNotice(
+          "Your version is saved as a separate investigation. The other saved version is unchanged.",
+        );
+      } catch (error) {
+        setNotice(
+          error instanceof Error && error.message === "slots"
+            ? `All ${MAX_SLOTS} save slots are full. Export your version or delete another investigation first.`
+            : "The separate copy could not be saved. Your version is still open; export it to keep a copy.",
+        );
+      }
+    });
+  const start = () =>
+    transition(async () => {
+      if (!(await preserveBeforeSwitch())) return;
+      if (listSaves().length >= MAX_SLOTS) {
+        setNotice(
+          `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves first.`,
+        );
+        return;
+      }
       undoStack.current = [];
       setUndoDepth(0);
-      setSaveFailed(false);
-      commitGame(null);
-      navigate("home");
-    }
-    setNotice("Saved investigation deleted.");
-  };
-  const start = () => {
-    if (saves.length >= MAX_SLOTS) {
-      setNotice(
-        `You already keep ${MAX_SLOTS} investigations. Delete one in Settings & saves first.`,
-      );
-      return;
-    }
-    undoStack.current = [];
-    setUndoDepth(0);
-    commitGame(
-      createGame(
+      const next = createGame(
         difficulty,
         crypto.getRandomValues(new Uint32Array(1))[0] || 1,
         selectedInvestigators,
-      ),
-    );
-    setSetup(false);
-    navigate("game");
-  };
+      );
+      // The shuffle seed is not an investigation identity across devices.
+      next.id = crypto.randomUUID();
+      commitGame(next);
+      setSetup(false);
+      navigate("game");
+    });
   const onStart = () => setSetup(true);
   const navItems: [Page, string, typeof Compass][] = [
     ["home", "Campaigns", Compass],
@@ -664,6 +728,21 @@ export default function App() {
           ref={mainContent}
           tabIndex={-1}
         >
+          {game && saveFailed && (
+            <section
+              className="save-integrity-banner"
+              aria-label="Investigation save status"
+            >
+              <span>
+                {saveStatus === "conflict"
+                  ? "Another tab changed this investigation. Your version is still open here."
+                  : "Your latest changes are not saved. Keep this tab open until you save or export them."}
+              </span>
+              <button onClick={() => setSettings(true)}>
+                Review save options
+              </button>
+            </section>
+          )}
           {page === "home" && (
             <Home
               game={game}
@@ -672,8 +751,8 @@ export default function App() {
               onFiles={() => navigate("investigators")}
               onGuide={() => navigate("guide")}
               onExpanded={() => navigate("expanded")}
-            onSaves={() => setSettings(true)}
-            savedCount={saves.length}
+              onSaves={() => setSettings(true)}
+              savedCount={saves.length}
               onScenario={(n) =>
                 n === 0 ? (game ? navigate("game") : onStart()) : setScenario(n)
               }
@@ -739,7 +818,8 @@ export default function App() {
               onHistory={() => setHistoryOpen(true)}
               canUndo={undoDepth > 0}
               onUndo={undo}
-              saved={!saveFailed}
+              saved={saveStatus === "saved"}
+              saving={saveStatus === "saving"}
             />
           )}
         </main>
@@ -796,6 +876,12 @@ export default function App() {
                 A friend has gone missing from their dormitory. Their room is
                 empty, and a strange quiet has fallen over Miskatonic
                 University.
+              </p>
+              <p className="party-setup-help">
+                Play the complete first scenario here with ready-made starter
+                decks. Later chapters are not yet playable in this browser
+                campaign. Your progress stays on this device; export a save to
+                keep a backup or move to another device.
               </p>
               <div className="party-setup-heading">
                 <span className="eyebrow">Assemble your investigators</span>
@@ -910,8 +996,9 @@ export default function App() {
               />
               {game && (
                 <p className="replace-note">
-                  Your current investigation stays saved in its own slot and can
-                  be reopened from Settings & saves.{" "}
+                  {saveFailed
+                    ? "Save your latest changes before starting another investigation. You can also export a backup."
+                    : "Your current investigation stays in its own slot and can be reopened from Settings & saves."}{" "}
                   <button onClick={() => exportSave(game)}>
                     Export current save
                   </button>
@@ -937,12 +1024,13 @@ export default function App() {
             </div>
             <h2>This case file is sealed.</h2>
             <p>
-              Follow the current investigation. Later titles, locations and
-              discoveries stay sealed until their story begins.
+              This browser campaign currently includes Spreading Flames.
+              Completing it does not unlock this chapter.
             </p>
             <p>
-              This chapter is not playable yet. Your current campaign record
-              stays saved for a future continuation.
+              This chapter is not playable yet. Export your campaign record to
+              keep your choices and experience. A transfer to later chapters is
+              not available yet.
             </p>
           </div>
           <Button
@@ -975,32 +1063,47 @@ export default function App() {
           <div className="settings-actions">
             {saveFailed && game && (
               <section className="save-health" role="alert">
-                <strong>Your latest changes are not saved.</strong>
+                <strong>
+                  {saveStatus === "conflict"
+                    ? "Another version of this investigation was saved."
+                    : "Your investigation or case history could not be fully saved."}
+                </strong>
                 <p>
-                  Export this investigation to keep a copy, or retry after
-                  freeing browser storage.
+                  {saveStatus === "conflict"
+                    ? "Your version is still open in this tab. Save it separately, export it, or review the version now stored on this device."
+                    : "Export this investigation to keep a copy, or retry after freeing browser storage. Switching investigations is paused until your progress is saved."}
                 </p>
                 <div className="save-health-actions">
                   <Button secondary onClick={() => exportSave(game)}>
                     Export current investigation
                   </Button>
                   <Button
-                    onClick={() => {
-                      try {
-                        writeSave(game);
-                        if (game.status === "resolution") recordResult(game);
-                        setSaveFailed(false);
-                        setSaves(listSaves());
-                        setNotice("Investigation saved successfully.");
-                      } catch {
-                        setNotice(
-                          "Your browser still could not save this investigation. Export a copy to keep your latest changes.",
-                        );
-                      }
-                    }}
+                    onClick={() =>
+                      transition(async () => {
+                        if (await persist()) {
+                          setNotice("Investigation saved successfully.");
+                        }
+                      })
+                    }
                   >
                     Retry saving
                   </Button>
+                  {saveStatus === "conflict" && (
+                    <>
+                      <Button secondary onClick={saveSeparateCopy}>
+                        Save as separate investigation
+                      </Button>
+                      <Button
+                        secondary
+                        onClick={() => {
+                          setReloadCandidate(loadSaveSnapshot(game.id));
+                          setConfirmReload(true);
+                        }}
+                      >
+                        Review saved version
+                      </Button>
+                    </>
+                  )}
                 </div>
               </section>
             )}
@@ -1015,9 +1118,17 @@ export default function App() {
                   secondary
                   onClick={async () => {
                     try {
-                      if (game) writeSave(game);
-                      await applyUpdate();
+                      await applyUpdate(async () => {
+                        // A waiting worker may activate long after this click.
+                        // Save the latest turn again at the actual reload boundary.
+                        if (transitionPending.current) return false;
+                        transitionPending.current = true;
+                        const saved = await persist();
+                        if (!saved) transitionPending.current = false;
+                        return saved;
+                      });
                     } catch {
+                      transitionPending.current = false;
                       setNotice(
                         "Your browser could not save this investigation. Export a copy before reloading for the update.",
                       );
@@ -1152,7 +1263,7 @@ export default function App() {
                           </button>
                         </>
                       ) : (
-                        <button onClick={() => setConfirmDelete(v.id)}>
+                        <button onClick={() => prepareDelete(v.id)}>
                           <Trash size={14} /> Delete
                         </button>
                       )}
@@ -1182,32 +1293,38 @@ export default function App() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              try {
-                if (file.size > 2000000) throw new Error("too large");
-                const value: unknown = JSON.parse(await file.text());
-                const decoded = decodeSave(value);
-                if (!decoded) throw new Error("invalid");
-                // Persist first: capacity/quota failure must preserve the open case.
-                writeSave(decoded);
-                undoStack.current = [];
-                setUndoDepth(0);
-                setRestorationSerial((serial) => serial + 1);
-                commitGame(decoded);
-                navigate("game");
-                setSettings(false);
-                setNotice("Saved investigation restored.");
-              } catch (error) {
-                setNotice(
-                  error instanceof Error && error.message === "slots"
-                    ? `All ${MAX_SLOTS} save slots are full. Delete a saved investigation before importing a new one.`
-                    : (error instanceof Error &&
-                          ["invalid", "too large"].includes(error.message)) ||
-                        error instanceof SyntaxError
-                      ? "This is not a valid Arkham Chronicle save. Your current game is unchanged."
-                      : "Your browser could not save the imported investigation. Your current game is unchanged; keep the import file and free storage before retrying.",
-                );
-              }
-              e.target.value = "";
+              const fileInput = e.target;
+              await transition(async () => {
+                try {
+                  if (!(await preserveBeforeSwitch())) return;
+                  if (file.size > 2000000) throw new Error("too large");
+                  const value: unknown = JSON.parse(await file.text());
+                  const decoded = decodeSave(value);
+                  if (!decoded) throw new Error("invalid");
+                  // A backup is a separate investigation, never an overwrite of
+                  // later progress from this browser or another open tab.
+                  const imported = { ...decoded, id: crypto.randomUUID() };
+                  await createSaveSession({
+                    game: imported,
+                    revision: null,
+                  }).save(imported);
+                  const snapshot = loadSaveSnapshot(imported.id);
+                  if (!snapshot) throw new Error("unreadable import");
+                  openSnapshot(snapshot);
+                  setNotice("Saved investigation imported as a separate copy.");
+                } catch (error) {
+                  setNotice(
+                    error instanceof Error && error.message === "slots"
+                      ? `All ${MAX_SLOTS} save slots are full. Delete a saved investigation before importing a new one.`
+                      : (error instanceof Error &&
+                            ["invalid", "too large"].includes(error.message)) ||
+                          error instanceof SyntaxError
+                        ? "This is not a valid Arkham Chronicle save. Your current game is unchanged."
+                        : "Your browser could not save the imported investigation. Your current game is unchanged; keep the import file and free storage before retrying.",
+                  );
+                }
+              });
+              fileInput.value = "";
             }}
           />
           <p className="quiet-note">
@@ -1221,6 +1338,62 @@ export default function App() {
               <br />
               Collection snapshot · 30 September 2026
             </p>
+          </div>
+        </Modal>
+      )}
+      {confirmReload && game && (
+        <Modal
+          title="Choose the version to continue"
+          onClose={() => setConfirmReload(false)}
+        >
+          <div className="modal-intro">
+            <h2>Keep your progress safe</h2>
+            <p>
+              Your open version: round {game.round}, act {game.act},{" "}
+              {game.player.actionsTaken} actions taken by{" "}
+              {card(game.player.code).name}.
+            </p>
+            <p>
+              {reloadCandidate
+                ? `Saved version: round ${reloadCandidate.game.round}, act ${reloadCandidate.game.act}, ${reloadCandidate.game.player.actionsTaken} actions taken by ${card(reloadCandidate.game.player.code).name}.`
+                : "There is no readable saved version now. Your version remains open in this tab."}
+            </p>
+            <p>
+              Using the saved version discards this tab’s unsaved changes.
+              Export them first if you want to keep both.
+            </p>
+          </div>
+          <div className="save-health-actions">
+            <Button secondary onClick={() => exportSave(game)}>
+              Export this tab’s version
+            </Button>
+            <Button secondary onClick={() => setConfirmReload(false)}>
+              Keep this tab’s version
+            </Button>
+            {reloadCandidate && (
+              <Button
+                onClick={() =>
+                  transition(async () => {
+                    const latest = loadSaveSnapshot(game.id);
+                    if (
+                      !latest ||
+                      latest.revision !== reloadCandidate.revision
+                    ) {
+                      setReloadCandidate(latest);
+                      setNotice(
+                        "The saved version changed again. Review its latest progress before continuing.",
+                      );
+                      return;
+                    }
+                    setConfirmReload(false);
+                    openSnapshot(latest);
+                    setNotice("The saved version is now open.");
+                  })
+                }
+              >
+                Use saved version
+              </Button>
+            )}
           </div>
         </Modal>
       )}

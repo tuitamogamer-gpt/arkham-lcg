@@ -35,7 +35,9 @@ try {
   await page.goto(base);
   // The load event can precede React's first commit on a cold browser.
   // Wait for the app without focusing the link: Tab must still reach it first.
-  await page.getByRole("link", { name: "Skip to content", exact: true }).waitFor();
+  await page
+    .getByRole("link", { name: "Skip to content", exact: true })
+    .waitFor();
   await page.keyboard.press("Tab");
   assert.equal(
     await page.evaluate(() => document.activeElement.textContent),
@@ -194,9 +196,13 @@ try {
     localStorage.setItem("quality-resolution-initialized", "1");
     const original = Storage.prototype.setItem;
     window.qualityFailRecord = true;
+    window.qualityRecordAttempts = 0;
     Storage.prototype.setItem = function (key, value) {
-      if (window.qualityFailRecord && key === "arkham-chronicle:record")
-        throw new DOMException("Storage full", "QuotaExceededError");
+      if (key === "arkham-chronicle:record") {
+        window.qualityRecordAttempts++;
+        if (window.qualityFailRecord)
+          throw new DOMException("Storage full", "QuotaExceededError");
+      }
       return original.call(this, key, value);
     };
   }, resolutionFixture);
@@ -218,12 +224,19 @@ try {
     ),
     null,
   );
+  const recordAttempts = await resolutionPage.evaluate(
+    () => window.qualityRecordAttempts,
+  );
   await resolutionPage
     .getByRole("button", { name: "Retry saving", exact: true })
     .click();
+  await resolutionPage.waitForFunction(
+    (before) => window.qualityRecordAttempts > before,
+    recordAttempts,
+  );
   await resolutionPage
     .getByRole("status")
-    .filter({ hasText: "Your browser still could not save" })
+    .filter({ hasText: /Your browser (?:still )?could not save/ })
     .waitFor();
   assert.equal(await resolutionPage.locator(".save-health").isVisible(), true);
   await resolutionPage.evaluate(() => {

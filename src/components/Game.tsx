@@ -84,6 +84,7 @@ export function Game({
   canUndo = false,
   onUndo,
   saved = true,
+  saving = false,
 }: {
   game: GameState;
   dispatch: (a: Action) => void;
@@ -94,6 +95,7 @@ export function Game({
   canUndo?: boolean;
   onUndo?: () => void;
   saved?: boolean;
+  saving?: boolean;
 }) {
   useTableMotion(s);
   const milestone = useCoreMilestones(s);
@@ -235,10 +237,14 @@ export function Game({
           <div className="coming-note">
             <span>THE NEXT CHAPTER</span>
             <h3>A sealed case file</h3>
-            <p>
-              Your campaign record is saved. Scenario II is not yet scripted in
-              this build.
+            <p role={saved || saving ? "status" : "alert"}>
+              {saving
+                ? "Saving your campaign record…"
+                : saved
+                  ? "Your campaign record is saved on this device."
+                  : "Your latest campaign record could not be saved. Export a copy before leaving this page."}
             </p>
+            <p>Scenario II is not yet playable in this browser campaign.</p>
           </div>
           <div className="resolution-buttons">
             <Button onClick={onHome} arrow>
@@ -283,7 +289,7 @@ export function Game({
           </button>
           <span className="autosaved">
             <CheckCircle size={14} />{" "}
-            {saved ? "Autosaved" : "Save needs attention"}
+            {saving ? "Saving…" : saved ? "Autosaved" : "Save needs attention"}
           </span>
           <button
             className="icon-button"

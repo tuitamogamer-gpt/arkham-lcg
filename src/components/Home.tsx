@@ -380,7 +380,7 @@ export function Home({
             {
               name: "Sealed chapter III",
               place: "Undiscovered",
-              copy: "Continue the story to uncover more.",
+              copy: "This chapter is not playable yet.",
               ready: false,
             },
           ].map((c, i) => (

@@ -1522,6 +1522,79 @@ test("campaign continuation preserves native mandatory scenario options and nest
     /not offered/,
   );
 });
+test("deck upgrades preserve campaign restrictions and nested return options", () => {
+  // Native ContinueCampaignStep parsing defaults omitted side-story permission
+  // to true. In The Scarlet Keys the final time threshold explicitly forbids it.
+  const nextStep = {
+    tag: "StandaloneScenarioStepWithOptions",
+    contents: [
+      "c81001",
+      {
+        tag: "ContinueCampaignStep",
+        contents: {
+          nextStep: { tag: "ScenarioStep", contents: "c09694" },
+          canUpgradeDecks: true,
+          canChooseSideStory: false,
+        },
+      },
+      {
+        scenarioOptionsStandalone: false,
+        scenarioOptionsPerformTarotReading: true,
+        scenarioOptionsLeadInvestigator: "01002",
+      },
+    ],
+  };
+  for (const flags of [
+    { canChooseSideStory: false, chooseSideStory: false, lead: "01002" },
+    { canChooseSideStory: true, chooseSideStory: true, lead: null },
+  ]) {
+    const continuation = { nextStep, canUpgradeDecks: true, ...flags };
+    const original = structuredClone(continuation);
+    const q = companionQuestion(
+      {
+        ...game,
+        campaign: {
+          step: { tag: "ContinueCampaignStep", contents: continuation },
+        },
+        question: { "seat-a": { tag: "ContinueCampaign" } },
+      },
+      "seat-a",
+    )!;
+    const answer = buildUpgradeStepAnswer(q);
+    assert.deepEqual(answer, {
+      tag: "CampaignStepAnswer",
+      contents: {
+        tag: "UpgradeDeckStep",
+        contents: { tag: "ContinueCampaignStep", contents: original },
+      },
+    });
+    assert.deepEqual(
+      continuation,
+      original,
+      "the pending question stays intact",
+    );
+  }
+});
+test("deck upgrades cannot bypass a campaign's upgrade restriction", () => {
+  const q = companionQuestion(
+    {
+      ...game,
+      campaign: {
+        step: {
+          tag: "ContinueCampaignStep",
+          contents: {
+            nextStep: { tag: "ScenarioStep", contents: "c02062" },
+            canUpgradeDecks: false,
+            canChooseSideStory: false,
+          },
+        },
+      },
+      question: { "seat-a": { tag: "ContinueCampaign" } },
+    },
+    "seat-a",
+  )!;
+  assert.throws(() => buildUpgradeStepAnswer(q), /not offered/);
+});
 test("existing scenario tarot/setup options survive changing only the lead investigator", () => {
   const next = {
     tag: "ScenarioStepWithOptions",

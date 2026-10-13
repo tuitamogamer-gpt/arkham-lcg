@@ -2276,7 +2276,9 @@ export function buildUpgradeStepAnswer(
     tag: "UpgradeDeckStep",
     contents: {
       tag: "ContinueCampaignStep",
-      contents: { nextStep: c.nextStep, canUpgradeDecks: true },
+      // The native decoder defaults omitted side-story permission to true.
+      // Keep every campaign restriction and option while visiting deck upgrades.
+      contents: { ...c },
     },
   });
 }
