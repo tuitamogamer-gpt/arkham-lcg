@@ -9,6 +9,7 @@ The generated [support map](../public/data/support-coverage.json) records source
 | Native source declarations         | 160 official scenario builders, 1,177 assets, 519 events, 157 skills and 96 investigators |
 | Captured native registry           | 6,331 code/art aliases, 114 investigator codes and 169 scenario references                |
 | Focused extension behavior         | Actual private Linux aggregate: 232 examples, zero failures                               |
+| Native correction profile          | Full Linux aggregate plus scenario fixes: 263 examples, zero failures                    |
 | Whole legal scenario victories     | Each retained report keeps its own native ending and acceptance status                    |
 | Installed release certification    | Remains false in this private QA inventory                                                |
 
@@ -28,4 +29,6 @@ To include retained private QA evidence, supply `--registry /path/to/status-capt
 
 A whole-scenario report cannot be promoted from setup, debug assistance, nonzero or missing assistance counters, a different binary, a partial run or a defeat. Epic completion contracts require their own evidence checks; a future successful but unverified contract is kept separate from a confirmed victory. Source declarations and the private aggregate do not certify every upstream interaction.
 
-Next independent Core content is Smoke and Mirrors, followed by Queen of Ash. Native campaign work should first reproduce the printed-rule gaps identified in The Drowned City western expedition, Loathsome Parasites and Polar Mirage; their existing experimental status remains in place. The official Drowned City guide places the Tablet-to-Cultist swap in the western branch. Its eastern source TODO is misleading and does not justify an eastern token change.
+The separate [13 October correction build](import-scenario-corrections-2026-10-13.md) compiles the full native engine and adds 31 passing behavior examples for The Drowned City western expedition, Loathsome Parasites and Polar Mirage. It has its own `scenario-fixes` profile, source hashes and full test driver. The generated map retains the earlier registry/API inventory; the new native test result does not replace those captures or certify a new installed release.
+
+Next independent Core content is Smoke and Mirrors, followed by Queen of Ash. The three documented native gaps are now corrected and behavior-tested; their existing experimental status remains in place. The western expedition swaps exactly one Tablet for a Cultist, and the eastern branch preserves its bag. Loathsome Parasites respects the printed reveal/reset timing instead of the misleading mid-effect-refill TODO. Frenzied Explorer now opens Polar Mirage's clue-control window before leaving play. Connected API acceptance and whole-scenario playthroughs for this corrected profile remain separate work.

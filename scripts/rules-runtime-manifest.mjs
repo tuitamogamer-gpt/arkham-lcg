@@ -45,8 +45,11 @@ export async function verifyDerivedRuntime(runtime, extension) {
       "The derived rules runtime manifest is not recognized. Rebuild the extension.",
     );
   const extensionIds = [...manifest.extensions].sort();
-  if (new Set(extensionIds).size !== extensionIds.length || extensionIds.some(id => !["barkham", "epic-labyrinth", "epic-machinations"].includes(id)))
+  if (new Set(extensionIds).size !== extensionIds.length || extensionIds.some(id => !["barkham", "epic-labyrinth", "epic-machinations", "scenario-fixes"].includes(id)))
     throw new Error("The derived runtime declares an unknown original extension.");
+  if (extensionIds.includes("scenario-fixes") &&
+      !["epic-labyrinth", "epic-machinations"].every(id => extensionIds.includes(id)))
+    throw new Error("Scenario fixes require the full original extension aggregate.");
   if (manifest.extensionSourceHashes) {
     if (Object.keys(manifest.extensionSourceHashes).length !== extensionIds.length
       || extensionIds.some(id => !/^[a-f0-9]{64}$/.test(manifest.extensionSourceHashes[id] || "")))

@@ -41,14 +41,22 @@ const toolchain = resolve(
 const extension = resolve(project, "rules/extensions/barkham");
 const withEpicMachinations = process.argv.includes("--with-epic-machinations");
 const withEpicLabyrinth = process.argv.includes("--with-epic-labyrinth") || withEpicMachinations;
+const withScenarioFixes = process.argv.includes("--with-scenario-fixes");
+if (withScenarioFixes && !withEpicMachinations)
+  throw new Error("--with-scenario-fixes requires --with-epic-machinations and its full aggregate test suite.");
+if (withScenarioFixes && process.argv.includes("--coordinator-tests"))
+  throw new Error("--with-scenario-fixes cannot use --coordinator-tests; run the full native aggregate suite.");
 const selectedExtensions = [
   "barkham",
   ...(withEpicLabyrinth ? ["epic-labyrinth"] : []),
   ...(withEpicMachinations ? ["epic-machinations"] : []),
+  ...(withScenarioFixes ? ["scenario-fixes"] : []),
 ];
 const testDriver = resolve(
   project,
-  withEpicMachinations
+  withScenarioFixes
+    ? "rules/tests/ChronicleFullScenarioFixesSpec.hs"
+    : withEpicMachinations
     ? "rules/tests/ChronicleFullSpec.hs"
     : withEpicLabyrinth
     ? "rules/tests/ChronicleSpec.hs"
@@ -395,8 +403,18 @@ if (withEpicMachinations) {
     "      - Arkham.Homebrew.EpicLabyrinth.TransferSpec\n      - Arkham.Homebrew.EpicMachinations.CoordinatorSpec\n      - Arkham.Homebrew.EpicMachinations.ScenarioSpec\n      - Arkham.Homebrew.EpicMachinations.EntitiesSpec\n      - Arkham.Homebrew.EpicMachinations.TransportSpec\n      - Arkham.Homebrew.EpicMachinations.TransactionsSpec\n      - Arkham.Homebrew.EpicMachinations.NobleLegacySpec\n      - Helpers.Message",
   ]);
 }
+if (withScenarioFixes) {
+  patches.push([
+    "arkham-api/package.yaml",
+    "      - Helpers.Message",
+    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Helpers.Message",
+  ]);
+}
 for (const id of selectedExtensions.slice(1)) {
-  for (const name of ["native-seams.json", "server-seams.json", "public-view-seams.json"]) {
+  const seamFiles = id === "scenario-fixes"
+    ? ["native-seams.json"]
+    : ["native-seams.json", "server-seams.json", "public-view-seams.json"];
+  for (const name of seamFiles) {
     const patchPath = resolve(project, "rules/extensions", id, name);
     if (name === "public-view-seams.json" && !(await exists(patchPath))) continue;
     const extra = JSON.parse(
@@ -423,7 +441,7 @@ for (const id of selectedExtensions.slice(1)) {
           /^arkham-api\/library\/[A-Za-z0-9/]+\.hs$/.test(entry[0]),
       )
     )
-      throw new Error(`Invalid original Epic patch contract: ${name}.`);
+      throw new Error(`Invalid original extension patch contract: ${id}/${name}.`);
     patches.push(...extra);
   }
 }
@@ -660,6 +678,20 @@ async function patchSource() {
     );
   const statePath = resolve(source, ".chronicle-stage-state.json");
   const prior = JSON.parse(await readFile(statePath, "utf8").catch(() => "{}"));
+  if (!withScenarioFixes) {
+    const fixedSources = [
+      "Arkham/Campaign/Campaigns/TheDrownedCity.hs",
+      "Arkham/Agenda/Cards/TheDrownedCity/TheApiary/LoathsomeParasites.hs",
+      "Arkham/Treachery/Cards/EdgeOfTheEarth/SilenceAndMystery/PolarMirage.hs",
+      "Arkham/Enemy/Cards/EdgeOfTheEarth/LeftBehind/FrenziedExplorer.hs",
+    ];
+    const containsFix = (await Promise.all(fixedSources.map(async (relative) =>
+      (await readFile(resolve(backend, "arkham-api/library", relative), "utf8"))
+        .includes("-- Chronicle scenario-fixes:")))).some(Boolean);
+    if (prior.extensions?.includes("scenario-fixes") || containsFix ||
+      await exists(resolve(backend, "arkham-api/tests/Arkham/Homebrew/ScenarioFixes")))
+      throw new Error("This private checkout contains scenario fixes. Use --with-epic-machinations --with-scenario-fixes, or a fresh pinned checkout, so the manifest matches all compiled extensions.");
+  }
   if (!withEpicMachinations &&
     (prior.extensions?.includes("epic-machinations") ||
       (await exists(resolve(backend, "arkham-api/library/Arkham/Homebrew/EpicMachinations/Content.hs")))))
@@ -810,15 +842,16 @@ async function stage() {
       resolve(backend, "arkham-api/tests/Arkham/Homebrew/Barkham"),
     );
   for (const id of selectedExtensions.slice(1)) {
-    // Explicit opt-in is used only after the root freezes the API/transfer batch.
     // Copying the whole original backend subtree retains SOURCE .hs-boot files.
-    const epic = resolve(project, "rules/extensions", id);
+    const selected = resolve(project, "rules/extensions", id);
+    // Scenario corrections can consist entirely of bounded native seams.
+    if (id !== "scenario-fixes" || await exists(resolve(selected, "backend")))
+      await copyChangedTree(
+        resolve(selected, "backend"),
+        resolve(backend, "arkham-api/library"),
+      );
     await copyChangedTree(
-      resolve(epic, "backend"),
-      resolve(backend, "arkham-api/library"),
-    );
-    await copyChangedTree(
-      resolve(epic, "tests"),
+      resolve(selected, "tests"),
       resolve(backend, "arkham-api/tests"),
     );
   }

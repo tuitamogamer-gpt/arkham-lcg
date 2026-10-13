@@ -45,6 +45,25 @@ test("Mac archive export binds the full actual current native proof instead of a
   ]) assert.throws(() => assertNativePackageProof(changed, proof, digest), /complete original derived macOS aggregate/);
 });
 
+test("Mac scenario correction exports require the exact corrected profile and its full native driver", () => {
+  const corrected = { ...manifest, extensions: [...manifest.extensions, "scenario-fixes"] };
+  const correctedDriver = "e".repeat(64);
+  const correctedProof = { ...proof, extensions: [...corrected.extensions].reverse(), testDriverSha256: correctedDriver };
+  assert.doesNotThrow(() => assertNativePackageProof(corrected, correctedProof, correctedDriver));
+  for (const changed of [
+    proof,
+    { ...correctedProof, extensions: ["barkham", "scenario-fixes"] },
+    { ...correctedProof, extensions: [...corrected.extensions, "scenario-fixes"] },
+    { ...correctedProof, extensions: [...corrected.extensions, "uncompiled"] },
+    { ...correctedProof, testDriverSha256: digest },
+  ]) assert.throws(() => assertNativePackageProof(corrected, changed, correctedDriver), /matching, unfiltered passing full native driver/);
+  assert.throws(() => assertNativePackageProof(manifest, correctedProof, correctedDriver), /matching, unfiltered passing full native driver/);
+  assert.throws(() => assertNativePackageProof(corrected, correctedProof, digest), /matching, unfiltered passing full native driver/);
+  assert.throws(() => assertNativePackageProof(
+    { ...corrected, extensions: [...corrected.extensions, "uncompiled"] }, correctedProof, correctedDriver,
+  ), /complete original derived macOS aggregate/);
+});
+
 test("portable runtime materialization expands approved links and rejects escaped private files and cycles", async () => {
   const directory = await mkdtemp(join(tmpdir(), "chronicle-mac-package-"));
   try {

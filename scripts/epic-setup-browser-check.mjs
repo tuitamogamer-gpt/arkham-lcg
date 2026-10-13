@@ -12,6 +12,7 @@ import { tsImport } from "tsx/esm/api";
 import {
   acceptanceManifest,
   nativeQaKind,
+  nativeAggregateExtensions,
 } from "./rules-qa-runtime-identity.mjs";
 import {
   installEpicArtworkCapture,
@@ -1331,11 +1332,7 @@ try {
       [...identity.extensions].sort(),
     );
   }
-  assert.deepEqual([...status.extensions].sort(), [
-    "barkham",
-    "epic-labyrinth",
-    "epic-machinations",
-  ]);
+  assert.deepEqual([...status.extensions].sort(), nativeAggregateExtensions(manifest.extensions));
   assert.match(status.binarySha256, /^[a-f0-9]{64}$/);
   proof.seedFileSha256 = sha(seedBytes);
   proof.manifest = {

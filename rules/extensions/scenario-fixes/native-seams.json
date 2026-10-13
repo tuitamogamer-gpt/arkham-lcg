@@ -1,0 +1,37 @@
+[
+  [
+    "arkham-api/library/Arkham/Campaign/Campaigns/TheDrownedCity.hs",
+    "            addCampaignCardToDeckChoice_ =<< genPlayerCard Assets.andyVanNortwick\n            setNextCampaignStep TheWesternWall",
+    "            addCampaignCardToDeckChoice_ =<< genPlayerCard Assets.andyVanNortwick\n            -- Chronicle scenario-fixes: the guide's western expedition replaces one Tablet.\n            removeChaosToken Tablet\n            addChaosToken Cultist\n            setNextCampaignStep TheWesternWall"
+  ],
+  [
+    "arkham-api/library/Arkham/Campaign/Campaigns/TheDrownedCity.hs",
+    "            -- TODO: swap a chaos token (remove 1 / add 1) for the remainder of the\n            -- campaign, per the Eastern Expedition setup.\n",
+    ""
+  ],
+  [
+    "arkham-api/library/Arkham/Agenda/Cards/TheDrownedCity/TheApiary/LoathsomeParasites.hs",
+    "import Arkham.Matcher\n",
+    "import Arkham.Matcher\nimport Arkham.Window qualified as Window\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Agenda/Cards/TheDrownedCity/TheApiary/LoathsomeParasites.hs",
+    "    UseThisAbility _ (isSource attrs -> True) 1 -> do\n      deck <- unDeck <$> getEncounterDeck\n      (others, rest) <- breakM (pure . (`cardMatch` card_ #enemy)) deck\n      case rest of\n        -- No enemy in the deck; leave the deck as revealed (nothing to spawn).\n        -- TODO: if the encounter deck is exhausted without an enemy, the discard\n        -- should be shuffled in and revealing continued.\n        [] -> pure ()\n        (enemyCard : remaining) -> do\n          -- Shuffle each other revealed card and place them on top of the deck.\n          shuffledOthers <- shuffleM others\n          setEncounterDeck $ Deck (shuffledOthers <> remaining)\n          createEnemyWith_ enemyCard (SpawnAtLocationMatching $ FirstLocation [EmptyLocation, Anywhere]) id\n      pure a\n",
+    "    -- Chronicle scenario-fixes: revealing does not remove cards from the deck.\n    -- Scan it once, including the no-enemy case, and shuffle every other\n    -- revealed card. An empty starting deck is refilled before this effect.\n    UseThisAbility _ (isSource attrs -> True) 1 -> do\n      deck <- unDeck <$> getEncounterDeck\n      when (null deck) $ push ShuffleEncounterDiscardBackIn\n      doStep 1 msg\n      pure a\n    DoStep 1 ability@(UseThisAbility _ (isSource attrs -> True) 1) -> do\n      deck <- unDeck <$> getEncounterDeck\n      let (others, rest) = break (`cardMatch` card_ #enemy) deck\n      shuffledOthers <- shuffleM others\n      case rest of\n        [] -> setEncounterDeck $ Deck shuffledOthers\n        enemyCard : remaining -> do\n          let completedDeck = shuffledOthers <> remaining\n          setEncounterDeck $ Deck completedDeck\n          createEnemyWith_ enemyCard (SpawnAtLocationMatching $ FirstLocation [EmptyLocation, Anywhere]) id\n          -- Only removing the sole card can actually empty this deck. Finish\n          -- spawning before its exhaustion window and discard reshuffle.\n          when (null completedDeck) $ doStep 2 ability\n      pure a\n    DoStep 2 (UseThisAbility _ (isSource attrs -> True) 1) -> do\n      deck <- unDeck <$> getEncounterDeck\n      when (null deck) do\n        checkWhen Window.EncounterDeckRunsOutOfCards\n        push ShuffleEncounterDiscardBackIn\n      pure a\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/EdgeOfTheEarth/LeftBehind/FrenziedExplorer.hs",
+    "import Arkham.Token\n",
+    "import Arkham.Token\nimport Arkham.Window qualified as Window\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/EdgeOfTheEarth/LeftBehind/FrenziedExplorer.hs",
+    "        flipDoomToClues iid 1\n        doStep 2 msg",
+    "        flipDoomToClues iid 1\n        -- Chronicle scenario-fixes: resolve clue control before this enemy leaves its location.\n        checkAfter $ Window.TakeControlOfClues iid (toSource attrs) 1\n        doStep 2 msg"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/EdgeOfTheEarth/SilenceAndMystery/PolarMirage.hs",
+    "-- TODO: Need to update for Frenzied Explorer and Lost Researcher",
+    "-- Chronicle scenario-fixes: both Left Behind enemies emit clue-control windows before being discarded."
+  ]
+]

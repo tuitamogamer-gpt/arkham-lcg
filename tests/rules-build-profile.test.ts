@@ -40,6 +40,18 @@ async function rejectedBeforeRestoration(
   }
 }
 
+test("scenario corrections require the full aggregate profile before restoration", async () => {
+  for (const profile of [[], ["--with-epic-labyrinth"]])
+    await rejectedBeforeRestoration(
+      ["--with-scenario-fixes", ...profile, "--stage"],
+      /--with-scenario-fixes requires --with-epic-machinations/,
+    );
+  await rejectedBeforeRestoration(
+    ["--with-scenario-fixes", "--with-epic-machinations", "--coordinator-tests"],
+    /--with-scenario-fixes cannot use --coordinator-tests/,
+  );
+});
+
 test("a private compilation check cannot prepare or publish runtime capabilities", async () => {
   for (const mode of [
     "--prepare-only",

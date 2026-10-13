@@ -27,7 +27,7 @@ if (process.argv.includes("--help")) {
   console.log(`Private real Linux aggregate API QA; no distribution/capability installation.
 ARKHAM_RULES_QA_PG_PREFIX=<full PostgreSQL 14.15 prefix> node scripts/linux-native-acceptance.mjs --prepare
 node scripts/linux-native-acceptance.mjs --start
-Required before preparation: passing --compile-only --with-epic-machinations --test aggregate proof and retained full test executable/objects/source. Build the private client with VITE_ARKHAM_RULES_URL=http://127.0.0.1:5494 npm run build (match any overridden private bridge port) before --prepare copies dist.
+Required before preparation: passing --compile-only --with-epic-machinations --test aggregate proof and retained full test executable/objects/source. Add --with-scenario-fixes during the build to include the original native scenario corrections and their behavior suites. Preparation verifies the exact selected profile. Build the private client with VITE_ARKHAM_RULES_URL=http://127.0.0.1:5494 npm run build (match any overridden private bridge port) before --prepare copies dist.
 Optional: ARKHAM_RULES_QA_DIR=<isolated directory under project output>, ARKHAM_RULES_QA_NATIVE_PROOF, ARKHAM_RULES_SOURCE. Ports default to 5494/5495/5496; override ARKHAM_RULES_PORT, ARKHAM_RULES_API_PORT, ARKHAM_RULES_PG_PORT. Data stays in <QA_DIR>/data; terminate the launcher to stop its managed API/database, then --start again for persistence QA. Use <QA_DIR>/runtime/chronicle-native-qa.json as ARKHAM_RULES_QA_MANIFEST in acceptance scripts. PostgreSQL must be run as a non-root user.`);
   process.exit(0);
 }
