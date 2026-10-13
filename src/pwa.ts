@@ -1,8 +1,7 @@
 import { registerSW } from "virtual:pwa-register";
+import { createPwaUpdateCoordinator } from "./game/pwaUpdate";
 
 let available = false;
-let requested = false;
-let switched = false;
 let updateWorker: (() => Promise<void>) | undefined;
 const listeners = new Set<() => void>();
 
@@ -10,6 +9,13 @@ function announceUpdate() {
   available = true;
   listeners.forEach((listener) => listener());
 }
+const updates = createPwaUpdateCoordinator({
+  activate: async () => {
+    await updateWorker?.();
+  },
+  reload: () => window.location.reload(),
+  announceUpdate,
+});
 
 export const getUpdateAvailable = () => available;
 export const subscribeUpdate = (listener: () => void) => {
@@ -19,24 +25,16 @@ export const subscribeUpdate = (listener: () => void) => {
   };
 };
 
-/** The caller saves the current investigation before explicitly reloading. */
-export async function applyUpdate() {
+/** The guard saves current progress immediately before the eventual reload. */
+export async function applyUpdate(beforeReload?: () => Promise<boolean>) {
   if (!available) return;
-  requested = true;
-  if (switched) window.location.reload();
-  else await updateWorker?.();
+  await updates.applyUpdate(beforeReload);
 }
 
 export function registerOfflineShell() {
   updateWorker = registerSW({
     immediate: true,
     onNeedRefresh: announceUpdate,
-    onNeedReload() {
-      switched = true;
-      // Another open tab can activate the waiting worker. Keep this table
-      // running until its player chooses to save and refresh as well.
-      if (requested) window.location.reload();
-      else announceUpdate();
-    },
+    onNeedReload: updates.onNeedReload,
   });
 }

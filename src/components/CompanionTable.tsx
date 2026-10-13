@@ -15,6 +15,8 @@ import {
   MapPin,
   Stack,
   StarFour,
+  SpinnerGap,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import {
   CARD_ART,
@@ -64,7 +66,10 @@ import {
   nativeEpicSetupComplete,
   type EpicReadyState,
 } from "../game/epicReady";
-import { createCompanionSync } from "../game/companionSync";
+import {
+  createCompanionTableSync,
+  type CompanionConnectionStatus,
+} from "../game/companionTableSync";
 import {
   Button,
   CardFace,
@@ -572,7 +577,11 @@ export function CompanionTable({
   const [presentation, setPresentation] = useState<CompanionPresentation>();
   const [solo, setSolo] = useState(false);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [connectionStatus, setConnectionStatus] =
+    useState<CompanionConnectionStatus>("connecting");
+  const busy =
+    connectionStatus === "updating" || connectionStatus === "confirming";
+  const connectionBlocked = connectionStatus !== "confirmed";
   const [epicReady, setEpicReady] = useState<{
     sessionKey: string;
     state: EpicReadyState;
@@ -585,7 +594,7 @@ export function CompanionTable({
   >(null);
   const sync = useRef<{
     sessionKey: string;
-    controller: ReturnType<typeof createCompanionSync>;
+    controller: ReturnType<typeof createCompanionTableSync>;
   } | null>(null);
   const sessionKey = `${session.gameId}:${session.seatId || ""}`;
   const milestone = useCompanionMilestones(snapshot, sessionKey);
@@ -599,11 +608,11 @@ export function CompanionTable({
   useEffect(() => {
     let disposed = false;
     setSnapshot(null);
-    setBusy(false);
+    setConnectionStatus("connecting");
     setError("");
     setSelected("");
     setNativeInspection(null);
-    const controller = createCompanionSync({
+    const controller = createCompanionTableSync({
       readStep: () => getCompanionGameStep(session),
       readGame: () => getCompanionGame(session),
       change: (raw) => {
@@ -613,19 +622,18 @@ export function CompanionTable({
         setSolo(obj(raw).multiplayerMode === "Solo");
         setError("");
       },
-      error: (cause, operation) =>
+      error: (cause, operation) => {
+        const message =
+          operation === "action" || controller.status === "unconfirmed"
+            ? "This action has not been confirmed. Reconnect to check the latest table before choosing again."
+            : "Connection interrupted. Reconnect to check the latest table before continuing.";
         setError(
-          cause instanceof Error
-            ? cause.message
-            : operation === "action"
-              ? "Could not complete this choice."
-              : operation === "poll"
-                ? "Connection interrupted. Your game is saved."
-                : "Could not load this investigation.",
-        ),
-      busy: (value) => {
-        setBusy(value);
-        if (value) setError("");
+          cause instanceof Error ? `${message} ${cause.message}` : message,
+        );
+      },
+      status: (value) => {
+        setConnectionStatus(value);
+        if (value === "updating") setError("");
       },
     });
     sync.current = { sessionKey, controller };
@@ -977,9 +985,34 @@ export function CompanionTable({
             <h1>{title}</h1>
           </div>
           <div className="game-header-actions">
-            <span className="autosaved">
-              <CheckCircle size={15} />{" "}
-              {busy ? "Saving…" : "Saved investigation"}
+            <span
+              className="autosaved"
+              role="status"
+              data-sync-status={connectionStatus}
+              title={
+                connectionStatus === "confirmed"
+                  ? "Latest table received from the companion."
+                  : undefined
+              }
+            >
+              {connectionStatus === "confirmed" ? (
+                <CheckCircle size={15} />
+              ) : connectionStatus === "disconnected" ||
+                connectionStatus === "unconfirmed" ? (
+                <WarningCircle size={15} />
+              ) : (
+                <SpinnerGap size={15} />
+              )}{" "}
+              {
+                {
+                  connecting: "Connecting…",
+                  updating: "Updating table…",
+                  confirming: "Confirming table…",
+                  confirmed: "Table confirmed",
+                  disconnected: "Connection interrupted",
+                  unconfirmed: "Action not yet confirmed",
+                }[connectionStatus]
+              }
             </span>
             <button
               className="icon-button"
@@ -990,7 +1023,9 @@ export function CompanionTable({
             </button>
             <button
               className="icon-button"
-              disabled={busy || epicBlocked || game.undoActionStep == null}
+              disabled={
+                connectionBlocked || epicBlocked || game.undoActionStep == null
+              }
               onClick={() => {
                 void perform(() => undoCompanionGame(session)).catch(() => {});
               }}
@@ -1008,6 +1043,7 @@ export function CompanionTable({
             <p>{error || catalogError || questionError}</p>
             <Button
               secondary
+              disabled={busy}
               onClick={() => {
                 if (catalogError) retryCatalog();
                 void load();
@@ -1019,7 +1055,7 @@ export function CompanionTable({
         )}
         {!snapshot ? (
           <p className="companion-loading" role="status">
-            Opening your saved table…
+            Opening your table…
           </p>
         ) : (
           <>
@@ -1577,7 +1613,7 @@ export function CompanionTable({
                   model={model}
                   context={context}
                   cards={cardMap}
-                  busy={busy || epicBlocked}
+                  busy={connectionBlocked || epicBlocked}
                   inspect={inspectCard}
                   submit={submit}
                   upgrade={upgrade}

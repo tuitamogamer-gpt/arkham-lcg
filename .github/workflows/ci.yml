@@ -48,6 +48,16 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node --import tsx scripts/quality-browser-check.mjs
+      - name: Campaign continuation and upgrade protocol fixtures
+        env:
+          BASE_URL: http://127.0.0.1:5187
+          QA_BRIDGE_PORT: 5194
+          QA_BROWSERS: chromium
+        run: node scripts/campaign-continuation-browser-check.mjs
+      - name: Cross-tab save conflicts and unsaved progress
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node --import tsx scripts/save-conflict-browser-check.mjs
       - name: Offline milestone media and lazy player
         env:
           BASE_URL: http://127.0.0.1:5187
@@ -62,4 +72,6 @@ jobs:
             output/review
             output/milestone-motion
             output/quality-pass
+            output/campaign-continuation
+            output/save-conflict
           if-no-files-found: ignore

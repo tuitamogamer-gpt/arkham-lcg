@@ -19,6 +19,13 @@ export interface SaveSummary {
   status: GameState["status"];
   result: string | null;
 }
+/** The revision is the exact persisted payload observed with this game. */
+export interface SaveSnapshot {
+  game: GameState;
+  revision: string | null;
+  /** Present only while an older, single-slot save awaits migration. */
+  legacyRevision?: string;
+}
 export interface ResultRecord {
   id: string;
   finishedAt: string;
@@ -586,10 +593,12 @@ function validSummary(x: unknown): x is SaveSummary {
   );
 }
 function readIndex(): { active: string | null; slots: SaveSummary[] } {
+  const slots: SaveSummary[] = [];
+  let active: unknown = null;
   try {
     const x: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) || "null");
     if (record(x) && Array.isArray(x.slots)) {
-      const slots: SaveSummary[] = [];
+      active = x.active;
       for (const v of x.slots) {
         if (!record(v) || !identifier(v.id) || slots.some((s) => s.id === v.id))
           continue;
@@ -609,17 +618,12 @@ function readIndex(): { active: string | null; slots: SaveSummary[] } {
             });
         }
       }
-      return {
-        active: slots.some((s) => s.id === x.active)
-          ? (x.active as string)
-          : null,
-        slots,
-      };
     }
   } catch {
     /* A damaged index must not hide healthy investigation payloads. */
   }
-  const slots: SaveSummary[] = [];
+  // A valid index can still be stale after another tab publishes a payload,
+  // or after an interrupted save. Always include healthy orphaned payloads.
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -636,7 +640,10 @@ function readIndex(): { active: string | null; slots: SaveSummary[] } {
   }
   // Payloads have no timestamp or active marker. Keep them available to open
   // without inventing recency or writing anything during recovery.
-  return { active: null, slots };
+  return {
+    active: slots.some((slot) => slot.id === active) ? (active as string) : null,
+    slots,
+  };
 }
 function writeIndex(index: { active: string | null; slots: SaveSummary[] }) {
   localStorage.setItem(INDEX_KEY, JSON.stringify(index));
@@ -661,39 +668,60 @@ export function listSaves(): SaveSummary[] {
 export function activeSaveId(): string | null {
   return readIndex().active;
 }
-export function loadSave(id: string): GameState | null {
+/** Read raw bytes even when they cannot be decoded: corruption is a change. */
+export function saveStorageRevision(id: string): string | null {
+  return localStorage.getItem(slotKey(id));
+}
+export function isSaveStorageKey(key: string | null): boolean {
+  return (
+    key === null ||
+    key === SAVE_KEY ||
+    key === INDEX_KEY ||
+    key === RECORD_KEY ||
+    key.startsWith(SLOT_PREFIX)
+  );
+}
+export function loadSaveSnapshot(id: string): SaveSnapshot | null {
   try {
-    const saved = decodeSave(
-      JSON.parse(localStorage.getItem(slotKey(id)) || "null"),
-    );
-    return saved?.id === id ? saved : null;
+    const revision = saveStorageRevision(id);
+    const game = decodeSave(JSON.parse(revision || "null"));
+    return game?.id === id && revision !== null ? { game, revision } : null;
   } catch {
     return null;
   }
 }
-/** Returns the active investigation, migrating the legacy single slot first. */
-export function readSave(): GameState | null {
-  let legacy: GameState | null = null;
+export function loadSave(id: string): GameState | null {
+  return loadSaveSnapshot(id)?.game ?? null;
+}
+/** Loading never writes: legacy migration happens during a guarded save. */
+export function readSaveSnapshot(): SaveSnapshot | null {
   try {
-    // The legacy key only exists when an older build (or automation) wrote
-    // it, so its content is the newest state of that investigation.
     const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) legacy = decodeSave(JSON.parse(raw));
+    const legacy = raw ? decodeSave(JSON.parse(raw)) : null;
+    if (legacy) {
+      // Legacy payloads have no reliable date. A valid slot must never be
+      // replaced merely because an older browser build left this key behind.
+      const current = loadSaveSnapshot(legacy.id);
+      if (current) {
+        const active = readIndex().active;
+        return (active ? loadSaveSnapshot(active) : null) ?? current;
+      }
+      return {
+        game: legacy,
+        // The legacy game did not come from the modern slot. A corrupt or
+        // unsupported payload there must conflict, never authorize overwrite.
+        revision: null,
+        legacyRevision: raw!,
+      };
+    }
   } catch {
     // A broken legacy save must not prevent reading a healthy active slot.
   }
-  if (legacy) {
-    try {
-      writeSave(legacy);
-      localStorage.removeItem(SAVE_KEY);
-    } catch {
-      // Keep the original when slots are full or storage is unavailable, and
-      // still let the player resume/export the investigation.
-    }
-    return legacy;
-  }
   const active = readIndex().active;
-  return active ? loadSave(active) : null;
+  return active ? loadSaveSnapshot(active) : null;
+}
+export function readSave(): GameState | null {
+  return readSaveSnapshot()?.game ?? null;
 }
 export function setActiveSave(id: string) {
   const index = readIndex();
@@ -725,6 +753,14 @@ export function writeSave(s: GameState) {
 }
 export function deleteSave(id: string) {
   const previousIndex = localStorage.getItem(INDEX_KEY);
+  const previousPayload = localStorage.getItem(slotKey(id));
+  let matchingLegacy: string | null = null;
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw && decodeSave(JSON.parse(raw))?.id === id) matchingLegacy = raw;
+  } catch {
+    // Unreadable legacy data is not evidence that it belongs to this case.
+  }
   const index = readIndex();
   writeIndex({
     active: index.active === id ? null : index.active,
@@ -732,8 +768,14 @@ export function deleteSave(id: string) {
   });
   try {
     localStorage.removeItem(slotKey(id));
+    // Explicit deletion includes the same investigation in the old format,
+    // otherwise its legacy copy could reactivate on the next page load.
+    if (matchingLegacy !== null) localStorage.removeItem(SAVE_KEY);
   } catch (error) {
-    // A failed deletion must keep both the payload and its previous index.
+    // A failed deletion must keep all payloads and their previous index.
+    if (previousPayload !== null)
+      localStorage.setItem(slotKey(id), previousPayload);
+    if (matchingLegacy !== null) localStorage.setItem(SAVE_KEY, matchingLegacy);
     if (previousIndex === null) localStorage.removeItem(INDEX_KEY);
     else localStorage.setItem(INDEX_KEY, previousIndex);
     throw error;

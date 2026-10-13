@@ -144,6 +144,16 @@ async function openCore(page, fixture) {
   );
 }
 async function save(page) {
+  // Cross-tab writes wait for their Web Lock. Inspect the persisted snapshot
+  // only once the application confirms this action's save has completed.
+  await page
+    .getByText("Autosaved", { exact: true })
+    .or(
+      page.getByText("Your campaign record is saved on this device.", {
+        exact: true,
+      }),
+    )
+    .waitFor({ state: "attached" });
   return page.evaluate(() => {
     const id = JSON.parse(
       localStorage.getItem("arkham-chronicle:saves") || "{}",
@@ -354,6 +364,7 @@ try {
     const fixture = ready();
     const { ctx, page } = await context({ fixture });
     await openCore(page, fixture);
+    const original = await save(page);
     const advanced = reduceGame(
       decision(structuredClone(fixture), "Advance authored case", [
         { kind: "advanceAct" },
@@ -373,7 +384,7 @@ try {
       assert.equal(
         imported.id,
         fixture.id,
-        "regression uses the same mounted investigation identity",
+        "the backup uses the original investigation identity",
       );
       const payload = JSON.stringify(imported);
       const decoded = decodeSave(JSON.parse(payload));
@@ -391,14 +402,18 @@ try {
       });
       await page
         .getByRole("status")
-        .filter({ hasText: "Saved investigation restored." })
+        .filter({ hasText: "Saved investigation imported as a separate copy." })
         .waitFor();
       await page.waitForFunction(
         ({ id, expected }) => {
+          const active = JSON.parse(
+            localStorage.getItem("arkham-chronicle:saves") || "{}",
+          ).active;
           const current = JSON.parse(
-            localStorage.getItem(`arkham-chronicle:save:${id}`) || "null",
+            localStorage.getItem(`arkham-chronicle:save:${active}`) || "null",
           );
           return (
+            active !== id &&
             current?.act === expected.act &&
             current?.status === expected.status &&
             current?.eventSerial === expected.eventSerial &&
@@ -407,16 +422,31 @@ try {
         },
         { id: decoded.id, expected: decoded },
       );
+      const restored = await save(page);
+      assert.notEqual(
+        restored.id,
+        decoded.id,
+        "imports keep a separate identity",
+      );
       assert.deepEqual(
-        await save(page),
+        { ...restored, id: decoded.id },
         decoded,
-        "same-id import restores the exact decoded state",
+        "the imported copy preserves every decoded game field except its new identity",
+      );
+      assert.deepEqual(
+        await page.evaluate(
+          (id) =>
+            JSON.parse(localStorage.getItem(`arkham-chronicle:save:${id}`)),
+          fixture.id,
+        ),
+        original,
+        "the original investigation remains unchanged",
       );
       await page.waitForTimeout(100);
       assert.equal(
         await page.locator(".milestone-notice").count(),
         0,
-        "successful same-id restoration does not animate saved progression",
+        "successful import does not animate saved progression",
       );
       assert.equal(
         await page.evaluate(() => window.milestoneAdded.length),
@@ -424,9 +454,9 @@ try {
         "restoration never briefly instantiates a saved milestone",
       );
     }
-    await shot(page, "same-id-restored-ending-silent");
+    await shot(page, "imported-ending-silent");
     checks.push(
-      "Actual UI same-id save imports while the game is mounted: newer act and ending restore their exact decoded states without even briefly creating a milestone.",
+      "Actual UI backup imports preserve the original investigation and restore act/ending states as separate copies without even briefly creating a milestone.",
     );
     await ctx.close();
   }
