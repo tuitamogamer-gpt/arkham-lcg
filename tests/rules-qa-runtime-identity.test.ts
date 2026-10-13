@@ -6,6 +6,9 @@ import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   nativeQaKind,
+  nativeAggregateExtensions,
+  nativeAggregateTestDriver,
+  acceptanceManifest,
   verifyNativeQaManifest,
 } from "../scripts/rules-qa-runtime-identity.mjs";
 import { verifyDerivedRuntime } from "../scripts/rules-runtime-manifest.mjs";
@@ -22,6 +25,22 @@ const manifest = {
   capabilityCertified: false,
   extensions: ["barkham", "epic-labyrinth", "epic-machinations"],
 };
+
+test("native acceptance permits only the legacy full aggregate or its explicit scenario corrections", () => {
+  const legacy = ["barkham", "epic-labyrinth", "epic-machinations"];
+  const corrected = [...legacy, "scenario-fixes"];
+  assert.deepEqual(nativeAggregateExtensions([...legacy].reverse()), legacy);
+  assert.deepEqual(nativeAggregateExtensions([...corrected].reverse()), corrected);
+  assert.equal(nativeAggregateTestDriver(legacy), "rules/tests/ChronicleFullSpec.hs");
+  assert.equal(nativeAggregateTestDriver(corrected), "rules/tests/ChronicleFullScenarioFixesSpec.hs");
+  for (const extensions of [
+    ["barkham", "scenario-fixes"],
+    ["barkham", "epic-machinations", "scenario-fixes"],
+    [...legacy, "uncompiled"],
+    [...corrected, "scenario-fixes"],
+  ])
+    assert.throws(() => nativeAggregateExtensions(extensions), /recognized full aggregate/);
+});
 
 test("a coordinator-only proof cannot qualify for full aggregate API acceptance", async () => {
   const output = resolve(import.meta.dirname, "../output");
@@ -84,6 +103,24 @@ test("the ordinary runtime validator rejects a private Linux QA manifest", async
       verifyDerivedRuntime(directory),
       /manifest is not recognized/,
     );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("a declared scenario correction profile cannot bypass actual packaged runtime validation", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "qa-scenario-profile-negative-"));
+  try {
+    const path = join(directory, "chronicle-runtime.json");
+    const packaged = {
+      ...manifest,
+      kind: "chronicle-derived",
+      extensions: [...manifest.extensions, "scenario-fixes"],
+    };
+    await writeFile(path, JSON.stringify(packaged));
+    await assert.rejects(acceptanceManifest(path), /source manifest is incomplete/);
+    await writeFile(path, JSON.stringify({ ...packaged, extensions: ["barkham", "scenario-fixes"] }));
+    await assert.rejects(acceptanceManifest(path), /recognized full aggregate/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

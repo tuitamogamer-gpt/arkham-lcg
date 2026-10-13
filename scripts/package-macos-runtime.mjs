@@ -10,12 +10,12 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { createGzip } from "node:zlib";
 import { verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
+import { nativeAggregateExtensions, nativeAggregateTestDriver } from "./rules-qa-runtime-identity.mjs";
 
 const execute = promisify(execFile);
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const baseArchiveSha256 = "29061cbdb683cc7b98f56fc45cb64fbc3762e5a21796406c429a936033bacf39";
 const upstreamRevision = "03a7f1e74925744f021f6e8fe0e39945d2c3a833";
-const aggregateExtensions = ["barkham", "epic-labyrinth", "epic-machinations"];
 const hashPattern = /^[a-f0-9]{64}$/;
 
 async function sha256(path) {
@@ -25,13 +25,16 @@ async function sha256(path) {
 }
 
 export function assertNativePackageProof(manifest, proof, driverSha256) {
-  const complete = value => Array.isArray(value) && value.length === aggregateExtensions.length &&
-    aggregateExtensions.every(id => value.includes(id)) && new Set(value).size === value.length;
+  const complete = value => {
+    if (!Array.isArray(value)) return false;
+    try { nativeAggregateExtensions(value); return true; } catch { return false; }
+  };
   if (!manifest || manifest.kind !== "chronicle-derived" || manifest.upstreamRevision !== upstreamRevision ||
       manifest.baseReleaseSha256 !== baseArchiveSha256 || !complete(manifest.extensions) ||
       !hashPattern.test(manifest.nativeEngineSha256 || ""))
     throw new Error("Export requires the complete original derived macOS aggregate, not a private QA identity.");
   if (!proof || proof.schema !== 1 || proof.status !== "passed" || proof.suite !== "arkham-api:test:barkham-spec" || !complete(proof.extensions) ||
+      JSON.stringify([...proof.extensions].sort()) !== JSON.stringify([...manifest.extensions].sort()) ||
       proof.upstreamRevision !== manifest.upstreamRevision || !Number.isSafeInteger(proof.examples) ||
       proof.examples < 1 || proof.failures !== 0 || proof.environmentSanitized !== true ||
       JSON.stringify(proof.hspecOptions) !== JSON.stringify(["--ignore-dot-hspec"]) ||
@@ -275,7 +278,7 @@ async function main(argv) {
   const epoch = Number(args["--source-epoch"]);
   const manifest = await verifyDerivedRuntime(candidate, resolve(project, "rules/extensions/barkham"));
   const proof = JSON.parse(await readFile(proofPath, "utf8"));
-  assertNativePackageProof(manifest, proof, await sha256(resolve(project, "rules/tests/ChronicleFullSpec.hs")));
+  assertNativePackageProof(manifest, proof, await sha256(resolve(project, nativeAggregateTestDriver(manifest?.extensions))));
   if (await sha256(archive) !== baseArchiveSha256) throw new Error("The base archive does not match the pinned release checksum.");
   const originalSignature = await capture("codesign", ["-dv", "--verbose=4", resolve(candidate, "bin/arkham-api")]);
   if (!/^Signature=adhoc$/m.test(originalSignature)) throw new Error("This export route preserves the existing ad-hoc candidate; another signing identity needs a separate verified release route.");

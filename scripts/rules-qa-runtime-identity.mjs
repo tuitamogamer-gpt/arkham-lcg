@@ -6,12 +6,24 @@ import { createReadStream } from "node:fs";
 import { readFile, realpath } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { extensionSourceHash } from "./rules-runtime-manifest.mjs";
+import { extensionSourceHash, verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
 
 export const nativeQaKind = "chronicle-linux-native-qa";
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const revision = "03a7f1e74925744f021f6e8fe0e39945d2c3a833";
-const extensions = ["barkham", "epic-labyrinth", "epic-machinations"];
+const aggregateExtensions = ["barkham", "epic-labyrinth", "epic-machinations"];
+/** Both explicit full aggregate profiles retain their own source/driver identity. */
+export function nativeAggregateExtensions(selected) {
+  const extensions = [...selected].sort();
+  const expected = extensions.includes("scenario-fixes")
+    ? [...aggregateExtensions, "scenario-fixes"] : aggregateExtensions;
+  assert.deepEqual(extensions, expected, "Native QA requires a recognized full aggregate extension profile.");
+  return extensions;
+}
+export function nativeAggregateTestDriver(selected) {
+  return nativeAggregateExtensions(selected).includes("scenario-fixes")
+    ? "rules/tests/ChronicleFullScenarioFixesSpec.hs" : "rules/tests/ChronicleFullSpec.hs";
+}
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
 export async function qaFileSha256(path) {
   const hash = createHash("sha256");
@@ -30,7 +42,7 @@ export async function verifyNativeQaManifest(manifestPath) {
   assert.equal(manifest.upstreamRevision, revision);
   for (const key of ["packaged", "installed", "capabilityCertified"])
     assert.equal(manifest[key], false, `Private QA cannot claim ${key}.`);
-  assert.deepEqual([...manifest.extensions].sort(), extensions);
+  const extensions = nativeAggregateExtensions(manifest.extensions);
   const proofPath = await realpath(manifest.nativeProof.path);
   assert.ok(
     proofPath.startsWith((await realpath(resolve(project, "output"))) + sep),
@@ -104,7 +116,7 @@ export async function verifyNativeQaManifest(manifestPath) {
   assert.equal(proof.behavior.environmentSanitized, true);
   assert.deepEqual(proof.behavior.hspecOptions, ["--ignore-dot-hspec"]);
   assert.equal(
-    await qaFileSha256(resolve(project, "rules/tests/ChronicleFullSpec.hs")),
+    await qaFileSha256(resolve(project, nativeAggregateTestDriver(extensions))),
     proof.behavior.testDriverSha256,
   );
   assert.equal(
@@ -137,5 +149,11 @@ export async function acceptanceManifest(path) {
   const manifest = JSON.parse(await readFile(path, "utf8"));
   if (manifest.kind === nativeQaKind) return verifyNativeQaManifest(path);
   assert.equal(manifest.kind, "chronicle-derived");
+  if (manifest.extensions?.includes("scenario-fixes")) {
+    nativeAggregateExtensions(manifest.extensions);
+    const verified = await verifyDerivedRuntime(dirname(path), resolve(project, "rules/extensions/barkham"));
+    assert.deepEqual(verified, manifest, "Scenario corrections must match the validated installed candidate manifest.");
+    return verified;
+  }
   return manifest;
 }

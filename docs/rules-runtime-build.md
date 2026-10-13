@@ -79,6 +79,20 @@ The complete original aggregate also accepts `--with-epic-machinations`, which i
 ARKHAM_RULES_GHC_HEAP=4G node scripts/build-rules-runtime.mjs --with-epic-machinations --incremental-native --direct-objects --test --compact-build
 ```
 
+The optional `--with-scenario-fixes` profile adds the Drowned City western
+expedition, Loathsome Parasites and Polar Mirage corrections. It requires
+`--with-epic-machinations` and uses
+`rules/tests/ChronicleFullScenarioFixesSpec.hs` to run the complete original
+suite plus the new native regressions. Coordinator-only checks cannot certify
+this profile. Its manifests, private QA and Mac export bind the additional
+extension's current source hash and the dedicated test driver. A staged fixes
+checkout cannot be downgraded in place to a legacy profile; use a fresh pinned
+checkout for that build.
+
+```sh
+node scripts/build-rules-runtime.mjs --with-epic-machinations --with-scenario-fixes --incremental-native --direct-objects --test --compact-build
+```
+
 ## Private Linux compilation checks
 
 Linux x86_64 workers can restore the pinned source and dependencies, then compile

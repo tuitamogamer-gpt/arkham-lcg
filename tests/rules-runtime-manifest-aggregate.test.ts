@@ -104,3 +104,43 @@ test("a prepared runtime binds the exact client presentation to its verified bin
     await assert.rejects(verifyDerivedRuntime(f.runtime, f.barkham), /presentation does not match/);
   } finally { await rm(f.directory, {recursive:true, force:true}); }
 });
+
+test("scenario corrections bind their native seam and regression tests to the complete aggregate", async () => {
+  const f = await fixture();
+  try {
+    const machinations = join(f.directory, "extensions/epic-machinations");
+    const corrections = join(f.directory, "extensions/scenario-fixes");
+    await mkdir(machinations);
+    await mkdir(join(corrections, "tests"), { recursive: true });
+    await writeFile(join(machinations, "Rules.hs"), "original Epic rules");
+    const seam = JSON.stringify([["Native.hs", "original", "correction"]]);
+    await writeFile(join(corrections, "native-seams.json"), seam);
+    await writeFile(join(corrections, "tests/ScenarioSpec.hs"), "original native regression");
+    const extensionSourceHashes = {
+      ...f.manifest.extensionSourceHashes,
+      "epic-machinations": await extensionSourceHash(machinations),
+      "scenario-fixes": await extensionSourceHash(corrections),
+    };
+    const corrected = {
+      ...f.manifest,
+      extensions: Object.keys(extensionSourceHashes).reverse(),
+      extensionSourceHashes,
+      extensionSourceSha256: hash(JSON.stringify(Object.keys(extensionSourceHashes).sort()
+        .map(id => [id, extensionSourceHashes[id as keyof typeof extensionSourceHashes]]))),
+    };
+    await f.save(corrected);
+    assert.deepEqual(await verifyDerivedRuntime(f.runtime, f.barkham), corrected);
+    for (const [path, original] of [
+      ["native-seams.json", seam],
+      ["tests/ScenarioSpec.hs", "original native regression"],
+    ]) {
+      await writeFile(join(corrections, path), "changed since compilation");
+      await assert.rejects(verifyDerivedRuntime(f.runtime, f.barkham), /source changed/);
+      await writeFile(join(corrections, path), original);
+    }
+    await f.save({ ...corrected, extensions: ["barkham", "scenario-fixes"] });
+    await assert.rejects(verifyDerivedRuntime(f.runtime, f.barkham), /require the full original extension aggregate/);
+  } finally {
+    await rm(f.directory, { recursive: true, force: true });
+  }
+});

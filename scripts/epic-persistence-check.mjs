@@ -13,7 +13,7 @@ import { promisify } from "node:util";
 import { mkdir, readFile, writeFile, realpath } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { acceptanceManifest, nativeQaKind } from "./rules-qa-runtime-identity.mjs";
+import { acceptanceManifest, nativeQaKind, nativeAggregateExtensions } from "./rules-qa-runtime-identity.mjs";
 
 if (process.argv.includes("--help")) {
   console.log(`EPIC_QA_CONFIRMED=1 node scripts/epic-persistence-check.mjs --baseline|--verify
@@ -34,7 +34,6 @@ const mode = modes[0].slice(2),
   output = resolve(process.env.QA_OUT || resolve(project, "output/epic-persistence")),
   uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/,
   hash = /^[a-f0-9]{64}$/,
-  extensions = ["barkham", "epic-labyrinth", "epic-machinations"].sort(),
   sha = (value) => createHash("sha256").update(value).digest("hex"),
   canonical = (value) =>
     Array.isArray(value)
@@ -82,7 +81,7 @@ const proof = {
   authentication: "Bridge GETs can warm seat authentication and set beta=true on QA users; user rows are outside save comparisons.",
   timers: "Compare every stored timer/state field exactly. Elapsed wall time is observational and is never applied or normalized into saves.",
 };
-let seats = [], events = [], barkhamGames = [], expected;
+let seats = [], events = [], barkhamGames = [], expected, extensions;
 const privateWrite = (path, value, flag = "wx") =>
   writeFile(path, JSON.stringify(value, null, 2) + "\n", { mode: 0o600, flag });
 async function get(path) {
@@ -293,11 +292,11 @@ try {
   const reportBytes = await readFile(reportPath), source = JSON.parse(reportBytes),
     manifestBytes = await readFile(manifestPath);
   expected = await acceptanceManifest(manifestPath);
+  extensions = nativeAggregateExtensions(expected.extensions);
   assert.equal(source.passed, true, "Use a passed full Epic harness report, not a table seed or arbitrary saves.");
   assert.equal(source.mode, undefined, "Table preparation is not full acceptance.");
   assert.equal(expected.schema, 1);
   assert.equal(expected.upstreamRevision, "03a7f1e74925744f021f6e8fe0e39945d2c3a833");
-  assert.deepEqual([...expected.extensions].sort(), extensions);
   assert.deepEqual([...source.runtime.extensions].sort(), extensions);
   for (const key of ["binarySha256", "extensionSourceSha256"]) {
     assert.match(expected[key], hash);

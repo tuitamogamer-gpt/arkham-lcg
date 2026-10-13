@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, webkit } from "playwright";
-import { acceptanceManifest } from "./rules-qa-runtime-identity.mjs";
+import { acceptanceManifest, nativeAggregateExtensions } from "./rules-qa-runtime-identity.mjs";
 import { installEpicArtworkCapture, verifyEpicArtwork, replaceEpicArtworkIndexes } from "./epic-browser-artwork.mjs";
 
 if (process.argv.includes("--help")) {
@@ -590,7 +590,9 @@ try {
     assert.equal(status.binarySha256, manifest.binarySha256);
     assert.equal(status.extensionSourceSha256, manifest.extensionSourceSha256);
   }
-  const extensions = ["barkham", "epic-labyrinth", "epic-machinations"].sort();
+  // The historical manifest-free path remains limited to the original profile.
+  // Additional scenario corrections require the exact validated candidate.
+  const extensions = nativeAggregateExtensions(manifest?.extensions || ["barkham", "epic-labyrinth", "epic-machinations"]);
   for (const actual of [status.extensions, seed.runtime.extensions, ...(manifest ? [manifest.extensions] : [])])
     assert.deepEqual([...actual].sort(), extensions, "The same aggregate candidate serves the seed and browser QA.");
   assert.deepEqual(seed.events.map((event) => event.scenarioId).sort(), ["70001", "87001"]);
