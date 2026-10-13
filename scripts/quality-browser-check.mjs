@@ -33,6 +33,9 @@ try {
     { fixture, slot },
   );
   await page.goto(base);
+  // The load event can precede React's first commit on a cold browser.
+  // Wait for the app without focusing the link: Tab must still reach it first.
+  await page.getByRole("link", { name: "Skip to content", exact: true }).waitFor();
   await page.keyboard.press("Tab");
   assert.equal(
     await page.evaluate(() => document.activeElement.textContent),
