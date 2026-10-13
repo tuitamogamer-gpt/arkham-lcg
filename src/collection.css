@@ -26,11 +26,60 @@
 .collection-filters .search {
   flex: 1 1 280px;
 }
+.collection-filters .search input,
+.collection-filters select {
+  font-size: 14px;
+}
 .collection-filters select {
   flex: 1 1 170px;
+  min-height: 44px;
   width: auto;
   min-width: 0;
   max-width: 100%;
+}
+.collection-filters .collection-reset {
+  padding: 12px 16px;
+  flex: 0 0 auto;
+}
+.collection-result-count {
+  scroll-margin-top: 100px;
+}
+.collection-page .archive-count {
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  line-height: 1.5;
+}
+.collection-page .archive-count > span {
+  font-size: 13px;
+  color: #b3ad98;
+}
+.collection-result-count:focus-visible {
+  outline: 2px solid #cdb482;
+  outline-offset: 6px;
+}
+.collection-product-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border-left: 2px solid #b39a67;
+  background: #ffffff07;
+  color: #c4bda7;
+  font-size: 15px;
+}
+.collection-product-context strong {
+  color: #e4d6b4;
+}
+.collection-product-context button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 4px;
+  color: #cdb482;
+  background: transparent;
 }
 .collection-card {
   display: flex;
@@ -83,6 +132,27 @@
 }
 .collection-pagination > span {
   color: #cdbd98;
+}
+.collection-pagination.top {
+  justify-content: flex-end;
+  margin: 0 0 22px;
+}
+.collection-page-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cdbd98;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.collection-page-select select {
+  min-width: 64px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid #bca57466;
+  border-radius: 2px;
+  color: #f0dba7;
+  background: #14231e;
 }
 .collection-products {
   display: grid;
@@ -214,10 +284,13 @@
     flex-basis: 100%;
   }
   .collection-filters select {
+    flex-basis: calc(50% - 6px);
+  }
+  .collection-filters .collection-product-filter {
     flex-basis: 100%;
   }
   .collection-filters select,
-  .collection-filters input {
+  .collection-filters .search input {
     font-size: 16px;
   }
   .collection-card .card-foot {
@@ -234,6 +307,12 @@
   }
   .collection-pagination {
     gap: 12px;
+  }
+  .collection-pagination.top {
+    justify-content: center;
+  }
+  .collection-page-select select {
+    font-size: 16px;
   }
   .collection-pagination .button {
     padding: 10px;

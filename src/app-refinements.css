@@ -1,0 +1,76 @@
+.skip-navigation {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  padding: 12px 20px;
+  background: #e6dcc2;
+  color: #12251e;
+  border: 2px solid #b49760;
+  transform: translateY(-180%);
+}
+.skip-navigation:focus {
+  transform: translateY(0);
+}
+.page-content-root:focus {
+  outline: none;
+}
+.sidebar-control.has-update {
+  color: #f0dba7;
+}
+.update-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e2bc72;
+  flex: 0 0 auto;
+}
+.page-recovery {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  padding-bottom: 40px;
+}
+.page-recovery > p {
+  max-width: 55ch;
+  font-size: 18px;
+  line-height: 1.6;
+}
+.page-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.save-health {
+  padding: 16px;
+  border: 1px solid #d59765;
+  background: #452e23;
+  color: #f0dcc3;
+}
+.save-health p {
+  margin: 8px 0 14px;
+  line-height: 1.5;
+}
+.save-health-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.toast.is-warning > svg {
+  color: #efc080;
+}
+.guide-page .coverage-note button {
+  margin-top: 16px;
+}
+@media (max-width: 760px) {
+  .sidebar-control.has-update {
+    position: relative;
+  }
+  .sidebar-control .update-dot {
+    display: block;
+    position: absolute;
+    right: 2px;
+    top: 10px;
+  }
+}

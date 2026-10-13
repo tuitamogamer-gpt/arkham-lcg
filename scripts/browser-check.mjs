@@ -158,7 +158,7 @@ await clickAndAcknowledge(
   page.getByRole("button", { name: "Card archive", exact: false }).first(),
   page,
 );
-await page.getByRole("textbox", { name: "Search cards" }).fill("Machete");
+await page.getByRole("searchbox", { name: "Search cards" }).fill("Machete");
 await page
   .getByRole("combobox", { name: "Filter by product" })
   .selectOption("core_2026");
@@ -176,7 +176,7 @@ await clickAndAcknowledge(
   page.getByRole("button", { name: "Close dialog" }),
   page,
 );
-await page.getByRole("textbox", { name: "Search cards" }).fill("");
+await page.getByRole("searchbox", { name: "Search cards" }).fill("");
 await page
   .getByRole("combobox", { name: "Filter by class" })
   .selectOption("seeker");

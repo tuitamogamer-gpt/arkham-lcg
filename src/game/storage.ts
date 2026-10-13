@@ -6,7 +6,8 @@ import { recordDiscoveries } from "./knowledge";
 export const SAVE_KEY = "arkham-chronicle:spreading-flames:v1";
 const INDEX_KEY = "arkham-chronicle:saves";
 const RECORD_KEY = "arkham-chronicle:record";
-const slotKey = (id: string) => `arkham-chronicle:save:${id}`;
+const SLOT_PREFIX = "arkham-chronicle:save:";
+const slotKey = (id: string) => `${SLOT_PREFIX}${id}`;
 export const MAX_SLOTS = 12;
 export interface SaveSummary {
   id: string;
@@ -423,6 +424,7 @@ export function validSave(x: unknown): x is GameState {
           (c) =>
             typeof c.id === "string" &&
             typeof c.label === "string" &&
+            (c.detail === undefined || typeof c.detail === "string") &&
             effects(c.effects),
         ))
     )
@@ -615,9 +617,26 @@ function readIndex(): { active: string | null; slots: SaveSummary[] } {
       };
     }
   } catch {
-    /* No index yet. */
+    /* A damaged index must not hide healthy investigation payloads. */
   }
-  return { active: null, slots: [] };
+  const slots: SaveSummary[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith(SLOT_PREFIX)) continue;
+      const id = key.slice(SLOT_PREFIX.length);
+      if (!identifier(id) || slots.some((slot) => slot.id === id)) continue;
+      // loadSave also checks that the payload belongs to this exact slot.
+      const saved = loadSave(id);
+      if (saved)
+        slots.push({ ...summarize(saved), updatedAt: new Date(0).toISOString() });
+    }
+  } catch {
+    /* Storage can be unavailable; retain any investigations already recovered. */
+  }
+  // Payloads have no timestamp or active marker. Keep them available to open
+  // without inventing recency or writing anything during recovery.
+  return { active: null, slots };
 }
 function writeIndex(index: { active: string | null; slots: SaveSummary[] }) {
   localStorage.setItem(INDEX_KEY, JSON.stringify(index));
@@ -705,12 +724,20 @@ export function writeSave(s: GameState) {
   }
 }
 export function deleteSave(id: string) {
+  const previousIndex = localStorage.getItem(INDEX_KEY);
   const index = readIndex();
-  localStorage.removeItem(slotKey(id));
   writeIndex({
     active: index.active === id ? null : index.active,
     slots: index.slots.filter((v) => v.id !== id),
   });
+  try {
+    localStorage.removeItem(slotKey(id));
+  } catch (error) {
+    // A failed deletion must keep both the payload and its previous index.
+    if (previousIndex === null) localStorage.removeItem(INDEX_KEY);
+    else localStorage.setItem(INDEX_KEY, previousIndex);
+    throw error;
+  }
 }
 export function readRecord(): ResultRecord[] {
   try {

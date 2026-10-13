@@ -117,6 +117,79 @@ test("damaged save summaries recover from their investigation and keep healthy s
   assert.equal(readSave()?.id, second.id);
 });
 
+test("a missing or damaged whole index recovers healthy slots without changing storage", () => {
+  for (const damaged of [null, "{", "{}", '{"slots":null}']) {
+    const store = installStorage();
+    const first = createGame("easy", 304);
+    const second = createGame("hard", 305, ["12001", "12007"]);
+    writeSave(first);
+    writeSave(second);
+    const indexKey = "arkham-chronicle:saves";
+    if (damaged === null) store.delete(indexKey);
+    else store.set(indexKey, damaged);
+    const before = new Map(store);
+
+    const recovered = listSaves();
+    assert.deepEqual(
+      new Set(recovered.map((s) => s.id)),
+      new Set([first.id, second.id]),
+    );
+    assert.deepEqual(
+      recovered.find((s) => s.id === second.id)?.party,
+      second.partyOrder,
+    );
+    assert.ok(
+      recovered.every((s) => s.updatedAt === new Date(0).toISOString()),
+    );
+    assert.equal(readSave(), null, "the lost active marker is not guessed");
+    assert.equal(
+      loadSave(first.id)?.id,
+      first.id,
+      "recovered slots remain openable",
+    );
+    assert.deepEqual(
+      store,
+      before,
+      "recovery does not rewrite or remove stored data",
+    );
+  }
+});
+
+test("whole-index recovery ignores corrupt, foreign and mismatched payloads", () => {
+  const store = installStorage();
+  const saved = createGame("standard", 306);
+  const prefix = "arkham-chronicle:save:";
+  store.set(`${prefix}${saved.id}`, JSON.stringify(saved));
+  store.set(`${prefix}wrong-id`, JSON.stringify(saved));
+  store.set(`${prefix}broken`, "{");
+  store.set(`${prefix}invalid`, "{}");
+  store.set(prefix, JSON.stringify(saved));
+  store.set("unrelated-save", JSON.stringify(saved));
+  assert.deepEqual(
+    listSaves().map((s) => s.id),
+    [saved.id],
+  );
+});
+
+test("saving after whole-index recovery preserves existing investigations and the slot limit", () => {
+  const store = installStorage();
+  const saved = Array.from({ length: MAX_SLOTS }, (_, i) =>
+    createGame("easy", 310 + i),
+  );
+  for (const game of saved) writeSave(game);
+  store.set("arkham-chronicle:saves", "{");
+  assert.throws(() => writeSave(createGame("expert", 399)), /slots/);
+  const progressed = reduceGame(saved[0], { type: "mulligan", ids: [] });
+  writeSave(progressed);
+  assert.equal(readSave()?.id, saved[0].id);
+  assert.equal(loadSave(saved[0].id)?.status, "playing");
+  assert.equal(listSaves().length, MAX_SLOTS);
+  assert.deepEqual(
+    new Set(listSaves().map((s) => s.id)),
+    new Set(saved.map((s) => s.id)),
+  );
+});
+
 test("invalid legacy data does not hide an active investigation", () => {
   const store = installStorage();
   const s = createGame("standard", 303);
@@ -165,6 +238,45 @@ test("an index write failure restores the prior payload and active investigation
   assert.throws(() => writeSave(imported), /quota/);
   assert.equal(store.has(`arkham-chronicle:save:${imported.id}`), false);
   assert.equal(readSave()?.id, original.id);
+});
+
+test("an index write failure during deletion preserves the investigation and active slot", () => {
+  const store = installStorage();
+  const saved = createGame("standard", 503);
+  writeSave(saved);
+  const before = new Map(store);
+  const originalSet = localStorage.setItem;
+  localStorage.setItem = (key, value) => {
+    if (key === "arkham-chronicle:saves") throw new Error("quota");
+    originalSet(key, value);
+  };
+  assert.throws(() => deleteSave(saved.id), /quota/);
+  assert.deepEqual(store, before);
+  assert.equal(readSave()?.id, saved.id);
+});
+
+test("a payload removal failure restores the exact index during deletion", () => {
+  for (const indexState of ["healthy", "missing", "damaged"]) {
+    const store = installStorage();
+    const saved = createGame("standard", 504);
+    writeSave(saved);
+    if (indexState === "missing") store.delete("arkham-chronicle:saves");
+    if (indexState === "damaged") store.set("arkham-chronicle:saves", "{");
+    const before = new Map(store);
+    const originalRemove = localStorage.removeItem;
+    localStorage.removeItem = (key) => {
+      if (key === `arkham-chronicle:save:${saved.id}`)
+        throw new Error("storage unavailable");
+      originalRemove(key);
+    };
+    assert.throws(() => deleteSave(saved.id), /storage unavailable/);
+    assert.deepEqual(store, before);
+    assert.deepEqual(
+      listSaves().map((s) => s.id),
+      [saved.id],
+    );
+    assert.equal(loadSave(saved.id)?.id, saved.id);
+  }
 });
 
 test("a payload from a different slot and malformed result history fail closed", () => {

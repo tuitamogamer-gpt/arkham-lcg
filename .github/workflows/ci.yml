@@ -44,6 +44,10 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node --import tsx scripts/milestone-browser-check.mjs
+      - name: Save recovery, navigation and optional-page failures
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node --import tsx scripts/quality-browser-check.mjs
       - name: Offline milestone media and lazy player
         env:
           BASE_URL: http://127.0.0.1:5187
@@ -57,4 +61,5 @@ jobs:
             output/browser
             output/review
             output/milestone-motion
+            output/quality-pass
           if-no-files-found: ignore
