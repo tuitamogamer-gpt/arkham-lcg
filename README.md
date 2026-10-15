@@ -116,6 +116,8 @@ The full importer and its coverage, release cutoff, supplemental Barkham data, p
 
 The [recorded support map](public/data/support-coverage.json) separates imported definitions, native source declarations, captured registry aliases, focused rule tests, legal playthrough reports and installation status. Its provenance and regeneration commands are documented in [support coverage](docs/support-coverage.md). The campaign/scenario chooser now retains the upstream Alpha/Beta labels, including multipart and variant modes.
 
+The [15 October native scenario continuation](docs/import-scenario-core2026-2026-10-15.md) corrects French Hill's discard cost, Queen of Ash's starting Cultist selection and A Gathering's conditional Servant spawn. These corrections use the companion's `--with-scenario-fixes` profile, also selected by the Mac build workflow.
+
 ArkhamDB provides a public JSON API with no credential needed for public card endpoints:
 
 - Documentation: https://arkhamdb.com/api/doc

@@ -1,6 +1,6 @@
 # Native scenario corrections
 
-This opt-in extension repairs three documented printed-rule gaps in the pinned
+This opt-in extension repairs six documented printed-rule gaps in the pinned
 native engine. It is applied after Barkham, Epic Labyrinth and Epic Machinations
 with `--with-epic-machinations --with-scenario-fixes`.
 
@@ -15,6 +15,15 @@ with `--with-epic-machinations --with-scenario-fixes`.
 - **Polar Mirage:** Frenzied Explorer emits its clue-control window before it
   leaves play, allowing the attached Mirage to resolve. Lost Researcher's
   existing window remains unchanged.
+- **Smoke and Mirrors, French Hill:** discarding a hand card is part of the
+  action's cost. An investigator who cannot pay cannot gain a charge or secret;
+  the chosen card is discarded before the ability resolves.
+- **Queen of Ash setup:** when the investigators stirred up trouble, only the
+  selected one Cultist per investigator is removed from the gathered encounter
+  cards. The other physical Cultist cards remain in the encounter deck.
+- **Queen of Ash, A Gathering:** advancing spawns a set-aside Servant of Flame
+  at Underground Cistern. A Servant already in play keeps its current location;
+  an absent Servant is not recreated.
 
 `native-seams.json` contains bounded patches against upstream revision
 `03a7f1e74925744f021f6e8fe0e39945d2c3a833`; it is not a vendored upstream engine.
@@ -33,6 +42,9 @@ Rules references:
 - [The Drowned City campaign guide, p. 11](https://cdn.svc.asmodee.net/production-fantasyflightgames/uploads/2026/09/ahc84_campaign_guide-web_1.pdf).
 - [Loathsome Parasites, 11555](https://arkhamdb.com/card/11555).
 - [Arkham Grimoire v1.1, p. 10: Effects and Encounter Deck](https://images-cdn.fantasyflightgames.com/filer_public/b6/ac/b6ac3b87-f5af-4d4c-b036-f7c51ced063d/arkham_grimoire_v11_web_1.pdf).
+- [Brethren of Ash campaign guide, p. 12: Queen of Ash setup](https://images-cdn.fantasyflightgames.com/filer_public/f0/22/f022ac7c-9c30-4521-ac16-1f74f00e1d31/ahc100_campaign_guide-web.pdf).
+- [French Hill, 12154](https://arkhamdb.com/card/12154).
+- [A Gathering, 12169](https://arkhamdb.com/card/12169).
 
 The upstream Loathsome Parasites TODO suggested refilling during the reveal.
 The printed timing rule does not support that continuation, so this extension

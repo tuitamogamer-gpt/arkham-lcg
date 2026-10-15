@@ -405,7 +405,7 @@ if (withScenarioFixes) {
   patches.push([
     "arkham-api/package.yaml",
     "      - Helpers.Message",
-    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Helpers.Message",
+    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Arkham.Homebrew.ScenarioFixes.FrenchHillSpec\n      - Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec\n      - Arkham.Homebrew.ScenarioFixes.AGatheringSpec\n      - Helpers.Message",
   ]);
 }
 for (const id of selectedExtensions.slice(1)) {
@@ -684,6 +684,9 @@ async function patchSource() {
       "Arkham/Agenda/Cards/TheDrownedCity/TheApiary/LoathsomeParasites.hs",
       "Arkham/Treachery/Cards/EdgeOfTheEarth/SilenceAndMystery/PolarMirage.hs",
       "Arkham/Enemy/Cards/EdgeOfTheEarth/LeftBehind/FrenziedExplorer.hs",
+      "Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
+      "Arkham/Scenario/Scenarios/BrethrenOfAsh/QueenOfAsh.hs",
+      "Arkham/Agenda/Cards/BrethrenOfAsh/QueenOfAsh/AGathering.hs",
     ];
     const containsFix = (await Promise.all(fixedSources.map(async (relative) =>
       (await readFile(resolve(backend, "arkham-api/library", relative), "utf8"))

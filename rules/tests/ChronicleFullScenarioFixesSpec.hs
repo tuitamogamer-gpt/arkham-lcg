@@ -14,6 +14,9 @@ import Arkham.Homebrew.EpicMachinations.ScenarioSpec qualified as MachinationsSc
 import Arkham.Homebrew.EpicMachinations.TransactionsSpec qualified as MachinationsTransactions
 import Arkham.Homebrew.EpicMachinations.TransportSpec qualified as MachinationsTransport
 import Arkham.Homebrew.ScenarioFixes.DrownedCitySpec qualified as DrownedCity
+import Arkham.Homebrew.ScenarioFixes.FrenchHillSpec qualified as FrenchHill
+import Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec qualified as QueenOfAsh
+import Arkham.Homebrew.ScenarioFixes.AGatheringSpec qualified as AGathering
 import Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec qualified as LoathsomeParasites
 import Arkham.Homebrew.ScenarioFixes.PolarMirageSpec qualified as PolarMirage
 import Prelude (IO)
@@ -37,3 +40,6 @@ main = hspec do
   DrownedCity.spec
   LoathsomeParasites.spec
   PolarMirage.spec
+  FrenchHill.spec
+  QueenOfAsh.spec
+  AGathering.spec

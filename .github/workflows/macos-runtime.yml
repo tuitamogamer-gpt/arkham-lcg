@@ -96,7 +96,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/build-rules-runtime.mjs --with-epic-machinations --bootstrap-only 2>&1 | tee output/macos-runtime-logs/bootstrap.log
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --with-scenario-fixes --bootstrap-only 2>&1 | tee output/macos-runtime-logs/bootstrap.log
           "$ARKHAM_RULES_TOOLCHAIN/postgres/bin/pg_config" --version | tee output/macos-runtime-logs/postgres-version.txt
           test "$(lipo -archs "$ARKHAM_RULES_TOOLCHAIN/postgres/lib/libpq.5.dylib")" = arm64
           node --input-type=module <<'NODE'
@@ -149,13 +149,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/build-rules-runtime.mjs --with-epic-machinations --dependencies 2>&1 | tee output/macos-runtime-logs/dependencies.log
-          node scripts/build-rules-runtime.mjs --with-epic-machinations --test-dependencies 2>&1 | tee output/macos-runtime-logs/test-dependencies.log
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --with-scenario-fixes --dependencies 2>&1 | tee output/macos-runtime-logs/dependencies.log
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --with-scenario-fixes --test-dependencies 2>&1 | tee output/macos-runtime-logs/test-dependencies.log
       - name: Compile and execute the full aggregate and prepare its candidate
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/build-rules-runtime.mjs --with-epic-machinations --incremental-native --direct-objects --test --compact-build --prepare-only 2>&1 | tee output/macos-runtime-logs/native-build.log
+          node scripts/build-rules-runtime.mjs --with-epic-machinations --with-scenario-fixes --incremental-native --direct-objects --test --compact-build --prepare-only 2>&1 | tee output/macos-runtime-logs/native-build.log
       - name: Export the exact tested candidate as a verified ad-hoc archive
         shell: bash
         run: |
