@@ -80,7 +80,8 @@ ARKHAM_RULES_GHC_HEAP=4G node scripts/build-rules-runtime.mjs --with-epic-machin
 ```
 
 The optional `--with-scenario-fixes` profile adds the Drowned City western
-expedition, Loathsome Parasites and Polar Mirage corrections. It requires
+expedition, Loathsome Parasites, Polar Mirage, French Hill, Queen of Ash setup
+and A Gathering corrections. It requires
 `--with-epic-machinations` and uses
 `rules/tests/ChronicleFullScenarioFixesSpec.hs` to run the complete original
 suite plus the new native regressions. Coordinator-only checks cannot certify
@@ -88,6 +89,10 @@ this profile. Its manifests, private QA and Mac export bind the additional
 extension's current source hash and the dedicated test driver. A staged fixes
 checkout cannot be downgraded in place to a legacy profile; use a fresh pinned
 checkout for that build.
+
+The macOS ARM64 workflow selects this correction profile for its full build,
+tests and exported candidate. A passing client deployment does not install
+that native archive or establish whole-scenario acceptance.
 
 ```sh
 node scripts/build-rules-runtime.mjs --with-epic-machinations --with-scenario-fixes --incremental-native --direct-objects --test --compact-build

@@ -33,5 +33,30 @@
     "arkham-api/library/Arkham/Treachery/Cards/EdgeOfTheEarth/SilenceAndMystery/PolarMirage.hs",
     "-- TODO: Need to update for Frenzied Explorer and Lost Researcher",
     "-- Chronicle scenario-fixes: both Left Behind enemies emit clue-control windows before being discarded."
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
+    "import Arkham.Helpers.Message.Discard.Lifted\n",
+    ""
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
+    "        actionAbility\n",
+    "        -- Chronicle scenario-fixes: the printed discard precedes the colon.\n        (actionAbilityWithCost $ HandDiscardCost 1 #any)\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
+    "      chooseAndDiscardCards iid attrs 1\n",
+    ""
+  ],
+  [
+    "arkham-api/library/Arkham/Agenda/Cards/BrethrenOfAsh/QueenOfAsh/AGathering.hs",
+    "      mServant <- selectOne $ enemyIs Enemies.servantOfFlameAWillingSacrifice\n      case mServant of\n        Just eid -> do\n          undergroundCistern <- selectJust $ locationIs Locations.undergroundCistern\n          push $ EnemyMove eid undergroundCistern\n        Nothing -> do\n          servantCards <- getSetAsideCardsMatching $ CardWithTitle \"Servant of Flame\"\n          case listToMaybe servantCards of\n            Just card -> do\n              undergroundCistern <- selectJust $ locationIs Locations.undergroundCistern\n              createEnemyAt_ card undergroundCistern\n            Nothing -> pure ()\n",
+    "      -- Chronicle scenario-fixes: the printed back only spawns a set-aside Servant.\n      -- An enemy already in play must retain its current location and state.\n      whenJustM (getSetAsideCardMaybe Enemies.servantOfFlameAWillingSacrifice) \\card -> do\n        undergroundCistern <- selectJust $ locationIs Locations.undergroundCistern\n        createEnemyAt_ card undergroundCistern\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Scenario/Scenarios/BrethrenOfAsh/QueenOfAsh.hs",
+    "        cultists <-\n          shuffle\n            =<< fromGathered (#cultist <> mapOneOf CardFromEncounterSet [Set.AshenPilgrims, Set.Cultists] <> #enemy)\n        for_ (zip (take n cultists) sewerTunnels) (uncurry createEnemyAt_)\n",
+    "        cultists <-\n          shuffle\n            =<< amongGathered (#cultist <> mapOneOf CardFromEncounterSet [Set.AshenPilgrims, Set.Cultists] <> #enemy)\n        -- Chronicle scenario-fixes: only the chosen physical cultists leave the encounter deck.\n        let startingCultists = take n cultists\n        removeCards startingCultists\n        for_ (zip startingCultists sewerTunnels) (uncurry createEnemyAt_)\n"
   ]
 ]
