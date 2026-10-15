@@ -2,7 +2,7 @@
 // Original build orchestration. Upstream sources and build caches stay outside Git.
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { constants, createReadStream, createWriteStream } from "node:fs";
+import { createReadStream } from "node:fs";
 import {
   chmod,
   copyFile,
@@ -17,8 +17,6 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { pipeline } from "node:stream/promises";
-import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { verifyDerivedRuntime } from "./rules-runtime-manifest.mjs";
 import { createBuildSpaceGuard, runWithBuildSpace } from "./rules-build-space.mjs";
@@ -494,20 +492,22 @@ async function download(item) {
   if ((await exists(item.path)) && (await sha256(item.path)) === item.sha256)
     return;
   console.log(`Downloading ${new URL(item.url).pathname.split("/").at(-1)}.`);
-  if (linuxNative) {
-    // curl honors the proxy configuration of isolated Linux build workers.
-    // The build-space guard also monitors these comparatively large downloads.
-    await run("curl", ["--fail", "--location", "--retry", "3", "--output", item.path, item.url], { cwd: downloads });
-    await chmod(item.path, 0o600);
-  } else {
-    const response = await fetch(item.url);
-    if (!response.ok || !response.body)
-      throw new Error(`Download failed (${response.status}).`);
-    await pipeline(
-      Readable.fromWeb(response.body),
-      createWriteStream(item.path, { mode: 0o600 }),
-    );
-  }
+  // curl retries transient transfer failures with exponential backoff. Node 22
+  // fetch (undici) can crash with assert(!this.paused) when TLS closes while
+  // the body stream is paused, which aborted the macOS PCRE download. curl also
+  // honors the proxy configuration of isolated Linux build workers, and the
+  // build-space guard monitors these comparatively large downloads.
+  await run("curl", [
+    "--fail",
+    "--location",
+    "--retry",
+    "5",
+    "--retry-all-errors",
+    "--output",
+    item.path,
+    item.url,
+  ], { cwd: downloads });
+  await chmod(item.path, 0o600);
   if ((await sha256(item.path)) !== item.sha256)
     throw new Error("Official toolchain archive checksum mismatch.");
 }
