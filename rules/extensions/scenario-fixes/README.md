@@ -1,6 +1,6 @@
 # Native scenario corrections
 
-This opt-in extension repairs six documented printed-rule gaps in the pinned
+This opt-in extension repairs documented printed-rule gaps in the pinned
 native engine. It is applied after Barkham, Epic Labyrinth and Epic Machinations
 with `--with-epic-machinations --with-scenario-fixes`.
 
@@ -24,6 +24,15 @@ with `--with-epic-machinations --with-scenario-fixes`.
 - **Queen of Ash, A Gathering:** advancing spawns a set-aside Servant of Flame
   at Underground Cistern. A Servant already in play keeps its current location;
   an absent Servant is not recreated.
+- **St. Elmo's Fire:** the nearest location must have no copy of the Fire when
+  it is first revealed. At round end it may move to any adjacent location,
+  including one with another copy, prioritizing investigators as printed.
+- **Blasphemous Invocation:** a failed test searches for a Cultist if no doom
+  was actually placed, including when Brethren of Ash replaces every attempted
+  placement with direct damage.
+- **Infected! and Eye of the Deep:** investigators at the host's location may
+  use the printed removal actions. Ownership still determines the treachery's
+  other effects; a remote investigator cannot use these actions.
 
 `native-seams.json` contains bounded patches against upstream revision
 `03a7f1e74925744f021f6e8fe0e39945d2c3a833`; it is not a vendored upstream engine.
@@ -45,6 +54,11 @@ Rules references:
 - [Brethren of Ash campaign guide, p. 12: Queen of Ash setup](https://images-cdn.fantasyflightgames.com/filer_public/f0/22/f022ac7c-9c30-4521-ac16-1f74f00e1d31/ahc100_campaign_guide-web.pdf).
 - [French Hill, 12154](https://arkhamdb.com/card/12154).
 - [A Gathering, 12169](https://arkhamdb.com/card/12169).
+- [St. Elmo's Fire, 11665](https://arkhamdb.com/card/11665).
+- [Blasphemous Invocation, 12190](https://arkhamdb.com/card/12190), and
+  [Brethren of Ash, 12171](https://arkhamdb.com/card/12171).
+- [Infected!, 11722](https://arkhamdb.com/card/11722), and
+  [Eye of the Deep, 11729](https://arkhamdb.com/card/11729).
 
 The upstream Loathsome Parasites TODO suggested refilling during the reveal.
 The printed timing rule does not support that continuation, so this extension

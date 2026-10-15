@@ -405,7 +405,7 @@ if (withScenarioFixes) {
   patches.push([
     "arkham-api/package.yaml",
     "      - Helpers.Message",
-    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Arkham.Homebrew.ScenarioFixes.FrenchHillSpec\n      - Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec\n      - Arkham.Homebrew.ScenarioFixes.AGatheringSpec\n      - Helpers.Message",
+    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Arkham.Homebrew.ScenarioFixes.FrenchHillSpec\n      - Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec\n      - Arkham.Homebrew.ScenarioFixes.AGatheringSpec\n      - Arkham.Homebrew.ScenarioFixes.StElmosFireSpec\n      - Arkham.Homebrew.ScenarioFixes.BlasphemousInvocationSpec\n      - Arkham.Homebrew.ScenarioFixes.SharedThreatAreaSpec\n      - Helpers.Message",
   ]);
 }
 for (const id of selectedExtensions.slice(1)) {
@@ -687,6 +687,10 @@ async function patchSource() {
       "Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
       "Arkham/Scenario/Scenarios/BrethrenOfAsh/QueenOfAsh.hs",
       "Arkham/Agenda/Cards/BrethrenOfAsh/QueenOfAsh/AGathering.hs",
+      "Arkham/Treachery/Cards/TheDrownedCity/ObsidianCanyons/StElmosFire.hs",
+      "Arkham/Treachery/Cards/BrethrenOfAsh/QueenOfAsh/BlasphemousInvocation.hs",
+      "Arkham/Treachery/Cards/TheDrownedCity/Stowaways/Infected.hs",
+      "Arkham/Treachery/Cards/TheDrownedCity/CosmicLegacy/EyeOfTheDeep.hs",
     ];
     const containsFix = (await Promise.all(fixedSources.map(async (relative) =>
       (await readFile(resolve(backend, "arkham-api/library", relative), "utf8"))

@@ -81,7 +81,9 @@ ARKHAM_RULES_GHC_HEAP=4G node scripts/build-rules-runtime.mjs --with-epic-machin
 
 The optional `--with-scenario-fixes` profile adds the Drowned City western
 expedition, Loathsome Parasites, Polar Mirage, French Hill, Queen of Ash setup
-and A Gathering corrections. It requires
+and A Gathering corrections. It also fixes St. Elmo's Fire relocation,
+Blasphemous Invocation's no-doom fallback, and shared threat-area action access
+for Infected! and Eye of the Deep. It requires
 `--with-epic-machinations` and uses
 `rules/tests/ChronicleFullScenarioFixesSpec.hs` to run the complete original
 suite plus the new native regressions. Coordinator-only checks cannot certify

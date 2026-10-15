@@ -19,6 +19,9 @@ import Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec qualified as QueenOfAsh
 import Arkham.Homebrew.ScenarioFixes.AGatheringSpec qualified as AGathering
 import Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec qualified as LoathsomeParasites
 import Arkham.Homebrew.ScenarioFixes.PolarMirageSpec qualified as PolarMirage
+import Arkham.Homebrew.ScenarioFixes.StElmosFireSpec qualified as StElmosFire
+import Arkham.Homebrew.ScenarioFixes.BlasphemousInvocationSpec qualified as BlasphemousInvocation
+import Arkham.Homebrew.ScenarioFixes.SharedThreatAreaSpec qualified as SharedThreatArea
 import Prelude (IO)
 import Test.Hspec (hspec)
 
@@ -43,3 +46,6 @@ main = hspec do
   FrenchHill.spec
   QueenOfAsh.spec
   AGathering.spec
+  StElmosFire.spec
+  BlasphemousInvocation.spec
+  SharedThreatArea.spec

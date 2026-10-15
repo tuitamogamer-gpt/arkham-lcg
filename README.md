@@ -100,7 +100,7 @@ distribution runs locally on Apple silicon. The separate private Linux acceptanc
 route uses the actual compiled aggregate without claiming a signed installation;
 the static production deployment does not include its Haskell/PostgreSQL server.
 The [ARM64 Mac build/export pipeline](docs/macos-runtime-release.md) verifies
-the actual candidate; its hosted build now passes all 232 native examples and
+the actual candidate; its hosted build runs the full native test driver and
 exports a checksum-bound archive with ad-hoc installation signatures.
 Developer ID signing, notarization and Mac gameplay acceptance remain separate.
 The native game remains usable
@@ -117,6 +117,8 @@ The full importer and its coverage, release cutoff, supplemental Barkham data, p
 The [recorded support map](public/data/support-coverage.json) separates imported definitions, native source declarations, captured registry aliases, focused rule tests, legal playthrough reports and installation status. Its provenance and regeneration commands are documented in [support coverage](docs/support-coverage.md). The campaign/scenario chooser now retains the upstream Alpha/Beta labels, including multipart and variant modes.
 
 The [15 October native scenario continuation](docs/import-scenario-core2026-2026-10-15.md) corrects French Hill's discard cost, Queen of Ash's starting Cultist selection and A Gathering's conditional Servant spawn. These corrections use the companion's `--with-scenario-fixes` profile, also selected by the Mac build workflow.
+
+The [following encounter batch](docs/import-scenario-encounters-2026-10-15.md) fixes St. Elmo's Fire relocation, Blasphemous Invocation when doom is replaced, and teammate assistance with Infected! and Eye of the Deep.
 
 ArkhamDB provides a public JSON API with no credential needed for public card endpoints:
 
