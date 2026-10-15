@@ -58,5 +58,30 @@
     "arkham-api/library/Arkham/Scenario/Scenarios/BrethrenOfAsh/QueenOfAsh.hs",
     "        cultists <-\n          shuffle\n            =<< fromGathered (#cultist <> mapOneOf CardFromEncounterSet [Set.AshenPilgrims, Set.Cultists] <> #enemy)\n        for_ (zip (take n cultists) sewerTunnels) (uncurry createEnemyAt_)\n",
     "        cultists <-\n          shuffle\n            =<< amongGathered (#cultist <> mapOneOf CardFromEncounterSet [Set.AshenPilgrims, Set.Cultists] <> #enemy)\n        -- Chronicle scenario-fixes: only the chosen physical cultists leave the encounter deck.\n        let startingCultists = take n cultists\n        removeCards startingCultists\n        for_ (zip startingCultists sewerTunnels) (uncurry createEnemyAt_)\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheDrownedCity/ObsidianCanyons/StElmosFire.hs",
+    "          let adjacentWithoutFire =\n                connectedTo (LocationWithId lid)\n                  <> LocationWithoutTreachery (treacheryIs Cards.stElmosFire)\n          withInvestigators <- select $ adjacentWithoutFire <> LocationWithInvestigator Anyone\n          candidates <-\n            if notNull withInvestigators\n              then pure withInvestigators\n              else select adjacentWithoutFire",
+    "          -- Chronicle scenario-fixes: only Revelation excludes another Fire.\n          -- Round-end movement may attach both copies to the same location.\n          let adjacent = connectedTo (LocationWithId lid)\n          withInvestigators <- select $ adjacent <> LocationWithInvestigator Anyone\n          candidates <-\n            if notNull withInvestigators\n              then pure withInvestigators\n              else select adjacent"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheDrownedCity/Stowaways/Infected.hs",
+    "    , skillTestAbility $ restricted a 2 (InThreatAreaOf You) actionAbility\n",
+    "    -- Chronicle scenario-fixes: any colocated investigator may activate this encounter card.\n    , skillTestAbility $ restricted a 2 OnSameLocation actionAbility\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheDrownedCity/CosmicLegacy/EyeOfTheDeep.hs",
+    "    [skillTestAbility $ restricted a 1 (InThreatAreaOf You) actionAbility]\n",
+    "    -- Chronicle scenario-fixes: action access is shared; the token modifier remains host-only.\n    [skillTestAbility $ restricted a 1 OnSameLocation actionAbility]\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/BrethrenOfAsh/QueenOfAsh/BlasphemousInvocation.hs",
+    "import Arkham.Treachery.Import.Lifted\n",
+    "import Arkham.Treachery.Import.Lifted\nimport Arkham.Timing qualified as Timing\nimport Arkham.Window qualified as Window\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/BrethrenOfAsh/QueenOfAsh/BlasphemousInvocation.hs",
+    "      revelationSkillTest sid iid attrs #willpower (Fixed 3)\n      pure t\n    FailedThisSkillTestBy iid (isSource attrs -> True) n | n > 0 -> do\n      cultists <- selectCount $ #cultist <> EnemyWithoutDoom <> CanPlaceDoomOnEnemy\n      if cultists > 0\n        then doStep n msg\n        else findAndDrawEncounterCard iid $ #enemy <> CardWithTrait Cultist\n      pure t\n    DoStep n msg'@(FailedThisSkillTest iid (isSource attrs -> True)) | n > 0 -> do\n      cultists <- select $ #cultist <> EnemyWithoutDoom <> CanPlaceDoomOnEnemy\n      chooseTargetM iid cultists \\cultist -> do\n        placeDoom attrs cultist 1\n        doStep (n - 1) msg'\n      pure t\n",
+    "      revelationSkillTest sid iid attrs #willpower (Fixed 3)\n      pure $ BlasphemousInvocation $ attrs & setMeta False\n    -- Chronicle scenario-fixes: track actual placements, not eligible targets\n    -- or pending attempts. Brethren of Ash can replace every doom with damage.\n    CheckWindows ws\n      | any (\\case\n          Window.Window Timing.After (Window.PlacedDoom (isSource attrs -> True) _ n) _ _ -> n > 0\n          _ -> False) ws ->\n          pure $ BlasphemousInvocation $ attrs & setMeta True\n    FailedThisSkillTestBy _ (isSource attrs -> True) n -> do\n      doStep (max 0 n) msg\n      pure t\n    DoStep n msg'@(FailedThisSkillTest iid (isSource attrs -> True)) | n > 0 -> do\n      cultists <- select $ #cultist <> EnemyWithoutDoom <> CanPlaceDoomOnEnemy\n      if null cultists\n        then doStep 0 msg'\n        else chooseTargetM iid cultists \\cultist -> do\n          placeDoom attrs cultist 1\n          doStep (n - 1) msg'\n      pure t\n    DoStep 0 (FailedThisSkillTest iid (isSource attrs -> True)) -> do\n      unless (toResultDefault False attrs.meta)\n        $ findAndDrawEncounterCard iid\n        $ #enemy <> CardWithTrait Cultist\n      pure t\n"
   ]
 ]
