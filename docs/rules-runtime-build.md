@@ -83,7 +83,9 @@ The optional `--with-scenario-fixes` profile adds the Drowned City western
 expedition, Loathsome Parasites, Polar Mirage, French Hill, Queen of Ash setup
 and A Gathering corrections. It also fixes St. Elmo's Fire relocation,
 Blasphemous Invocation's no-doom fallback, and shared threat-area action access
-for Infected! and Eye of the Deep. It requires
+for Infected! and Eye of the Deep. Apiary Tender also recognizes doom on
+treachery/event cards at its location, and full encounter searches shuffle their
+searched deck after a no-match result. It requires
 `--with-epic-machinations` and uses
 `rules/tests/ChronicleFullScenarioFixesSpec.hs` to run the complete original
 suite plus the new native regressions. Coordinator-only checks cannot certify

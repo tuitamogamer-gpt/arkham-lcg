@@ -120,6 +120,8 @@ The [15 October native scenario continuation](docs/import-scenario-core2026-2026
 
 The [following encounter batch](docs/import-scenario-encounters-2026-10-15.md) fixes St. Elmo's Fire relocation, Blasphemous Invocation when doom is replaced, and teammate assistance with Infected! and Eye of the Deep.
 
+The [16 October native continuation](docs/import-apiary-search-2026-10-16.md) extends Apiary Tender’s doom coverage and corrects encounter search completion after no matches.
+
 ArkhamDB provides a public JSON API with no credential needed for public card endpoints:
 
 - Documentation: https://arkhamdb.com/api/doc
