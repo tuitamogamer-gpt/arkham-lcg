@@ -34,14 +34,31 @@ with `--with-epic-machinations --with-scenario-fixes`.
   use the printed removal actions. Ownership still determines the treachery's
   other effects; a remote investigator cannot use these actions.
 
-- **Apiary Tender:** positive doom placed on treachery and event cards at its
-  location can trigger its ready/lose-aloof/attack sequence, alongside the
-  previously handled card types. The existing after-placement timing remains;
-  inconsistent native before-placement windows are a separate engine issue.
-- **Encounter searches without a match:** acknowledging a completed full-deck
-  find-and-draw search shuffles the searched encounter deck, including a keyed
-  deck, without merging its discard or changing another deck. Successful keyed
-  searches have a separate source-zone handling defect outside this correction.
+- **Apiary Tender and doom timing:** positive doom on every supported card type
+  opens its printed interrupt before mutation. Enemy replacement windows stay
+  earlier; after-placement receipts observe actual doom. Act and Agenda first-doom
+  receipts are emitted only by an uncancelled positive mutation.
+- **Encounter searches:** both unsuccessful and successful searches shuffle only
+  the searched deck. Saved successful choices retain their original encounter
+  deck key and deck/discard zone, removing exactly the chosen physical card.
+- **Fortune or Fate:** cancel one pending doom from the triggering placement,
+  preserve pre-existing doom and later placements, publish the remaining amount,
+  and exile the paid event. Card-cost cancellation restrictions remain in force.
+- **Voltaic Eel:** flooded shortcuts apply only while moving in the enemy phase.
+- **Colossal Tyrant:** its direct horror reaches grid-adjacent cards even when
+  their location is not connected by a movement edge.
+- **Slitherer in Darkness:** tied lowest combat selects one investigator for its
+  attack. Its fallback after a prevented/cancelled attack remains separate work.
+- **Dark Magician:** the nearest eligible enemy may be the Magician itself.
+- **Your Friend's Room:** the printed Engage action can move an already engaged
+  enemy from a connecting location. Movement can resolve when engagement is
+  prohibited; failed movement cannot drag an enemy into engagement remotely.
+- **Raising Suspicions:** surge depends on doom actually placed, including
+  replacement and cancellation, rather than merely finding an eligible enemy.
+- **Calcification:** the first actual move each round includes fast and forced
+  movement and movement before the treachery entered play.
+- **Writhing Appendage:** damage to Cnidathqua retains the enemy ability as its
+  source, without incorrectly crediting an investigator.
 
 `native-seams.json` contains bounded patches against upstream revision
 `03a7f1e74925744f021f6e8fe0e39945d2c3a833`; it is not a vendored upstream engine.
@@ -74,3 +91,15 @@ Rules references:
 The upstream Loathsome Parasites TODO suggested refilling during the reveal.
 The printed timing rule does not support that continuation, so this extension
 deliberately removes it rather than implementing it.
+
+Expanded import references: [Fortune or Fate, 05237](https://arkhamdb.com/card/05237),
+[Voltaic Eel, 11733](https://arkhamdb.com/card/11733),
+[Colossal Tyrant, 11635](https://arkhamdb.com/card/11635),
+[Slitherer in Darkness, 11605](https://arkhamdb.com/card/11605),
+[Dark Magician, 12189](https://arkhamdb.com/card/12189),
+[Your Friend's Room, 12113](https://arkhamdb.com/card/12113),
+[Raising Suspicions, 12160](https://arkhamdb.com/card/12160),
+[Calcification, 10723](https://arkhamdb.com/card/10723), and
+[Writhing Appendage, 82030](https://arkhamdb.com/card/82030).
+The Grimoire's Target rule (p. 22) allows the Room's movement to resolve even
+when its subsequent engagement cannot change the target's state.

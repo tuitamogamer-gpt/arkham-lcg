@@ -122,6 +122,8 @@ The [following encounter batch](docs/import-scenario-encounters-2026-10-15.md) f
 
 The [16 October native continuation](docs/import-apiary-search-2026-10-16.md) extends Apiary Tender’s doom coverage and corrects encounter search completion after no matches.
 
+The [expanded 16 October import](docs/import-expanded-scenarios-2026-10-16.md) adds eleven correction areas, including keyed search identity, before-doom interrupts, Fortune or Fate, and eight encounter cards.
+
 ArkhamDB provides a public JSON API with no credential needed for public card endpoints:
 
 - Documentation: https://arkhamdb.com/api/doc
