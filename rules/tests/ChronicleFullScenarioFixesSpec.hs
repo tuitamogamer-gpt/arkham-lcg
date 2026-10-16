@@ -24,6 +24,15 @@ import Arkham.Homebrew.ScenarioFixes.BlasphemousInvocationSpec qualified as Blas
 import Arkham.Homebrew.ScenarioFixes.SharedThreatAreaSpec qualified as SharedThreatArea
 import Arkham.Homebrew.ScenarioFixes.ApiaryTenderSpec qualified as ApiaryTender
 import Arkham.Homebrew.ScenarioFixes.EncounterSearchSpec qualified as EncounterSearch
+import Arkham.Homebrew.ScenarioFixes.KeyedEncounterSearchSpec qualified as KeyedEncounterSearch
+import Arkham.Homebrew.ScenarioFixes.DoomTimingSpec qualified as DoomTiming
+import Arkham.Homebrew.ScenarioFixes.DrownedEnemyTimingSpec qualified as DrownedEnemyTiming
+import Arkham.Homebrew.ScenarioFixes.CoreEncounterActionsSpec qualified as CoreEncounterActions
+import Arkham.Homebrew.ScenarioFixes.RaisingSuspicionsSpec qualified as RaisingSuspicions
+import Arkham.Homebrew.ScenarioFixes.CalcificationSpec qualified as Calcification
+import Arkham.Homebrew.ScenarioFixes.WrithingAppendageSpec qualified as WrithingAppendage
+import Arkham.Homebrew.ScenarioFixes.FortuneOrFateSpec qualified as FortuneOrFate
+import Arkham.Homebrew.ScenarioFixes.ActDoomReceiptSpec qualified as ActDoomReceipt
 import Prelude (IO)
 import Test.Hspec (hspec)
 
@@ -53,3 +62,12 @@ main = hspec do
   SharedThreatArea.spec
   ApiaryTender.spec
   EncounterSearch.spec
+  KeyedEncounterSearch.spec
+  DoomTiming.spec
+  DrownedEnemyTiming.spec
+  CoreEncounterActions.spec
+  RaisingSuspicions.spec
+  Calcification.spec
+  WrithingAppendage.spec
+  FortuneOrFate.spec
+  ActDoomReceipt.spec

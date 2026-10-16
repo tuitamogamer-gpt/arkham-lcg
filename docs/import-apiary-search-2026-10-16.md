@@ -1,5 +1,9 @@
 # Apiary and encounter search continuation — 16 October 2026
 
+The later [expanded continuation](import-expanded-scenarios-2026-10-16.md)
+resolves this batch's deferred before-doom timing and successful keyed-search
+gaps. The 339-example result below remains the historical proof for this batch.
+
 This batch extends `scenario-fixes` against pinned upstream
 `03a7f1e74925744f021f6e8fe0e39945d2c3a833`. It follows the
 [316-example encounter batch](import-scenario-encounters-2026-10-15.md).

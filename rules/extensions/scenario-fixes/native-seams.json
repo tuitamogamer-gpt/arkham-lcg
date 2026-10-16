@@ -98,5 +98,175 @@
     "arkham-api/library/Arkham/Helpers/Window.hs",
     "    Matcher.PlacedDoomCounter timing sourceMatcher targetMatcher -> guardTiming timing $ \\case\n      Window.PlacedDoom source' target _ ->\n        andM [targetMatches target targetMatcher, sourceMatches source' sourceMatcher]\n      _ -> noMatch\n",
     "    Matcher.PlacedDoomCounter timing sourceMatcher targetMatcher -> guardTiming timing $ \\case\n      -- Chronicle scenario-fixes: no counters placed means no placement trigger.\n      Window.PlacedDoom source' target n | n > 0 ->\n        andM [targetMatches target targetMatcher, sourceMatches source' sourceMatcher]\n      _ -> noMatch\n"
+  ],
+  [
+    "arkham-api/library/Arkham/EncounterCard/Source.hs",
+    "  | FromKeyedEncounterDeck ScenarioEncounterDeckKey\n",
+    "  | FromKeyedEncounterDeck ScenarioEncounterDeckKey\n  -- Chronicle scenario-fixes: retain the selected keyed discard across saves.\n  | FromKeyedEncounterDiscard ScenarioEncounterDeckKey\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Scenario/Runner.hs",
+    "  FoundAndDrewEncounterCard iid cardSource card -> do\n    let\n      cardId = toCardId card\n      discard = case cardSource of\n        FromDiscard -> filter ((/= cardId) . toCardId) scenarioDiscard\n        _ -> scenarioDiscard\n      encounterDeck = case cardSource of\n        FromEncounterDeck ->\n          filter ((/= cardId) . toCardId) (unDeck scenarioEncounterDeck)\n        _ -> unDeck scenarioEncounterDeck\n      encounterDecksF = case cardSource of\n        FromEncounterDeck -> encounterDecksL . each . _1 %~ withDeck (filter ((/= cardId) . toCardId))\n        _ -> id\n      signifier = case cardSource of\n        FromEncounterDeck -> Just Deck.EncounterDeck\n        FromKeyedEncounterDeck key -> Just $ Deck.EncounterDeckByKey key\n        FromDiscard -> Just Deck.EncounterDiscard\n        _ -> Nothing\n    shuffled <- shuffleM encounterDeck\n    push $ InvestigatorDrewEncounterCardFrom iid card signifier\n    pure $ a & (encounterDeckL .~ Deck shuffled) & (discardL .~ discard) & encounterDecksF\n",
+    "  FoundAndDrewEncounterCard iid cardSource card -> do\n    -- Chronicle scenario-fixes: the saved choice owns both its original\n    -- encounter deck and its source zone, even if the investigator moves.\n    let\n      (deckKey, fromDeck, fromDiscard, signifier) = case cardSource of\n        FromEncounterDeck -> (RegularEncounterDeck, True, False, Just Deck.EncounterDeck)\n        FromKeyedEncounterDeck key -> (key, True, False, Just $ Deck.EncounterDeckByKey key)\n        FromDiscard -> (RegularEncounterDeck, False, True, Just Deck.EncounterDiscard)\n        FromKeyedEncounterDiscard key -> (key, False, True, Just Deck.EncounterDiscard)\n        _ -> (RegularEncounterDeck, False, False, Nothing)\n      handler = specificEncounterDeckHandler deckKey\n      removeChosen = filter ((/= toCardId card) . toCardId)\n      encounterDeck = unDeck $ a ^. deckLens handler\n      remainingDeck = if fromDeck then removeChosen encounterDeck else encounterDeck\n      discard = a ^. discardLens handler\n      remainingDiscard = if fromDiscard then removeChosen discard else discard\n    shuffled <- shuffleM remainingDeck\n    push $ InvestigatorDrewEncounterCardFrom iid card signifier\n    pure $ a & (deckLens handler .~ Deck shuffled) & (discardLens handler .~ remainingDiscard)\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Scenario/Runner.hs",
+    "      deckKey = case deckKey' of\n        RegularEncounterDeck -> FromEncounterDeck\n        other -> FromKeyedEncounterDeck other\n      handler = specificEncounterDeckHandler deckKey'\n",
+    "      deckKey = case deckKey' of\n        RegularEncounterDeck -> FromEncounterDeck\n        other -> FromKeyedEncounterDeck other\n      discardKey = case deckKey' of\n        RegularEncounterDeck -> FromDiscard\n        other -> FromKeyedEncounterDiscard other\n      handler = specificEncounterDeckHandler deckKey'\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Scenario/Runner.hs",
+    "            [FoundAndDrewEncounterCard iid FromDiscard card]\n",
+    "            [FoundAndDrewEncounterCard iid discardKey card]\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Runner.hs",
+    "    PlaceTokens source target tType n | isTarget a target -> runQueueT do\n",
+    "    -- Chronicle scenario-fixes: doom's When window precedes its mutation.\n    PlaceDoom source target n | isTarget a target -> do\n      checkWhen $ Window.PlacedDoom source target n\n      push $ Do msg\n      pure a\n    PlaceTokens source target tType n | isTarget a target -> runQueueT do\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Event/Runner.hs",
+    "  PlaceTokens source target tType n | isTarget a target -> do\n",
+    "  -- Chronicle scenario-fixes: expose doom's interrupt before changing tokens.\n  PlaceDoom source target n | isTarget a target -> do\n    Lifted.checkWhen $ Window.PlacedDoom source target n\n    push $ Do msg\n    pure a\n  Do (PlaceDoom source target n) | isTarget a target -> do\n    Lifted.checkAfter $ Window.PlacedDoom source target n\n    when (a.doom == 0) do\n      Lifted.checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source target n\n    pure $ a & tokensL %~ addTokens Doom n\n  PlaceTokens source target tType n | isTarget a target -> do\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Runner.hs",
+    "    PlaceTokens source target tType n | isTarget a target -> do\n",
+    "    -- Chronicle scenario-fixes: resolve doom interrupts before placing doom.\n    PlaceDoom source target n | isTarget a target -> do\n      pushM $ checkWhen $ Window.PlacedDoom source target n\n      push $ Do msg\n      pure a\n    Do (PlaceDoom source target n) | isTarget a target -> do\n      when (a.doom == 0) do\n        pushM $ checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source target n\n      pushM $ checkAfter $ Window.PlacedDoom source target n\n      pure $ a & tokensL %~ addTokens Doom n\n    PlaceTokens source target tType n | isTarget a target -> do\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Investigator/Runner.hs",
+    "  PlaceTokens source (isTarget a -> True) token n -> do\n",
+    "  -- Chronicle scenario-fixes: a doom When window must observe the old total.\n  PlaceDoom source target n | isTarget a target -> do\n    pushM $ Helpers.checkWindow $ mkWhen $ Window.PlacedDoom source target n\n    push $ Do msg\n    pure a\n  Do (PlaceDoom source target n) | isTarget a target -> do\n    when (a.doom == 0) do\n      pushM $ checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source target n\n    pushM $ Helpers.checkWindow $ mkAfter $ Window.PlacedDoom source target n\n    pure $ a & tokensL %~ addTokens Doom n\n  PlaceTokens source (isTarget a -> True) token n -> do\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Runner.hs",
+    "              push $ Would batchId [whenWindow, Do msg]\n",
+    "              -- Chronicle scenario-fixes: keep replacement before placement,\n              -- then expose When/At before the doom mutation inside that batch.\n              let (placedWhen, placedAt, _) = frame $ Window.PlacedDoom source target n\n              push $ Would batchId [whenWindow, placedWhen, placedAt, Do msg]\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Runner.hs",
+    "              pushAll $ windows [Window.PlacedDoom source (toTarget a) n]\n",
+    "              pushM $ checkAfter $ Window.PlacedDoom source (toTarget a) n\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/TheDrownedCity/TheApiary/ApiaryTender.hs",
+    "      $ PlacedDoomCounter #after AnySource (TargetAtLocation $ locationWithEnemy a)\n",
+    "      $ PlacedDoomCounter #when AnySource (TargetAtLocation $ locationWithEnemy a)\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Agenda/Runner.hs",
+    "    PlaceDoom source (isTarget a -> True) n -> do\n      when (a.doom == 0) do\n        pushM $ checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source (toTarget a) n\n\n      wouldDo msg (Window.WouldPlaceDoom source (toTarget a) n) (Window.PlacedDoom source (toTarget a) n)\n      pure a\n    DoBatch _ (PlaceDoom _ (isTarget a -> True) n) -> do\n      pure $ a & doomL +~ n\n",
+    "    PlaceDoom source (isTarget a -> True) n -> do\n      wouldDo msg (Window.WouldPlaceDoom source (toTarget a) n) (Window.PlacedDoom source (toTarget a) n)\n      pure a\n    DoBatch _ (PlaceDoom source (isTarget a -> True) n) -> do\n      -- Chronicle scenario-fixes: a canceled/replaced placement has no receipt.\n      when (n > 0 && a.doom == 0) do\n        pushM $ checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source (toTarget a) n\n      pure $ a & doomL +~ n\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/TheDrownedCity/UnderseaCreatures/VoltaicEel.hs",
+    "import Arkham.Enemy.Import.Lifted\n",
+    "import Arkham.Enemy.Import.Lifted\nimport Arkham.GameEnv (getPhase)\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/TheDrownedCity/UnderseaCreatures/VoltaicEel.hs",
+    "    isMoving <- a.id <=~> MovingEnemy\n    modifySelectWhen a isMoving Anywhere [ConnectedToWhen FullyFloodedLocation FullyFloodedLocation]",
+    "    isMoving <- a.id <=~> MovingEnemy\n    phase <- getPhase\n    -- Chronicle scenario-fixes: the printed shortcut exists only during the enemy phase.\n    modifySelectWhen a (isMoving && phase == #enemy) Anywhere [ConnectedToWhen FullyFloodedLocation FullyFloodedLocation]"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/TheDrownedCity/CourtOfTheAncients/ColossalTyrant.hs",
+    "        ( notExists (investigatorAt (locationWithEnemy a))\n            <> oneOf\n              [ exists $ AssetWithSanity <> at_ (connectedFrom (locationWithEnemy a))\n              , exists $ InvestigatorAt (connectedFrom (locationWithEnemy a))\n              ]\n        )",
+    "        -- Chronicle scenario-fixes: grid-adjacent cards need not be connected.\n        (notExists $ investigatorAt (locationWithEnemy a))"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/TheDrownedCity/TheGrandVault/SlithererInDarkness.hs",
+    "        then for_ lowestCombat \\iid ->\n          push\n            $ EnemyWillAttack\n            $ (enemyAttack attrs.id (attrs.ability 1) iid)\n              { attackDamageStrategy = enemyDamageStrategy attrs\n              }",
+    "        then do\n          -- Chronicle scenario-fixes: a tie still selects one investigator for one attack.\n          lead <- getLead\n          chooseOrRunOneM lead $ targets lowestCombat \\iid ->\n            push\n              $ EnemyWillAttack\n              $ (enemyAttack attrs.id (attrs.ability 1) iid)\n                { attackDamageStrategy = enemyDamageStrategy attrs\n                }"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/BrethrenOfAsh/QueenOfAsh/DarkMagician.hs",
+    "(EnemyWithoutDoom <> CanPlaceDoomOnEnemy <> not_ (be a))",
+    "(EnemyWithoutDoom <> CanPlaceDoomOnEnemy)"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/BrethrenOfAsh/QueenOfAsh/DarkMagician.hs",
+    "          <> CanPlaceDoomOnEnemy\n          <> not_ (be attrs)",
+    "          <> CanPlaceDoomOnEnemy"
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Cards/BrethrenOfAsh/SpreadingFlames/YourFriendsRoom.hs",
+    "      $ restricted a 1 (Here <> exists (at_ (connectedFrom (be a)) <> UnengagedEnemy)) actionAbility",
+    "      -- Chronicle scenario-fixes: the printed Engage action can pull an engaged enemy.\n      $ restricted a 1 (Here <> exists (EnemyAt (connectedFrom (be a)) <> EnemyCanEnter (be a)))\n      $ ActionAbility #engage Nothing (ActionCost 1)"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/BrethrenOfAsh/DeadEnds/RaisingSuspicions.hs",
+    "import Arkham.Treachery.Import.Lifted\n",
+    "import Arkham.Treachery.Import.Lifted\nimport Arkham.Timing qualified as Timing\nimport Arkham.Window qualified as Window\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/BrethrenOfAsh/DeadEnds/RaisingSuspicions.hs",
+    "      if null enemies\n        then gainSurge attrs\n        else chooseTargetM iid enemies $ placeDoomOn attrs 1\n      pure t\n",
+    "      unless (null enemies) $ chooseTargetM iid enemies $ placeDoomOn attrs 1\n      doStep 0 msg\n      pure $ RaisingSuspicions $ attrs & setMeta False\n    -- Chronicle scenario-fixes: a replaced or cancelled placement is not doom placed.\n    CheckWindows ws\n      | any (\\case\n          Window.Window Timing.After (Window.PlacedDoom (isSource attrs -> True) _ n) _ _ -> n > 0\n          _ -> False) ws ->\n          pure $ RaisingSuspicions $ attrs & setMeta True\n    DoStep 0 (Revelation _ (isSource attrs -> True)) -> do\n      unless (toResultDefault False attrs.meta) $ gainSurge attrs\n      pure t\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Helpers/Ability.hs",
+    "  Action.Engage -> case abilitySource of\n    EnemySource _ -> pure True",
+    "  Action.Engage -> case abilitySource of\n    -- Chronicle scenario-fixes: a location action supplies its own printed criteria.\n    -- Its movement may resolve even when the subsequent engagement cannot.\n    LocationSource _ -> pure True\n    EnemySource _ -> pure True"
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Cards/BrethrenOfAsh/SpreadingFlames/YourFriendsRoom.hs",
+    "        enemyMoveTo (attrs.ability 1) enemy (toId attrs)\n        engageEnemy iid enemy\n      pure l\n",
+    "        enemyMoveTo (attrs.ability 1) enemy (toId attrs)\n        handleTarget iid (attrs.ability 1) enemy\n      pure l\n    HandleTargetChoice iid (isAbilitySource attrs 1 -> True) (EnemyTarget enemy) -> do\n      -- Resolve the printed movement first; a prohibited engagement must not\n      -- undo that movement or drag an enemy whose movement failed into the room.\n      canEngage <- enemy <=~> (EnemyAt (be attrs) <> EnemyCanEngage (InvestigatorWithId iid))\n      when canEngage $ engageEnemy iid enemy\n      pure l\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Location/Cards/BrethrenOfAsh/SpreadingFlames/YourFriendsRoom.hs",
+    "      enemies <- select $ EnemyAt $ connectedFrom (be attrs)",
+    "      enemies <- select $ EnemyAt (connectedFrom (be attrs)) <> EnemyCanEnter (be attrs)"
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "import Arkham.Helpers.Enemy (\n",
+    "import Arkham.Helpers.Enemy qualified as EnemyHelpers\nimport Arkham.Helpers.Enemy (\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Game.hs",
+    "    EnemyCanEnter locationMatcher -> do\n      locations <- traverse (traverseToSnd getModifiers) =<< select locationMatcher\n      es & filterM \\enemy -> do\n        if attr enemyPlacement enemy == InTheShadows\n          then pure False\n          else\n            locations & anyM \\(_lid, mods) -> do\n              mods & noneM \\case\n                CannotBeEnteredBy matcher -> null <$> enemyMatcherFilter [enemy] matcher\n                _ -> pure False\n",
+    "    EnemyCanEnter locationMatcher -> do\n      locations <- select locationMatcher\n      es & filterM \\enemy -> do\n        if attr enemyPlacement enemy == InTheShadows\n          then pure False\n          -- Chronicle scenario-fixes: eligibility must use the same destination\n          -- restrictions as EnemyMove, including enemy-side movement bans.\n          else anyM (EnemyHelpers.canEnterLocation (toId enemy)) locations\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheFeastOfHemlockVale/HorrorsInTheRock/Calcification.hs",
+    "import Arkham.Helpers.Cost\n",
+    "import Arkham.Helpers.Cost\nimport Arkham.Helpers.History\nimport Arkham.Helpers.Modifiers (modifiedWhen_)\nimport Arkham.Placement\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheFeastOfHemlockVale/HorrorsInTheRock/Calcification.hs",
+    "  deriving anyclass (IsTreachery, HasModifiersFor)",
+    "  deriving anyclass IsTreachery"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheFeastOfHemlockVale/HorrorsInTheRock/Calcification.hs",
+    "instance HasAbilities Calcification where",
+    "-- Chronicle scenario-fixes: count every completed move this round, including\n-- fast and forced movement before this physical treachery entered play.\ninstance HasModifiersFor Calcification where\n  getModifiersFor (Calcification a) = case a.placement of\n    InThreatArea iid -> do\n      moved <- getHistoryField RoundHistory iid HistoryMoved\n      modifiedWhen_ a (moved > 0)\n        (AbilityTarget iid $ AbilityRef (toSource a) 1)\n        [SetAbilityCriteria $ CriteriaOverride Never]\n    _ -> pure ()\n\ninstance HasAbilities Calcification where"
+  ],
+  [
+    "arkham-api/library/Arkham/Treachery/Cards/TheFeastOfHemlockVale/HorrorsInTheRock/Calcification.hs",
+    "        $ PerformAction #when You (FirstActionMatchOfRound #move)",
+    "        $ Moves #when You AnySource Anywhere Anywhere"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/CarnevaleOfHorrors/WrithingAppendage.hs",
+    "    UseCardAbility iid (isSource attrs -> True) 2 _ _ -> do\n      -- TODO: Damage here should not be dealt from an investigator to avoid\n      -- triggering any abilities\n      mCnidathquaId <- getCnidathqua\n      for_ mCnidathquaId $ \\cnidathquaId ->\n        push $ Msg.DealDamage (EnemyTarget cnidathquaId) $ nonAttack Nothing iid 1\n",
+    "    UseCardAbility _ (isSource attrs -> True) 2 _ _ -> do\n      mCnidathquaId <- getCnidathqua\n      for_ mCnidathquaId $ \\cnidathquaId ->\n        -- Chronicle scenario-fixes: the encounter enemy deals this damage;\n        -- resolving its Forced ability does not give the investigator credit.\n        push $ Msg.DealDamage (EnemyTarget cnidathquaId) $ nonAttack Nothing (toAbilitySource attrs 2) 1\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Event/Events/FortuneOrFate2.hs",
+    "module Arkham.Event.Events.FortuneOrFate2 (\n  fortuneOrFate2,\n  FortuneOrFate2 (..),\n) where\n\nimport Arkham.Prelude\n\nimport Arkham.Classes\nimport Arkham.Event.Cards qualified as Cards\nimport Arkham.Event.Runner\nimport Arkham.Window (Window (..))\nimport Arkham.Window qualified as Window\n\nnewtype FortuneOrFate2 = FortuneOrFate2 EventAttrs\n  deriving anyclass (IsEvent, HasModifiersFor, HasAbilities)\n  deriving newtype (Show, Eq, ToJSON, FromJSON, Entity)\n\nfortuneOrFate2 :: EventCard FortuneOrFate2\nfortuneOrFate2 = event FortuneOrFate2 Cards.fortuneOrFate2\n\ngetDoomTarget :: [Window] -> Target\ngetDoomTarget [] = error \"wrong window\"\ngetDoomTarget ((windowType -> Window.PlacedDoom _ doomTarget _) : _) = doomTarget\ngetDoomTarget (_ : xs) = getDoomTarget xs\n\ninstance RunMessage FortuneOrFate2 where\n  runMessage msg e@(FortuneOrFate2 attrs) = case msg of\n    InvestigatorPlayEvent _ eid _ (getDoomTarget -> doomTarget) _ | eid == toId attrs -> do\n      push $ RemoveDoom (toSource attrs) doomTarget 1\n      pure e\n    _ -> FortuneOrFate2 <$> runMessage msg attrs\n",
+    "module Arkham.Event.Events.FortuneOrFate2 (\n  fortuneOrFate2,\n  FortuneOrFate2 (..),\n) where\n\nimport Arkham.Prelude\n\nimport Arkham.Classes\nimport Arkham.Classes.HasQueue (withQueue_)\nimport Arkham.Event.Cards qualified as Cards\nimport Arkham.Event.Runner\nimport Arkham.Window (Window (..))\nimport Arkham.Window qualified as Window\n\nnewtype FortuneOrFate2 = FortuneOrFate2 EventAttrs\n  deriving anyclass (IsEvent, HasModifiersFor, HasAbilities)\n  deriving newtype (Show, Eq, ToJSON, FromJSON, Entity)\n\nfortuneOrFate2 :: EventCard FortuneOrFate2\nfortuneOrFate2 = eventWith FortuneOrFate2 Cards.fortuneOrFate2 $ afterPlayL .~ ExileThis\n\ngetDoomWindow :: [Window] -> Window\ngetDoomWindow [] = error \"wrong window\"\ngetDoomWindow (w@(windowType -> Window.PlacedDoom {}) : _) = w\ngetDoomWindow (_ : xs) = getDoomWindow xs\n\n-- Chronicle scenario-fixes: cancel pending doom and honor printed exile.\n-- Only the pending placement that opened this window is reduced. Existing doom\n-- is untouched, and later placements (including the same target) stay queued.\n-- Agenda doom already has its After window in the batch; other runners produce\n-- their After windows from the reduced Do message when the mutation resolves.\npreventOneDoom :: Window -> [Message] -> [Message]\npreventOneDoom window = snd . go\n where\n  (source, target) = case windowType window of\n    Window.PlacedDoom s t _ -> (s, t)\n    _ -> error \"wrong doom window\"\n  matches s t = source == s && target == t\n  matchesBatch batch = maybe True (== batch) (windowBatchId window)\n\n  go [] = (False, [])\n  go (Would batch messages : rest)\n    | matchesBatch batch = case go messages of\n        (True, messages') -> (True, Would batch messages' : rest)\n        (False, _) -> let (found, rest') = go rest in (found, Would batch messages : rest')\n  go (Do (PlaceDoom s t n) : rest)\n    | matches s t =\n        let remaining = max 0 (n - 1)\n         in (True, [Do (PlaceDoom s t remaining) | remaining > 0] <> remainingAfter remaining rest)\n  go (DoBatch batch (PlaceDoom s t n) : rest)\n    | matchesBatch batch && matches s t =\n        let remaining = max 0 (n - 1)\n         in (True, [DoBatch batch (PlaceDoom s t remaining) | remaining > 0] <> remainingAfter remaining rest)\n  go (message : rest) = let (found, rest') = go rest in (found, message : rest')\n\n  -- A prebuilt After immediately follows the agenda mutation. Do not traverse\n  -- later batches or independent placements while updating this receipt.\n  remainingAfter n (CheckWindows ws : rest)\n    | any matchingReceipt ws =\n        [CheckWindows ws' | notNull ws'] <> rest\n   where\n    ws' = mapMaybe (receipt n) ws\n  remainingAfter n (Do (CheckWindows ws) : rest)\n    | any matchingReceipt ws =\n        [Do (CheckWindows ws') | notNull ws'] <> rest\n   where\n    ws' = mapMaybe (receipt n) ws\n  remainingAfter _ rest = rest\n\n  matchingReceipt w = case windowType w of\n    Window.PlacedDoom s t _ -> matches s t\n    _ -> False\n  receipt n w\n    | matchingReceipt w =\n        if n > 0 then Just w {windowType = Window.PlacedDoom source target n} else Nothing\n    | otherwise = Just w\n\ninstance RunMessage FortuneOrFate2 where\n  runMessage msg e@(FortuneOrFate2 attrs) = case msg of\n    InvestigatorPlayEvent _ eid _ (getDoomWindow -> window) _ | eid == toId attrs -> do\n      withQueue_ $ preventOneDoom window\n      pure e\n    _ -> FortuneOrFate2 <$> runMessage msg attrs\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/BrethrenOfAsh/QueenOfAsh/DarkMagician.hs",
+    "instance HasAbilities DarkMagician where",
+    "-- Chronicle scenario-fixes: the nearest eligible enemy includes this card.\ninstance HasAbilities DarkMagician where"
+  ],
+  [
+    "arkham-api/library/Arkham/Act/Runner.hs",
+    "    PlaceDoom source (isTarget a -> True) n -> do\n      pushM $ checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source (toTarget a) n\n      wouldDo msg (Window.WouldPlaceDoom source (toTarget a) n) (Window.PlacedDoom source (toTarget a) n)\n      pure a\n    DoBatch _ (PlaceDoom _ (isTarget a -> True) n) -> do\n      pure $ a & tokensL %~ addTokens Doom n\n",
+    "    PlaceDoom source (isTarget a -> True) n -> do\n      wouldDo msg (Window.WouldPlaceDoom source (toTarget a) n) (Window.PlacedDoom source (toTarget a) n)\n      pure a\n    DoBatch _ (PlaceDoom source (isTarget a -> True) n) -> do\n      -- Chronicle scenario-fixes: emit a first-doom receipt only for a real\n      -- zero-to-positive transition, after cancellation/replacement windows.\n      when (n > 0 && a.token Doom == 0) do\n        pushM $ checkAfter $ Window.PlacedDoomCounterOnTargetWithNoDoom source (toTarget a) n\n      pure $ a & tokensL %~ addTokens Doom n\n"
   ]
 ]

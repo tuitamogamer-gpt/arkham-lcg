@@ -24,12 +24,11 @@ import TestImport.New
 
 -- Apiary Tender (11575) says "a card at this location", without restricting
 -- card types. Drive actual token placement and its offered Forced ability.
--- This bounded correction retains the engine's existing after-placement timing;
--- several entity runners do not yet emit a pre-placement doom window.
+-- The printed When trigger now finishes its attack before doom is placed.
 spec :: Spec
 spec = describe "Apiary Tender's doom trigger covers every located card type" do
   for_ ["treachery", "event", "location", "enemy", "asset", "investigator"] \kind ->
-    it ("readies and attacks after doom is placed on a local " <> kind) . gameTest $ \self -> do
+    it ("readies and attacks before doom is placed on a local " <> kind) . gameTest $ \self -> do
       here <- testLocation
       self `moveTo` here
       tender <- tenderAt here
@@ -37,7 +36,7 @@ spec = describe "Apiary Tender's doom trigger covers every located card type" do
       exhaust tender
       (target, doom) <- locatedTarget kind self here tender
       run $ PlaceDoom GameSource target 1
-      doom `shouldReturn` 1
+      doom `shouldReturn` 0
       tender.exhausted `shouldReturn` True
       resolveTender tender
       assertAttack self tender
@@ -129,7 +128,7 @@ spec = describe "Apiary Tender's doom trigger covers every located card type" do
     -- that same physical card and then offers the Tender's Forced ability.
     run $ EnemyEngageInvestigator tender.id self.id
     chooseAbility (TreacherySource tid) 1
-    field TreacheryDoom tid `shouldReturn` 1
+    field TreacheryDoom tid `shouldReturn` 0
     field TreacheryPlacement tid `shouldReturn` InThreatArea self.id
     tender.exhausted `shouldReturn` True
     roundTripPendingGame

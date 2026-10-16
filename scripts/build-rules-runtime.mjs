@@ -405,7 +405,7 @@ if (withScenarioFixes) {
   patches.push([
     "arkham-api/package.yaml",
     "      - Helpers.Message",
-    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Arkham.Homebrew.ScenarioFixes.FrenchHillSpec\n      - Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec\n      - Arkham.Homebrew.ScenarioFixes.AGatheringSpec\n      - Arkham.Homebrew.ScenarioFixes.StElmosFireSpec\n      - Arkham.Homebrew.ScenarioFixes.BlasphemousInvocationSpec\n      - Arkham.Homebrew.ScenarioFixes.SharedThreatAreaSpec\n      - Arkham.Homebrew.ScenarioFixes.ApiaryTenderSpec\n      - Arkham.Homebrew.ScenarioFixes.EncounterSearchSpec\n      - Helpers.Message",
+    "      - Arkham.Homebrew.ScenarioFixes.DrownedCitySpec\n      - Arkham.Homebrew.ScenarioFixes.LoathsomeParasitesSpec\n      - Arkham.Homebrew.ScenarioFixes.PolarMirageSpec\n      - Arkham.Homebrew.ScenarioFixes.FrenchHillSpec\n      - Arkham.Homebrew.ScenarioFixes.QueenOfAshSpec\n      - Arkham.Homebrew.ScenarioFixes.AGatheringSpec\n      - Arkham.Homebrew.ScenarioFixes.StElmosFireSpec\n      - Arkham.Homebrew.ScenarioFixes.BlasphemousInvocationSpec\n      - Arkham.Homebrew.ScenarioFixes.SharedThreatAreaSpec\n      - Arkham.Homebrew.ScenarioFixes.ApiaryTenderSpec\n      - Arkham.Homebrew.ScenarioFixes.EncounterSearchSpec\n      - Arkham.Homebrew.ScenarioFixes.KeyedEncounterSearchSpec\n      - Arkham.Homebrew.ScenarioFixes.DoomTimingSpec\n      - Arkham.Homebrew.ScenarioFixes.DrownedEnemyTimingSpec\n      - Arkham.Homebrew.ScenarioFixes.CoreEncounterActionsSpec\n      - Arkham.Homebrew.ScenarioFixes.RaisingSuspicionsSpec\n      - Arkham.Homebrew.ScenarioFixes.CalcificationSpec\n      - Arkham.Homebrew.ScenarioFixes.WrithingAppendageSpec\n      - Arkham.Homebrew.ScenarioFixes.FortuneOrFateSpec\n      - Arkham.Homebrew.ScenarioFixes.ActDoomReceiptSpec\n      - Helpers.Message",
   ]);
 }
 for (const id of selectedExtensions.slice(1)) {
@@ -680,20 +680,39 @@ async function patchSource() {
   const prior = JSON.parse(await readFile(statePath, "utf8").catch(() => "{}"));
   if (!withScenarioFixes) {
     const fixedSources = [
-      "Arkham/Campaign/Campaigns/TheDrownedCity.hs",
-      "Arkham/Agenda/Cards/TheDrownedCity/TheApiary/LoathsomeParasites.hs",
-      "Arkham/Treachery/Cards/EdgeOfTheEarth/SilenceAndMystery/PolarMirage.hs",
-      "Arkham/Enemy/Cards/EdgeOfTheEarth/LeftBehind/FrenziedExplorer.hs",
-      "Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
-      "Arkham/Scenario/Scenarios/BrethrenOfAsh/QueenOfAsh.hs",
+      "Arkham/Act/Runner.hs",
       "Arkham/Agenda/Cards/BrethrenOfAsh/QueenOfAsh/AGathering.hs",
-      "Arkham/Treachery/Cards/TheDrownedCity/ObsidianCanyons/StElmosFire.hs",
-      "Arkham/Treachery/Cards/BrethrenOfAsh/QueenOfAsh/BlasphemousInvocation.hs",
-      "Arkham/Treachery/Cards/TheDrownedCity/Stowaways/Infected.hs",
-      "Arkham/Treachery/Cards/TheDrownedCity/CosmicLegacy/EyeOfTheDeep.hs",
+      "Arkham/Agenda/Cards/TheDrownedCity/TheApiary/LoathsomeParasites.hs",
+      "Arkham/Agenda/Runner.hs",
+      "Arkham/Campaign/Campaigns/TheDrownedCity.hs",
+      "Arkham/EncounterCard/Source.hs",
+      "Arkham/Enemy/Cards/BrethrenOfAsh/QueenOfAsh/DarkMagician.hs",
+      "Arkham/Enemy/Cards/CarnevaleOfHorrors/WrithingAppendage.hs",
+      "Arkham/Enemy/Cards/EdgeOfTheEarth/LeftBehind/FrenziedExplorer.hs",
+      "Arkham/Enemy/Cards/TheDrownedCity/CourtOfTheAncients/ColossalTyrant.hs",
       "Arkham/Enemy/Cards/TheDrownedCity/TheApiary/ApiaryTender.hs",
+      "Arkham/Enemy/Cards/TheDrownedCity/TheGrandVault/SlithererInDarkness.hs",
+      "Arkham/Enemy/Cards/TheDrownedCity/UnderseaCreatures/VoltaicEel.hs",
+      "Arkham/Enemy/Runner.hs",
+      "Arkham/Event/Events/FortuneOrFate2.hs",
+      "Arkham/Event/Runner.hs",
+      "Arkham/Game.hs",
+      "Arkham/Helpers/Ability.hs",
       "Arkham/Helpers/Window.hs",
+      "Arkham/Investigator/Runner.hs",
+      "Arkham/Location/Cards/BrethrenOfAsh/Arkham/FrenchHill.hs",
+      "Arkham/Location/Cards/BrethrenOfAsh/SpreadingFlames/YourFriendsRoom.hs",
+      "Arkham/Location/Runner.hs",
       "Arkham/Scenario/Runner.hs",
+      "Arkham/Scenario/Scenarios/BrethrenOfAsh/QueenOfAsh.hs",
+      "Arkham/Treachery/Cards/BrethrenOfAsh/DeadEnds/RaisingSuspicions.hs",
+      "Arkham/Treachery/Cards/BrethrenOfAsh/QueenOfAsh/BlasphemousInvocation.hs",
+      "Arkham/Treachery/Cards/EdgeOfTheEarth/SilenceAndMystery/PolarMirage.hs",
+      "Arkham/Treachery/Cards/TheDrownedCity/CosmicLegacy/EyeOfTheDeep.hs",
+      "Arkham/Treachery/Cards/TheDrownedCity/ObsidianCanyons/StElmosFire.hs",
+      "Arkham/Treachery/Cards/TheDrownedCity/Stowaways/Infected.hs",
+      "Arkham/Treachery/Cards/TheFeastOfHemlockVale/HorrorsInTheRock/Calcification.hs",
+      "Arkham/Treachery/Runner.hs",
     ];
     const containsFix = (await Promise.all(fixedSources.map(async (relative) =>
       (await readFile(resolve(backend, "arkham-api/library", relative), "utf8"))
