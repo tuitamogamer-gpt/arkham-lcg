@@ -22,6 +22,8 @@ import Arkham.Homebrew.ScenarioFixes.PolarMirageSpec qualified as PolarMirage
 import Arkham.Homebrew.ScenarioFixes.StElmosFireSpec qualified as StElmosFire
 import Arkham.Homebrew.ScenarioFixes.BlasphemousInvocationSpec qualified as BlasphemousInvocation
 import Arkham.Homebrew.ScenarioFixes.SharedThreatAreaSpec qualified as SharedThreatArea
+import Arkham.Homebrew.ScenarioFixes.ApiaryTenderSpec qualified as ApiaryTender
+import Arkham.Homebrew.ScenarioFixes.EncounterSearchSpec qualified as EncounterSearch
 import Prelude (IO)
 import Test.Hspec (hspec)
 
@@ -49,3 +51,5 @@ main = hspec do
   StElmosFire.spec
   BlasphemousInvocation.spec
   SharedThreatArea.spec
+  ApiaryTender.spec
+  EncounterSearch.spec

@@ -34,6 +34,15 @@ with `--with-epic-machinations --with-scenario-fixes`.
   use the printed removal actions. Ownership still determines the treachery's
   other effects; a remote investigator cannot use these actions.
 
+- **Apiary Tender:** positive doom placed on treachery and event cards at its
+  location can trigger its ready/lose-aloof/attack sequence, alongside the
+  previously handled card types. The existing after-placement timing remains;
+  inconsistent native before-placement windows are a separate engine issue.
+- **Encounter searches without a match:** acknowledging a completed full-deck
+  find-and-draw search shuffles the searched encounter deck, including a keyed
+  deck, without merging its discard or changing another deck. Successful keyed
+  searches have a separate source-zone handling defect outside this correction.
+
 `native-seams.json` contains bounded patches against upstream revision
 `03a7f1e74925744f021f6e8fe0e39945d2c3a833`; it is not a vendored upstream engine.
 Original native regression tests live under `tests/`. The dedicated
@@ -54,6 +63,8 @@ Rules references:
 - [Brethren of Ash campaign guide, p. 12: Queen of Ash setup](https://images-cdn.fantasyflightgames.com/filer_public/f0/22/f022ac7c-9c30-4521-ac16-1f74f00e1d31/ahc100_campaign_guide-web.pdf).
 - [French Hill, 12154](https://arkhamdb.com/card/12154).
 - [A Gathering, 12169](https://arkhamdb.com/card/12169).
+- [Apiary Tender, 11575](https://arkhamdb.com/card/11575).
+- [Arkham Grimoire v1.1, p. 21: Search](https://images-cdn.fantasyflightgames.com/filer_public/b6/ac/b6ac3b87-f5af-4d4c-b036-f7c51ced063d/arkham_grimoire_v11_web_1.pdf).
 - [St. Elmo's Fire, 11665](https://arkhamdb.com/card/11665).
 - [Blasphemous Invocation, 12190](https://arkhamdb.com/card/12190), and
   [Brethren of Ash, 12171](https://arkhamdb.com/card/12171).

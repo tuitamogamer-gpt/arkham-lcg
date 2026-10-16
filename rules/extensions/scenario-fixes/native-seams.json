@@ -83,5 +83,20 @@
     "arkham-api/library/Arkham/Treachery/Cards/BrethrenOfAsh/QueenOfAsh/BlasphemousInvocation.hs",
     "      revelationSkillTest sid iid attrs #willpower (Fixed 3)\n      pure t\n    FailedThisSkillTestBy iid (isSource attrs -> True) n | n > 0 -> do\n      cultists <- selectCount $ #cultist <> EnemyWithoutDoom <> CanPlaceDoomOnEnemy\n      if cultists > 0\n        then doStep n msg\n        else findAndDrawEncounterCard iid $ #enemy <> CardWithTrait Cultist\n      pure t\n    DoStep n msg'@(FailedThisSkillTest iid (isSource attrs -> True)) | n > 0 -> do\n      cultists <- select $ #cultist <> EnemyWithoutDoom <> CanPlaceDoomOnEnemy\n      chooseTargetM iid cultists \\cultist -> do\n        placeDoom attrs cultist 1\n        doStep (n - 1) msg'\n      pure t\n",
     "      revelationSkillTest sid iid attrs #willpower (Fixed 3)\n      pure $ BlasphemousInvocation $ attrs & setMeta False\n    -- Chronicle scenario-fixes: track actual placements, not eligible targets\n    -- or pending attempts. Brethren of Ash can replace every doom with damage.\n    CheckWindows ws\n      | any (\\case\n          Window.Window Timing.After (Window.PlacedDoom (isSource attrs -> True) _ n) _ _ -> n > 0\n          _ -> False) ws ->\n          pure $ BlasphemousInvocation $ attrs & setMeta True\n    FailedThisSkillTestBy _ (isSource attrs -> True) n -> do\n      doStep (max 0 n) msg\n      pure t\n    DoStep n msg'@(FailedThisSkillTest iid (isSource attrs -> True)) | n > 0 -> do\n      cultists <- select $ #cultist <> EnemyWithoutDoom <> CanPlaceDoomOnEnemy\n      if null cultists\n        then doStep 0 msg'\n        else chooseTargetM iid cultists \\cultist -> do\n          placeDoom attrs cultist 1\n          doStep (n - 1) msg'\n      pure t\n    DoStep 0 (FailedThisSkillTest iid (isSource attrs -> True)) -> do\n      unless (toResultDefault False attrs.meta)\n        $ findAndDrawEncounterCard iid\n        $ #enemy <> CardWithTrait Cultist\n      pure t\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Scenario/Runner.hs",
+    "    if null matches\n      then chooseOne iid [Label \"$label.noMatchesFound\" []]\n",
+    "    if null matches\n      -- Chronicle scenario-fixes: an unsuccessful whole-deck search still\n      -- shuffles that same encounter deck when its acknowledgement completes.\n      then chooseOne iid [Label \"$label.noMatchesFound\" [ShuffleDeck $ Deck.EncounterDeckByKey deckKey']]\n"
+  ],
+  [
+    "arkham-api/library/Arkham/Enemy/Cards/TheDrownedCity/TheApiary/ApiaryTender.hs",
+    "      $ oneOf\n        [ PlacedCounterOnLocation #after (locationWithEnemy a) AnySource DoomCounter (atLeast 1)\n        , PlacedCounterOnEnemy #after (EnemyAt (locationWithEnemy a)) AnySource DoomCounter (atLeast 1)\n        , PlacedCounterOnAsset #after (AssetAt (locationWithEnemy a)) AnySource DoomCounter (atLeast 1)\n        , PlacedCounterOnInvestigator\n            #after\n            (InvestigatorAt $ locationWithEnemy a)\n            AnySource\n            DoomCounter\n            (atLeast 1)\n        ]",
+    "      -- Chronicle scenario-fixes: a card here also includes attached events\n      -- and treacheries in an investigator's threat area.\n      $ PlacedDoomCounter #after AnySource (TargetAtLocation $ locationWithEnemy a)"
+  ],
+  [
+    "arkham-api/library/Arkham/Helpers/Window.hs",
+    "    Matcher.PlacedDoomCounter timing sourceMatcher targetMatcher -> guardTiming timing $ \\case\n      Window.PlacedDoom source' target _ ->\n        andM [targetMatches target targetMatcher, sourceMatches source' sourceMatcher]\n      _ -> noMatch\n",
+    "    Matcher.PlacedDoomCounter timing sourceMatcher targetMatcher -> guardTiming timing $ \\case\n      -- Chronicle scenario-fixes: no counters placed means no placement trigger.\n      Window.PlacedDoom source' target n | n > 0 ->\n        andM [targetMatches target targetMatcher, sourceMatches source' sourceMatcher]\n      _ -> noMatch\n"
   ]
 ]
