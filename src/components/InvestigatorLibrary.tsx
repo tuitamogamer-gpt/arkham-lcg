@@ -29,6 +29,7 @@ import { isPlayerCard } from "../game/knowledge";
 import { Button, SkillStats } from "./Common";
 import { useCatalog } from "./useCatalog";
 import "../catalog.css";
+import { matchesSearch } from "../game/search";
 
 interface InvestigatorLibraryProps {
   inspect: (code: string) => void;
@@ -188,9 +189,10 @@ export function InvestigatorLibrary({
         (availability === "playable"
           ? playable(c.code)
           : separatelySoldStarter(c.code))) &&
-      `${c.name} ${c.subname || ""} ${c.traits || ""} ${c.code} ${sources.map((source) => source.name).join(" ")}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase())
+      matchesSearch(
+        `${c.name} ${c.subname || ""} ${c.traits || ""} ${c.code} ${sources.map((source) => source.name).join(" ")}`,
+        query,
+      )
     );
   });
   const opened = openCode ? card(openCode) : undefined;
@@ -400,7 +402,7 @@ export function InvestigatorLibrary({
       <p className="library-scope-note">
         Public investigator printings are available to browse. The built-in
         table supports the five 2026 core investigators in Spreading Flames.
-        Expanded play uses the connected companion engine's available content.
+        Other investigators are available for browsing and deck reference.
       </p>
     </section>
   );
@@ -513,8 +515,8 @@ function InvestigatorDeck({
               </>
             ) : (
               <>
-                <Books size={15} /> Available in the collection · check the
-                companion engine for play support
+                <Books size={15} /> Available in the collection · not playable
+                in the browser game
               </>
             )}
           </span>
@@ -534,7 +536,10 @@ function InvestigatorDeck({
               </Button>
             )}
             {onExpandedPlay && (
-              <Button secondary onClick={() => onExpandedPlay(investigator.code)}>
+              <Button
+                secondary
+                onClick={() => onExpandedPlay(investigator.code)}
+              >
                 Play with expansions
               </Button>
             )}

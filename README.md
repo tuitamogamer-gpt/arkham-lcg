@@ -1,6 +1,6 @@
 # Arkham Chronicle
 
-A cinematic, local-first Arkham Horror: The Card Game prototype, built with React, TypeScript and Vite. The collection imports published Arkham content through **30 September 2026**, including the original, revised and 2026 cores, expansion cycles, investigator decks, standalone and parallel scenarios, Return To, novella and promo content, and Barkham. Expanded campaigns use a separately installed rules engine through Chronicle's physical table. The original Core game follows **Spreading Flames** from the **March 2026 Core Set / Chapter Two** campaign **Brethren of Ash**.
+A cinematic, local-first Arkham Horror: The Card Game prototype, built with React, TypeScript and Vite. The collection imports published Arkham content through **30 September 2026**, including the original, revised and 2026 cores, expansion cycles, investigator decks, standalone and parallel scenarios, Return To, novella and promo content, and Barkham. The published app runs directly in the browser with no companion installation. Imported expansions are browsable; their native gameplay integration is retained as an optional developer build. The original Core game follows **Spreading Flames** from the **March 2026 Core Set / Chapter Two** campaign **Brethren of Ash**.
 
 ## Run
 
@@ -13,20 +13,9 @@ npm run dev
 
 Open http://localhost:5187. For a production build, run `npm run build`; serve the output with `npm run preview`.
 
-For expanded play on macOS with Apple silicon, keep a second terminal running:
+The published app needs no Mac companion, local server or account. **Expansions & campaigns** offers browser play and a searchable product library with direct links to the card archive. Imported content is not automatically playable: **Spreading Flames** is the browser scenario, with its existing saves, offline support and five starter decks.
 
-```sh
-npm run rules:server
-```
-
-Open **Expansions & campaigns** in Chronicle. The first start downloads a pinned
-companion engine and creates its local database under ignored
-`output/rules-server/`. Chronicle presents the companion's card/scenario
-decisions, campaign records and upgrades on its existing green physical table.
-Expanded games open directly in the client and can be resumed from their saved
-investigation links. The Spreading Flames table and its existing saves remain
-independent. See
-[installation, provenance and limitations](docs/rules-server.md).
+The native integration and scenario corrections remain available for development. Explicitly enable its UI with `VITE_ENABLE_LOCAL_RULES=true npm run dev` (or the same variable for `npm run build`), then run `npm run rules:server` separately. This is not enabled in the default or production build. Existing native saves remain under ignored `output/rules-server/`; they are not converted or deleted. See [developer installation and limitations](docs/rules-server.md). The macOS packaging workflow is manual-only and no longer runs for routine pushes or deployments.
 
 ## Playable now
 

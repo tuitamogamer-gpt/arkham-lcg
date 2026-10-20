@@ -682,6 +682,7 @@ try {
     await ctx.close();
   }
 
+  const nativeBase = process.env.NATIVE_BASE_URL || base;
   // A separate public-wire projection fixture. All bridge requests are mocked
   // GET/HEAD/OPTIONS; POST is rejected, recorded and must remain absent.
   const nativeId = "00000000-0000-4000-8000-000000000091",
@@ -757,12 +758,12 @@ try {
         status: 200,
         json: response,
         headers: {
-          "Access-Control-Allow-Origin": new URL(base).origin,
+          "Access-Control-Allow-Origin": new URL(nativeBase).origin,
           "Access-Control-Allow-Credentials": "true",
         },
       });
     });
-    await page.goto(`${base}/#investigation=${nativeId}`);
+    await page.goto(`${nativeBase}/#investigation=${nativeId}`);
     await page
       .getByRole("button", { name: "Public fixture choice", exact: true })
       .waitFor();

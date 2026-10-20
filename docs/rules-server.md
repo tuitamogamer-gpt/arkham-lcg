@@ -1,4 +1,6 @@
-# Full rules table
+# Optional native developer table
+
+The default and published app no longer uses this integration. It requires no Mac companion and does not contact localhost. The browser library keeps imported content available to browse; only Spreading Flames runs on the browser engine. To work on the retained native integration, explicitly run `VITE_ENABLE_LOCAL_RULES=true npm run dev`, or set that variable for a separate development build. Native saved games and source imports are preserved. The macOS packaging workflow is available only via manual dispatch.
 
 Chronicle connects to the separately installed [ArkhamHorror rules engine](https://github.com/halogenandtoast/ArkhamHorror) for its implemented campaigns, investigators, player cards, and decisions. Expanded games use Chronicle's green physical table, existing card faces, typography and token controls. The native engine remains authoritative for payments, choices, scenario layouts, deck upgrades, campaign logs, undo and saved games. The existing Chronicle Core game continues to use its own engine and design.
 
@@ -41,7 +43,7 @@ River of Blood's 13 scenario-card image requests, including exact location backs
 
 The bridge listens only on `127.0.0.1`. It validates the Host header and accepts cross-origin requests from HTTP loopback origins and the exact published origin `https://arkham-lcg.vercel.app`. Expanded gameplay uses its original `/chronicle/play` adapter; local account credentials stay at the bridge. Epic seats remain bound to one game. `/chronicle/open` is retained for the independently installed deck editor. All gameplay decisions and campaign setup use Chronicle's own client.
 
-The published static Vercel client connects to this independently running local service. The browser may ask for local-network access. Start `npm run rules:server` on the same Mac before connecting; the deployment does not host PostgreSQL or the native executable. Card images that are not bundled use ArkhamDB or the exact published rules asset host and need internet access. Failed image requests retain readable card faces.
+An explicitly enabled native developer build connects to this independently running local service. The published static Vercel client does not. The browser may ask for local-network access. Start `npm run rules:server` on the same Mac before connecting; the deployment does not host PostgreSQL or the native executable. Card images that are not bundled use ArkhamDB or the exact published rules asset host and need internet access. Failed image requests retain readable card faces.
 
 Ports and paths can be configured for local development:
 
