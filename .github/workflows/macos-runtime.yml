@@ -1,23 +1,7 @@
 name: Prepare macOS ARM64 native runtime
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - rules/extensions/**
-      - rules/tests/**
-      - scripts/build-rules-*.mjs
-      - scripts/rules-runtime-manifest.mjs
-      - scripts/rules-native-test-environment.mjs
-      - scripts/rules-native-postgres.*
-      - tests/rules-native-postgres.test.ts
-      - scripts/rules-native-load-paths.*
-      - tests/rules-native-load-paths.test.ts
-      - tests/fixtures/macos-pinned-psql-load-commands.json
-      - scripts/rules-build-space.mjs
-      - scripts/package-macos-runtime.*
-      - tests/package-macos-runtime.test.ts
-      - .github/workflows/macos-runtime.yml
+  # Optional developer packaging only; production browser releases do not need a Mac.
   workflow_dispatch:
     inputs:
       runner:

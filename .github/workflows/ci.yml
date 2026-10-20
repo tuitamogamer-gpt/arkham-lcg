@@ -32,6 +32,17 @@ jobs:
             curl -sf http://127.0.0.1:5187/ > /dev/null && break
             sleep 1
           done
+      - name: Build optional native developer UI separately
+        env:
+          VITE_ENABLE_LOCAL_RULES: "true"
+        run: npx vite build --outDir dist-native
+      - name: Serve optional native UI
+        run: |
+          npx vite preview --outDir dist-native --port 5188 --host 127.0.0.1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5188/ > /dev/null && break
+            sleep 1
+          done
       - name: Browser smoke test (real clicks through a first turn)
         env:
           BASE_URL: http://127.0.0.1:5187
@@ -43,17 +54,12 @@ jobs:
       - name: Significant-event motion and control independence
         env:
           BASE_URL: http://127.0.0.1:5187
+          NATIVE_BASE_URL: http://127.0.0.1:5188
         run: node --import tsx scripts/milestone-browser-check.mjs
       - name: Save recovery, navigation and optional-page failures
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node --import tsx scripts/quality-browser-check.mjs
-      - name: Campaign continuation and upgrade protocol fixtures
-        env:
-          BASE_URL: http://127.0.0.1:5187
-          QA_BRIDGE_PORT: 5194
-          QA_BROWSERS: chromium
-        run: node scripts/campaign-continuation-browser-check.mjs
       - name: Cross-tab save conflicts and unsaved progress
         env:
           BASE_URL: http://127.0.0.1:5187
@@ -62,6 +68,16 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node --import tsx scripts/milestone-offline-check.mjs
+      - name: Browser-only library, search and investigator selection
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node scripts/browser-first-check.mjs
+      - name: Campaign continuation and upgrade protocol fixtures
+        env:
+          BASE_URL: http://127.0.0.1:5188
+          QA_BRIDGE_PORT: 5194
+          QA_BROWSERS: chromium
+        run: node scripts/campaign-continuation-browser-check.mjs
       - name: Keep screenshots when the browser check fails
         if: failure()
         uses: actions/upload-artifact@v4
@@ -74,4 +90,5 @@ jobs:
             output/quality-pass
             output/campaign-continuation
             output/save-conflict
+            output/browser-first
           if-no-files-found: ignore

@@ -216,6 +216,7 @@ function Record() {
 export function Home({
   game,
   onStart,
+  onChooseInvestigator,
   onResume,
   onFiles,
   onGuide,
@@ -226,6 +227,7 @@ export function Home({
 }: {
   game: GameState | null;
   onStart: () => void;
+  onChooseInvestigator: (code: string) => void;
   onResume: () => void;
   onFiles: () => void;
   onGuide: () => void;
@@ -422,8 +424,8 @@ export function Home({
               <span className="eyebrow">BEYOND THE CORE SET</span>
               <h2 id="home-expansions-title">Expansions &amp; campaigns</h2>
               <p>
-                Choose another campaign, bring an investigator deck, or return
-                to a saved expansion game.
+                Explore imported campaigns, scenarios and their cards. Spreading
+                Flames is ready to play in your browser.
               </p>
             </div>
             <Button secondary onClick={onExpanded} arrow>
@@ -456,7 +458,7 @@ export function Home({
                 className={`night-dossier ${card(c).faction_code}`}
                 data-preview-code={c}
                 key={c}
-                onClick={onStart}
+                onClick={() => onChooseInvestigator(c)}
               >
                 <div
                   className="dossier-photo"

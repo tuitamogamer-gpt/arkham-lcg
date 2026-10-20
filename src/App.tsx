@@ -55,16 +55,24 @@ import {
   tutorialPending,
 } from "./components/Tutorial";
 import { InvestigatorLibrary } from "./components/InvestigatorLibrary";
-// The collection browser and the companion mode are only needed on their own
+// The collection browser and optional native tools are only needed on their own
 // pages, so they load as separate chunks and keep the game shell small.
 const Archive = lazy(() =>
   import("./components/Archive").then((m) => ({ default: m.Archive })),
 );
-const ExpandedPlay = lazy(() =>
-  import("./components/ExpandedPlay").then((m) => ({
-    default: m.ExpandedPlay,
+const localRulesEnabled = import.meta.env.VITE_ENABLE_LOCAL_RULES === "true";
+const CampaignLibrary = lazy(() =>
+  import("./components/CampaignLibrary").then((m) => ({
+    default: m.CampaignLibrary,
   })),
 );
+const ExpandedPlay = localRulesEnabled
+  ? lazy(() =>
+      import("./components/ExpandedPlay").then((m) => ({
+        default: m.ExpandedPlay,
+      })),
+    )
+  : null;
 import { catalog } from "./game/catalog";
 import {
   Button,
@@ -190,11 +198,10 @@ function Guide({ onExpanded }: { onExpanded: () => void }) {
             an investigator is eliminated.
           </p>
           <p>
-            Expansions & campaigns opens the separate companion mode for later
-            scenarios, custom decks and campaign upgrades. It requires the local
-            rules server; available content and Alpha/Beta labels follow the
-            connected engine. Spreading Flames works independently, including
-            offline once the app is cached.
+            Expansions & campaigns lets you explore the imported collection.
+            Spreading Flames is playable directly in your browser, including
+            offline once the app is cached. Other scenarios are available to
+            browse. No desktop installation or account is needed.
           </p>
           <Button secondary onClick={onExpanded}>
             Explore expansions & campaigns <ArrowRight size={17} />
@@ -254,6 +261,7 @@ export default function App() {
   }, [page]);
   const [companionTableOpen, setCompanionTableOpen] = useState(false);
   const [expandedInvestigator, setExpandedInvestigator] = useState<string>();
+  const [archiveProduct, setArchiveProduct] = useState<string>();
   const {
     game,
     gameRef,
@@ -411,9 +419,12 @@ export default function App() {
         },
         ...(page === "expanded"
           ? {
-              status: "companion rules table",
-              available:
-                "Content availability follows the connected rules engine",
+              status: localRulesEnabled
+                ? "companion rules table"
+                : "campaign and expansion library",
+              available: localRulesEnabled
+                ? "Content availability follows the connected rules engine"
+                : "Spreading Flames playable in browser; imported products available to browse",
             }
           : game
             ? gameSummary(game)
@@ -747,6 +758,10 @@ export default function App() {
             <Home
               game={game}
               onStart={onStart}
+              onChooseInvestigator={(code) => {
+                setSelectedInvestigators([code]);
+                onStart();
+              }}
               onResume={() => navigate("game")}
               onFiles={() => navigate("investigators")}
               onGuide={() => navigate("guide")}
@@ -765,6 +780,8 @@ export default function App() {
             >
               <Suspense fallback={<PageLoading />}>
                 <Archive
+                  key={archiveProduct || "all"}
+                  initialProductCode={archiveProduct}
                   game={game}
                   inspect={(code, spoilers = false) => {
                     setInspectCatalog(spoilers);
@@ -777,10 +794,14 @@ export default function App() {
           {page === "investigators" && (
             <InvestigatorLibrary
               inspect={setInspect}
-              onExpandedPlay={(code) => {
-                setExpandedInvestigator(code);
-                navigate("expanded");
-              }}
+              onExpandedPlay={
+                localRulesEnabled
+                  ? (code) => {
+                      setExpandedInvestigator(code);
+                      navigate("expanded");
+                    }
+                  : undefined
+              }
               onStart={(code) => {
                 if (code) setSelectedInvestigators([code]);
                 onStart();
@@ -793,11 +814,22 @@ export default function App() {
               onHome={() => navigate("home")}
             >
               <Suspense fallback={<PageLoading />}>
-                <ExpandedPlay
-                  investigatorCode={expandedInvestigator}
-                  inspect={setInspect}
-                  onTableOpen={setCompanionTableOpen}
-                />
+                {ExpandedPlay ? (
+                  <ExpandedPlay
+                    investigatorCode={expandedInvestigator}
+                    inspect={setInspect}
+                    onTableOpen={setCompanionTableOpen}
+                  />
+                ) : (
+                  <CampaignLibrary
+                    hasGame={!!game}
+                    onPlay={() => (game ? navigate("game") : onStart())}
+                    onCards={(code) => {
+                      setArchiveProduct(code);
+                      navigate("archive");
+                    }}
+                  />
+                )}
               </Suspense>
             </PageBoundary>
           )}

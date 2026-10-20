@@ -1,0 +1,75 @@
+.campaign-browser-case {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 28px;
+  margin: 28px 0 36px;
+  border: 1px solid #827048;
+  background: #192b25;
+  border-radius: 8px;
+}
+.campaign-browser-case p {
+  max-width: 68ch;
+  line-height: 1.65;
+  color: #b8c0b4;
+}
+.campaign-browser-case .button {
+  flex-shrink: 0;
+}
+.campaign-catalog-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.campaign-catalog-heading p {
+  max-width: 80ch;
+  line-height: 1.7;
+}
+.campaign-library-filters {
+  display: flex;
+  align-items: end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 28px 0 16px;
+}
+.campaign-library-filters label {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-width: min(250px, 100%);
+}
+.campaign-library-filters input,
+.campaign-library-filters select {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #5f6b5f;
+  border-radius: 4px;
+  background: #14221e;
+  color: #e1dfd0;
+  font: inherit;
+}
+.campaign-library-notice {
+  border-left: 3px solid #bdaa71;
+  padding: 16px;
+  line-height: 1.6;
+}
+.campaign-library .collection-products article {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .campaign-browser-case {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px;
+  }
+  .campaign-library-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .campaign-library .button {
+    white-space: normal;
+  }
+}

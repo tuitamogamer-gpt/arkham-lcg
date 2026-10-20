@@ -9,18 +9,27 @@ import {
   Eye,
 } from "@phosphor-icons/react";
 import { cards as coreCards, plain } from "../game/data";
-import { catalog, kindLabel, productForCard } from "../game/catalog";
+import {
+  catalog,
+  kindLabel,
+  productForCard,
+  productsForCard,
+} from "../game/catalog";
 import { CardFace, Button } from "./Common";
 import { availableCards, isPlayerCard } from "../game/knowledge";
 import type { GameState } from "../game/types";
 import { useCatalog } from "./useCatalog";
 
+import { matchesSearch } from "../game/search";
+
 const PAGE_SIZE = 48;
 export function Archive({
   game,
   inspect,
+  initialProductCode,
 }: {
   game: GameState | null;
+  initialProductCode?: string;
   inspect: (code: string, allowSpoilers?: boolean) => void;
 }) {
   const { cards, loading, error, retry } = useCatalog();
@@ -28,7 +37,7 @@ export function Archive({
   const [productQuery, setProductQuery] = useState("");
   const [type, setType] = useState("all");
   const [faction, setFaction] = useState("all");
-  const [productCode, setProductCode] = useState("all");
+  const [productCode, setProductCode] = useState(initialProductCode || "all");
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"cards" | "products">("cards");
   const [includeStories, setIncludeStories] = useState(false);
@@ -52,7 +61,11 @@ export function Archive({
     () =>
       available.map((c) => ({
         card: c,
-        text: `${c.name} ${c.subname || ""} ${c.traits || ""} ${c.code} ${plain(c.text)} ${productForCard(c)?.name || ""}`.toLowerCase(),
+        text: `${c.name} ${c.subname || ""} ${c.traits || ""} ${c.code} ${plain(c.text)} ${productsForCard(
+          c,
+        )
+          .map((p) => p.name)
+          .join(" ")}`.toLowerCase(),
       })),
     [available],
   );
@@ -82,7 +95,7 @@ export function Archive({
               c.faction2_code === faction ||
               c.faction3_code === faction) &&
             (!productCards || productCards.has(c.code)) &&
-            text.includes(search),
+            matchesSearch(text, search),
         )
         .map(({ card }) => card)
         .sort((a, b) => {
@@ -106,9 +119,10 @@ export function Archive({
   const products = catalog.products.filter(
     (p) =>
       (category === "all" || p.kind === category) &&
-      `${p.name} ${p.cycleName} ${kindLabel(p.kind)}`
-        .toLowerCase()
-        .includes(productSearch),
+      matchesSearch(
+        `${p.name} ${p.cycleName} ${p.code} ${kindLabel(p.kind)}`,
+        productSearch,
+      ),
   );
   const hasFilters =
     view === "cards"

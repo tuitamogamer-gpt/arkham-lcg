@@ -6,3 +6,4 @@ output/
 *.tsbuildinfo
 .vercel
 .claude/
+dist-native/

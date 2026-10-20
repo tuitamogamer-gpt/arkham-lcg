@@ -75,6 +75,7 @@ export function Button({
   arrow = false,
   className = "",
   title,
+  "aria-label": ariaLabel,
 }: {
   children: ReactNode;
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -83,10 +84,12 @@ export function Button({
   arrow?: boolean;
   className?: string;
   title?: string;
+  "aria-label"?: string;
 }) {
   return (
     <button
       title={title}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={onClick}
       className={`button ${secondary ? "secondary" : ""} ${className}`}
@@ -177,7 +180,8 @@ export function Modal({
       onClick={(e) => {
         // A click counts only when it both started and ended on the backdrop,
         // so a text selection dragged out of the dialog does not close it.
-        if (e.target === e.currentTarget && pressedBackdrop.current) onClose?.();
+        if (e.target === e.currentTarget && pressedBackdrop.current)
+          onClose?.();
         pressedBackdrop.current = false;
       }}
     >
@@ -305,12 +309,15 @@ export function CardFace({
   useEffect(() => {
     const image = artRef.current;
     if (!image || !art || failed) return;
-    const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting)) {
-        setVisibleArt(true);
-        observer.disconnect();
-      }
-    }, {rootMargin: "200px"});
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisibleArt(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
     observer.observe(image);
     return () => observer.disconnect();
   }, [art, failed]);
