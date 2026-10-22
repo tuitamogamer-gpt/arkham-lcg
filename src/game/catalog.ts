@@ -103,8 +103,11 @@ export const kindLabel = (kind: string) =>
   })[kind] || kind;
 
 let loadedCards: Card[] | undefined;
+let referenceCards: Map<string, Card> | undefined;
 let pending: Promise<Card[]> | undefined;
 export const cachedCatalogCards = () => loadedCards;
+/** Current imported reference text; never used to replace the fixed game pool. */
+export const catalogReferenceCard = (code: string) => referenceCards?.get(code);
 export function loadCatalogCards(): Promise<Card[]> {
   if (loadedCards) return Promise.resolve(loadedCards);
   if (pending) return pending;
@@ -134,6 +137,7 @@ export function loadCatalogCards(): Promise<Card[]> {
       )
         throw new Error("The collection is incomplete. Please try again.");
       registerCatalogCards(cards);
+      referenceCards = new Map(cards.map((card) => [card.code, card]));
       loadedCards = cards;
       return cards;
     })

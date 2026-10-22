@@ -48,7 +48,7 @@ import {
 } from "./game/saveSession";
 import { useInvestigationSave } from "./useInvestigationSave";
 import type { Action, Difficulty, GameState } from "./game/types";
-import { audio, readAudioPreference } from "./audio";
+import { audio, readAudioPreference, readAudioVolume } from "./audio";
 import {
   Tutorial,
   resetTutorial,
@@ -295,6 +295,10 @@ export default function App() {
     readAudioPreference("ambience"),
   );
   const [effects, setEffects] = useState(() => readAudioPreference("effects"));
+  const [audioMuted, setAudioMuted] = useState(() =>
+    readAudioPreference("muted"),
+  );
+  const [audioVolume, setAudioVolume] = useState(readAudioVolume);
   const [tutorial, setTutorial] = useState(tutorialPending);
   useEffect(() => {
     try {
@@ -467,7 +471,10 @@ export default function App() {
     if (!audio.setAmbience(next))
       setNotice("Ambient sound is unavailable in this browser.");
   };
-  const toggleEffects = () => setEffects((value) => !value);
+  const toggleEffects = () => {
+    audio.setEffects(!effects);
+    setEffects(!effects);
+  };
   const transition = async (work: () => Promise<void>) => {
     if (transitionPending.current) return;
     transitionPending.current = true;
@@ -1208,6 +1215,23 @@ export default function App() {
               </small>
             </label>
             <div className="sound-toggles">
+              <button
+                type="button"
+                className="button secondary"
+                aria-label="Mute all audio"
+                aria-pressed={audioMuted}
+                onClick={() => {
+                  audio.setMuted(!audioMuted);
+                  setAudioMuted(!audioMuted);
+                }}
+              >
+                {audioMuted ? (
+                  <SpeakerSlash size={18} />
+                ) : (
+                  <SpeakerHigh size={18} />
+                )}{" "}
+                Audio: {audioMuted ? "muted" : "on"}
+              </button>
               <Button secondary onClick={toggleSound}>
                 {ambience ? (
                   <SpeakerHigh size={18} />
@@ -1236,6 +1260,27 @@ export default function App() {
                 <GraduationCap size={18} /> Show the tutorial again
               </Button>
             </div>
+            <label className="motion-setting">
+              <span>Sound volume · {Math.round(audioVolume * 100)}%</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                aria-label="Sound volume"
+                aria-valuetext={`${Math.round(audioVolume * 100)} percent`}
+                value={Math.round(audioVolume * 100)}
+                onChange={(event) => {
+                  const volume = Number(event.target.value) / 100;
+                  audio.setVolume(volume);
+                  setAudioVolume(volume);
+                }}
+              />
+              <small>
+                Sound effects include brief voice cues for resolved acts,
+                agendas and scenario endings. Audio never advances the game.
+              </small>
+            </label>
             <section className="save-slots" aria-label="Saved investigations">
               <div className="save-slots-heading">
                 <span className="eyebrow">Saved investigations</span>
@@ -1368,7 +1413,16 @@ export default function App() {
             <p>
               Spreading Flames · Joe, Daniela, Trish, Dexter and Isabelle
               <br />
-              Collection snapshot · 30 September 2026
+              Collection snapshot ·{" "}
+              {new Date(`${catalog.asOf}T00:00:00Z`).toLocaleDateString(
+                "en-GB",
+                {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  timeZone: "UTC",
+                },
+              )}
             </p>
           </div>
         </Modal>
@@ -1432,6 +1486,7 @@ export default function App() {
       {inspect && (
         <CardDetail
           code={inspect}
+          reference={page === "archive"}
           allowSpoilers={page === "archive" && inspectCatalog}
           game={game}
           onClose={() => {

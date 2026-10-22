@@ -28,10 +28,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // The app shell, milestone clips, fonts and card data are precached; card art is cached
+        // The app shell, milestone clips/audio, fonts and card data are precached; card art is cached
         // as it is seen, so a played scenario keeps working offline.
         globPatterns: [
-          "**/*.{js,css,html,svg,ttf,png,webm,mp4,webmanifest,json}",
+          "**/*.{js,css,html,svg,ttf,png,webm,mp4,mp3,webmanifest,json}",
         ],
         globIgnores: ["**/art/**"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,

@@ -68,6 +68,10 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:5187
         run: node --import tsx scripts/milestone-offline-check.mjs
+      - name: Significant Fish audio, mute and offline playback
+        env:
+          BASE_URL: http://127.0.0.1:5187
+        run: node --import tsx scripts/fish-audio-browser-check.mjs
       - name: Browser-only library, search and investigator selection
         env:
           BASE_URL: http://127.0.0.1:5187
@@ -91,4 +95,5 @@ jobs:
             output/campaign-continuation
             output/save-conflict
             output/browser-first
+            output/fish-audio
           if-no-files-found: ignore

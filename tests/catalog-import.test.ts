@@ -251,6 +251,24 @@ test("starter lists separate the sold level-zero deck, required cards and upgrad
 
 test("lazy shards stay below cache limits and match recorded integrity hashes; taboo remains optional", () => {
   const provenance = read("catalog-source.json");
+  assert.equal(provenance.asOf, catalog.asOf);
+  assert.equal(provenance.revision, catalog.revision);
+  assert.equal(provenance.coreSnapshot.policy, "preserved-runtime");
+  for (const [path, expected] of [
+    [provenance.coreSnapshot.path, provenance.coreSnapshot.sha256],
+    [provenance.coreSnapshot.sourcePath, provenance.coreSnapshot.sourceSha256],
+  ]) {
+    const bytes = readFileSync(
+      new URL(`../public/data/${path}`, import.meta.url),
+    );
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), expected);
+  }
+  assert.equal(provenance.coreSnapshot.count, 196);
+  assert.equal(provenance.coreSnapshot.revision, read("source.json").revision);
+  assert.deepEqual(provenance.coreSnapshot.catalogDifferenceCodes, [
+    "12138",
+    "12180",
+  ]);
   for (const file of provenance.cardFiles) {
     const body = readFileSync(
       new URL(`../public/data/${file.name}`, import.meta.url),

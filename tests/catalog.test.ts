@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
   catalog,
+  catalogReferenceCard,
   loadCatalogCards,
   productForCard,
   productsForCard,
@@ -20,6 +21,8 @@ import { createGame } from "./helpers";
 test("catalog loading retries an incomplete transaction and shares concurrent requests without expanding the scripted pool", async () => {
   const fetchBefore = globalThis.fetch;
   const coreBefore = JSON.stringify(coreCards);
+  const fixedServantText = card("12138").text;
+  assert.equal(catalogReferenceCard("12138"), undefined);
   const calls: string[] = [];
   let corrupt = true;
   globalThis.fetch = (async (path: string | URL | Request) => {
@@ -33,6 +36,7 @@ test("catalog loading retries an incomplete transaction and shares concurrent re
   }) as typeof fetch;
   try {
     await assert.rejects(loadCatalogCards(), /incomplete/);
+    assert.equal(catalogReferenceCard("12138"), undefined);
     corrupt = false;
     const first = loadCatalogCards();
     const second = loadCatalogCards();
@@ -42,6 +46,14 @@ test("catalog loading retries an incomplete transaction and shares concurrent re
     assert.equal(calls.length, catalog.cardFiles.length * 2);
     assert.equal(await loadCatalogCards(), imported);
     assert.equal(JSON.stringify(coreCards), coreBefore);
+    const correctedServant = imported.find(
+      (definition) => definition.code === "12138",
+    )!;
+    assert.equal(catalogReferenceCard("12138"), correctedServant);
+    assert.notEqual(correctedServant.text, fixedServantText);
+    assert.equal(card("12138").text, fixedServantText);
+    assert.equal(catalogReferenceCard("__proto__"), undefined);
+    assert.equal(catalogReferenceCard("constructor"), undefined);
     assert.equal(PLAYABLE_INVESTIGATORS.length, 5);
     assert.equal(Object.keys(STARTER_DECKS).length, 5);
     const starter = catalog.starterDecks[0];

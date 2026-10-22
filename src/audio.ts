@@ -1,8 +1,10 @@
 import type { MotionKind } from "./game/motion";
+import type { MilestoneKind } from "./game/milestones";
+import { MilestonePlayback } from "./milestoneAudio";
 
-// Procedural sound. Nothing is downloaded: the ambience and every effect are
-// synthesized, so there are no licensing constraints and no network cost.
-// Sound never influences the rules and is off until the player enables it.
+// Ambience and ordinary effects are synthesized. Significant-event voices are
+// finite, local Fish Audio clips. Sound never influences the rules and stays
+// off until the player enables it.
 export type SfxKind =
   | "card"
   | "token"
@@ -21,7 +23,19 @@ export type SfxKind =
 const KEYS = {
   ambience: "arkham-chronicle:ambience",
   effects: "arkham-chronicle:effects",
+  muted: "arkham-chronicle:muted",
 } as const;
+const VOLUME_KEY = "arkham-chronicle:volume";
+export function readAudioVolume() {
+  try {
+    const stored = localStorage.getItem(VOLUME_KEY);
+    if (stored === null || stored.trim() === "") return 0.75;
+    const value = Number(stored);
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.75;
+  } catch {
+    return 0.75;
+  }
+}
 export function readAudioPreference(kind: keyof typeof KEYS) {
   try {
     return localStorage.getItem(KEYS[kind]) === "on";
@@ -59,20 +73,41 @@ const PRIORITY: Partial<Record<MotionKind, [SfxKind, number]>> = {
   extinguish: ["card", 1],
 };
 
-class ArkhamAudio {
+export class ArkhamAudio {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private effectBus: GainNode | null = null;
   private ambienceStop: (() => void) | null = null;
   private effects = false;
+  private muted = readAudioPreference("muted");
+  private volume = readAudioVolume();
   private lastPlayed = new Map<SfxKind, number>();
+  private voices = new MilestonePlayback<AudioBuffer, AudioNode>(() =>
+    this.effects &&
+    !this.muted &&
+    this.volume > 0 &&
+    typeof document !== "undefined" &&
+    document.visibilityState === "visible" &&
+    this.ctx &&
+    this.effectBus
+      ? { context: this.ctx, destination: this.effectBus }
+      : null,
+  );
+  private resume() {
+    if (this.ctx?.state === "suspended") void this.ctx.resume().catch(() => {});
+  }
   constructor() {
     if (typeof document === "undefined") return;
     // Browsers only start audio after a gesture; resume quietly on any input.
     const resume = () => {
-      if (this.ctx?.state === "suspended") void this.ctx.resume();
+      this.resume();
     };
     document.addEventListener("pointerdown", resume, true);
     document.addEventListener("keydown", resume, true);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") this.stopMilestone();
+    });
+    window.addEventListener("pagehide", () => this.stopMilestone());
   }
   private ensure(): AudioContext | null {
     if (this.ctx) return this.ctx;
@@ -83,8 +118,11 @@ class ArkhamAudio {
           .webkitAudioContext;
       this.ctx = new Context();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.9;
+      this.master.gain.value = this.muted ? 0 : this.volume * 0.9;
       this.master.connect(this.ctx.destination);
+      this.effectBus = this.ctx.createGain();
+      this.effectBus.gain.value = this.effects ? 1 : 0;
+      this.effectBus.connect(this.master);
       return this.ctx;
     } catch {
       return null;
@@ -174,7 +212,7 @@ class ArkhamAudio {
     }
     const ctx = this.ensure();
     if (!ctx) return false;
-    void ctx.resume();
+    this.resume();
     if (this.ambienceStop) return true;
     const out = ctx.createGain();
     out.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -236,53 +274,146 @@ class ArkhamAudio {
   setEffects(on: boolean) {
     this.effects = on;
     persist("effects", on);
-    if (on) void this.ensure()?.resume();
+    if (on) this.ensure();
+    if (this.effectBus) this.effectBus.gain.value = on ? 1 : 0;
+    if (on) this.resume();
+    else this.stopMilestone();
+  }
+  setVolume(value: number) {
+    if (!Number.isFinite(value)) return;
+    this.volume = Math.max(0, Math.min(1, value));
+    try {
+      localStorage.setItem(VOLUME_KEY, String(this.volume));
+    } catch {}
+    if (this.master)
+      this.master.gain.value = this.muted ? 0 : this.volume * 0.9;
+    if (this.volume === 0) this.stopMilestone();
+  }
+  setMuted(on: boolean) {
+    this.muted = on;
+    persist("muted", on);
+    if (this.master) this.master.gain.value = on ? 0 : this.volume * 0.9;
+    if (on) this.stopMilestone();
+  }
+  playMilestone(kind: MilestoneKind) {
+    void this.voices.play(kind);
+  }
+  stopMilestone() {
+    this.voices.cancel();
   }
   play(kind: SfxKind) {
-    if (!this.effects) return;
+    if (!this.effects || this.muted || this.volume === 0) return;
     const ctx = this.ensure();
-    if (!ctx || ctx.state !== "running" || !this.master) return;
+    if (!ctx || ctx.state !== "running" || !this.effectBus) return;
     const now = performance.now();
     if (now - (this.lastPlayed.get(kind) || 0) < 120) return;
     this.lastPlayed.set(kind, now);
-    const out = this.master;
+    const out = this.effectBus;
     switch (kind) {
       case "card":
-        this.burst(ctx, out, { duration: 0.14, type: "bandpass", freq: 900, q: 0.8, gain: 0.16 });
+        this.burst(ctx, out, {
+          duration: 0.14,
+          type: "bandpass",
+          freq: 900,
+          q: 0.8,
+          gain: 0.16,
+        });
         break;
       case "coin":
         this.tone(ctx, out, { freq: 2200, duration: 0.09, gain: 0.07 });
-        this.tone(ctx, out, { freq: 3300, duration: 0.12, gain: 0.05, at: 0.03 });
+        this.tone(ctx, out, {
+          freq: 3300,
+          duration: 0.12,
+          gain: 0.05,
+          at: 0.03,
+        });
         break;
       case "clue":
         this.tone(ctx, out, { freq: 1568, duration: 0.25, gain: 0.08 });
-        this.tone(ctx, out, { freq: 2093, duration: 0.3, gain: 0.05, at: 0.07 });
+        this.tone(ctx, out, {
+          freq: 2093,
+          duration: 0.3,
+          gain: 0.05,
+          at: 0.07,
+        });
         break;
       case "token":
-        this.burst(ctx, out, { duration: 0.04, type: "highpass", freq: 3000, gain: 0.1 });
-        this.tone(ctx, out, { freq: 1320, duration: 0.55, gain: 0.12, at: 0.02 });
-        this.tone(ctx, out, { freq: 1980, duration: 0.35, gain: 0.05, at: 0.02 });
+        this.burst(ctx, out, {
+          duration: 0.04,
+          type: "highpass",
+          freq: 3000,
+          gain: 0.1,
+        });
+        this.tone(ctx, out, {
+          freq: 1320,
+          duration: 0.55,
+          gain: 0.12,
+          at: 0.02,
+        });
+        this.tone(ctx, out, {
+          freq: 1980,
+          duration: 0.35,
+          gain: 0.05,
+          at: 0.02,
+        });
         break;
       case "reveal":
-        this.burst(ctx, out, { duration: 0.22, type: "bandpass", freq: 480, q: 0.9, gain: 0.14 });
+        this.burst(ctx, out, {
+          duration: 0.22,
+          type: "bandpass",
+          freq: 480,
+          q: 0.9,
+          gain: 0.14,
+        });
         this.tone(ctx, out, { freq: 80, end: 55, duration: 0.4, gain: 0.12 });
         break;
       case "attack":
         this.tone(ctx, out, { freq: 120, end: 42, duration: 0.2, gain: 0.3 });
-        this.burst(ctx, out, { duration: 0.09, type: "lowpass", freq: 320, gain: 0.25 });
+        this.burst(ctx, out, {
+          duration: 0.09,
+          type: "lowpass",
+          freq: 320,
+          gain: 0.25,
+        });
         break;
       case "damage":
         this.tone(ctx, out, { freq: 100, end: 40, duration: 0.18, gain: 0.22 });
-        this.burst(ctx, out, { duration: 0.07, type: "lowpass", freq: 260, gain: 0.18 });
+        this.burst(ctx, out, {
+          duration: 0.07,
+          type: "lowpass",
+          freq: 260,
+          gain: 0.18,
+        });
         break;
       case "horror":
-        this.tone(ctx, out, { freq: 196, duration: 0.7, gain: 0.07, type: "sawtooth" });
-        this.tone(ctx, out, { freq: 207, duration: 0.7, gain: 0.07, type: "sawtooth" });
+        this.tone(ctx, out, {
+          freq: 196,
+          duration: 0.7,
+          gain: 0.07,
+          type: "sawtooth",
+        });
+        this.tone(ctx, out, {
+          freq: 207,
+          duration: 0.7,
+          gain: 0.07,
+          type: "sawtooth",
+        });
         this.tone(ctx, out, { freq: 98, end: 70, duration: 0.7, gain: 0.08 });
         break;
       case "heal":
-        this.tone(ctx, out, { freq: 660, duration: 0.22, gain: 0.08, type: "triangle" });
-        this.tone(ctx, out, { freq: 880, duration: 0.3, gain: 0.07, type: "triangle", at: 0.16 });
+        this.tone(ctx, out, {
+          freq: 660,
+          duration: 0.22,
+          gain: 0.08,
+          type: "triangle",
+        });
+        this.tone(ctx, out, {
+          freq: 880,
+          duration: 0.3,
+          gain: 0.07,
+          type: "triangle",
+          at: 0.16,
+        });
         break;
       case "fire":
         for (let i = 0; i < 7; i++)
@@ -294,23 +425,72 @@ class ArkhamAudio {
             gain: 0.09,
             at: i * 0.07 + Math.random() * 0.03,
           });
-        this.tone(ctx, out, { freq: 70, duration: 0.6, gain: 0.06, type: "triangle" });
+        this.tone(ctx, out, {
+          freq: 70,
+          duration: 0.6,
+          gain: 0.06,
+          type: "triangle",
+        });
         break;
       case "story":
-        this.tone(ctx, out, { freq: 659, duration: 0.9, gain: 0.08, type: "triangle" });
-        this.tone(ctx, out, { freq: 988, duration: 1.1, gain: 0.06, type: "triangle", at: 0.22 });
+        this.tone(ctx, out, {
+          freq: 659,
+          duration: 0.9,
+          gain: 0.08,
+          type: "triangle",
+        });
+        this.tone(ctx, out, {
+          freq: 988,
+          duration: 1.1,
+          gain: 0.06,
+          type: "triangle",
+          at: 0.22,
+        });
         break;
       case "success":
-        this.tone(ctx, out, { freq: 523, duration: 0.18, gain: 0.08, type: "triangle" });
-        this.tone(ctx, out, { freq: 784, duration: 0.35, gain: 0.08, type: "triangle", at: 0.14 });
+        this.tone(ctx, out, {
+          freq: 523,
+          duration: 0.18,
+          gain: 0.08,
+          type: "triangle",
+        });
+        this.tone(ctx, out, {
+          freq: 784,
+          duration: 0.35,
+          gain: 0.08,
+          type: "triangle",
+          at: 0.14,
+        });
         break;
       case "failure":
-        this.tone(ctx, out, { freq: 392, duration: 0.2, gain: 0.08, type: "triangle" });
-        this.tone(ctx, out, { freq: 262, duration: 0.45, gain: 0.08, type: "triangle", at: 0.16 });
+        this.tone(ctx, out, {
+          freq: 392,
+          duration: 0.2,
+          gain: 0.08,
+          type: "triangle",
+        });
+        this.tone(ctx, out, {
+          freq: 262,
+          duration: 0.45,
+          gain: 0.08,
+          type: "triangle",
+          at: 0.16,
+        });
         break;
       case "defeat":
-        this.tone(ctx, out, { freq: 220, end: 55, duration: 1.2, gain: 0.12, type: "sawtooth" });
-        this.burst(ctx, out, { duration: 0.5, type: "lowpass", freq: 200, gain: 0.12 });
+        this.tone(ctx, out, {
+          freq: 220,
+          end: 55,
+          duration: 1.2,
+          gain: 0.12,
+          type: "sawtooth",
+        });
+        this.burst(ctx, out, {
+          duration: 0.5,
+          type: "lowpass",
+          freq: 200,
+          gain: 0.12,
+        });
         break;
     }
   }

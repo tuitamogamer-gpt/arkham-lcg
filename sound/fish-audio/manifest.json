@@ -1,0 +1,58 @@
+{
+  "provider": "Fish Audio",
+  "generatedOn": "2026-10-22",
+  "voice": {
+    "id": "933563129e564b19a115bedd57b7406a",
+    "name": "Sarah",
+    "author": "Fish Official"
+  },
+  "model": "s2.1-pro",
+  "scope": "Short generated vocal cues for actual story milestones. No music or general environmental sound generation is claimed.",
+  "processing": {
+    "tool": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "audioFilter": "loudnorm=I=-20:TP=-3:LRA=7,afade=t=in:st=0:d=0.04",
+    "sampleRate": 44100,
+    "channels": 1,
+    "codec": "libmp3lame",
+    "bitrate": "96k",
+    "stripMetadata": true
+  },
+  "assets": [
+    {
+      "kind": "act",
+      "file": "public/audio/fish-act.mp3",
+      "prompt": "[soft] [gentle] A new lead.",
+      "generationTaskId": "78f5471f07a440778b1c4cc11f5ccc0d",
+      "sourceUrl": "https://platform.r2.fish.audio/tasks/2026-10-22/78f5471f07a440778b1c4cc11f5ccc0d.mp3",
+      "sourceSha256": "a0de79d1de1af9078e36e7dd7baed895110a47218ced9c4ef699526c26ece77f",
+      "sha256": "9175bd9583a9d6ae41eebfcc3ca9881a98af70fdce9dc322368882859aa566a9",
+      "bytes": 14150,
+      "durationSeconds": 1.149388,
+      "creditsCharged": 27
+    },
+    {
+      "kind": "agenda",
+      "file": "public/audio/fish-agenda.mp3",
+      "prompt": "[whispering] [serious] Time is running out.",
+      "generationTaskId": "8a81c5887fa84e62b171a8c37d3049b7",
+      "sourceUrl": "https://platform.r2.fish.audio/tasks/2026-10-22/8a81c5887fa84e62b171a8c37d3049b7.mp3",
+      "sourceSha256": "5b63cb115a6644bfed08e11c244481ef20f13e3ceb671dc3be6affd3fd1098e9",
+      "sha256": "54dcc99eb760075b36a91542ed0ce21b7e3dd3f466c3323d7def6dc30ff779ff",
+      "bytes": 14777,
+      "durationSeconds": 1.201633,
+      "creditsCharged": 43
+    },
+    {
+      "kind": "ending",
+      "file": "public/audio/fish-ending.mp3",
+      "prompt": "[soft] [serious] The investigation is over.",
+      "generationTaskId": "2da6ad6e5feb487392f599540cc5decd",
+      "sourceUrl": "https://platform.r2.fish.audio/tasks/2026-10-22/2da6ad6e5feb487392f599540cc5decd.mp3",
+      "sourceSha256": "3bd6ae82e7bdae1222974bf6ca84491ab64bf3a06b72db615597a679ea4be7f3",
+      "sha256": "764bbd3dd82fd27de5b58bad865408b9a9ee854a9855d5f849fc7a7d480db4e0",
+      "bytes": 21359,
+      "durationSeconds": 1.750204,
+      "creditsCharged": 43
+    }
+  ]
+}

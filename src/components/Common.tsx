@@ -38,7 +38,12 @@ import {
 import scans from "../../public/data/art-manifest.json";
 import type { Card, GameState, Skill } from "../game/types";
 import { canInspectCard, canReadReverse } from "../game/knowledge";
-import { kindLabel, productForCard, productsForCard } from "../game/catalog";
+import {
+  catalogReferenceCard,
+  kindLabel,
+  productForCard,
+  productsForCard,
+} from "../game/catalog";
 const dialogStack: HTMLElement[] = [];
 /** The dialog that currently owns keyboard input, if any. */
 export const topDialog = () => dialogStack.at(-1);
@@ -406,14 +411,16 @@ export function CardDetail({
   onClose,
   actions,
   allowSpoilers = false,
+  reference = false,
 }: {
   code: string;
   game: GameState | null;
   onClose: () => void;
   actions?: ReactNode;
   allowSpoilers?: boolean;
+  reference?: boolean;
 }) {
-  const c = card(code);
+  const c = (reference && catalogReferenceCard(code)) || card(code);
   const [flipped, setFlipped] = useState(false);
   const [backFailed, setBackFailed] = useState(false);
   useEffect(() => {

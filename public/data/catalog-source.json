@@ -1,8 +1,8 @@
 {
   "source": "https://github.com/zzorba/arkhamdb-json-data",
-  "revision": "7ae21d7563ce9f68396c0d5e3a36f40f90fe1156",
-  "asOf": "2026-09-30",
-  "retrievedAt": "2026-09-30T09:05:43.939Z",
+  "revision": "5f633d3afaaa924d7ff4672ed0af43d50794420f",
+  "asOf": "2026-10-22",
+  "retrievedAt": "2026-10-22T17:26:43.497Z",
   "counts": {
     "packCount": 103,
     "productCount": 116,
@@ -13,7 +13,20 @@
     "hiddenFaceCount": 341
   },
   "api": "https://arkhamdb.com/api/public/cards?encounter=1",
-  "apiCount": 5929,
+  "apiCount": 0,
+  "coreSnapshot": {
+    "policy": "preserved-runtime",
+    "path": "core-2026.json",
+    "sha256": "e0f985b5375ff5515eaa1ce6a683bb57fc47d4e8daad4eec687d85c03da049f7",
+    "sourcePath": "source.json",
+    "sourceSha256": "2b7d9c88b154ff03ce2b308ffce587cda3404489c8328b71356b2ce2ed5fd82e",
+    "revision": "7ae21d7563ce9f68396c0d5e3a36f40f90fe1156",
+    "count": 196,
+    "catalogDifferenceCodes": [
+      "12138",
+      "12180"
+    ]
+  },
   "sourceFiles": [
     {
       "path": "pack/cob/cob.json",
@@ -23,7 +36,7 @@
     {
       "path": "pack/core/core_2026_encounter.json",
       "count": 92,
-      "sha256": "b21eeab8bbadfdd2c200c1326dcc53c27c09d78329265073dcf0376493d8c2d7"
+      "sha256": "2d73c0f741713143d140f77b98f580d719fd236b6753ba9cd07d17ea0529c19b"
     },
     {
       "path": "pack/core/core_2026.json",
@@ -38,7 +51,7 @@
     {
       "path": "pack/core/core.json",
       "count": 104,
-      "sha256": "5c7bc669790beabe51036a5ebbb21315f68b8207a9212ed9320228e6e695a79c"
+      "sha256": "b681200bfad7bdd6532c4b2903630c1c277252ac6e64658e4844dce0e26dbacc"
     },
     {
       "path": "pack/core/rcore.json",
@@ -48,7 +61,7 @@
     {
       "path": "pack/dwl/bota_encounter.json",
       "count": 30,
-      "sha256": "75da4a6f8c7e777b3fbf77d994af5149c5701709798bc07e764ed5449ba13aa3"
+      "sha256": "58e63d9279b6da906d058aac8c2c64f3f328e62fe9b7778d292c29e6c641ae0c"
     },
     {
       "path": "pack/dwl/bota.json",
@@ -58,7 +71,7 @@
     {
       "path": "pack/dwl/dwl_encounter.json",
       "count": 65,
-      "sha256": "9b420cad4e688180234f79806b1c2a35d779ff726e082a597e2d3e18a945a5ad"
+      "sha256": "cb2538d528384e43d8434d991bf1a1b0ca613e2f90ef32b766577443b203d3c7"
     },
     {
       "path": "pack/dwl/dwl.json",
@@ -78,7 +91,7 @@
     {
       "path": "pack/dwl/tece_encounter.json",
       "count": 25,
-      "sha256": "9ef76d7387fa8b8fcf75128f41155d63c10ecdc5f87b6877a476075aa32a21ee"
+      "sha256": "3065387dec6d1965735c33509f87c455f994f319a36bcf21994e74a3a28e5186"
     },
     {
       "path": "pack/dwl/tece.json",
@@ -93,7 +106,7 @@
     {
       "path": "pack/dwl/tmm.json",
       "count": 13,
-      "sha256": "e659b37571b32a4c32f7aea0b0fe027e8567ecdace5ee57ed099045aa99d636e"
+      "sha256": "e81e70efdb6ef4bf33765807f658e299f67ff1a9079b1b25d2c977a6a6542544"
     },
     {
       "path": "pack/dwl/uau_encounter.json",
@@ -103,12 +116,12 @@
     {
       "path": "pack/dwl/uau.json",
       "count": 11,
-      "sha256": "d6d21a22ceca606af3a1b78b6c1628f03b9d8e2db2ef5a466c51aacd7f5551b8"
+      "sha256": "d6467f7f99dcba9e41ffad29634434d6c1ad5be2df860a2fab7fa127e4480c9c"
     },
     {
       "path": "pack/dwl/wda_encounter.json",
       "count": 25,
-      "sha256": "46f63bfbc387cf38156a786c9a468cd257d4530e632c27450fb445d8bbfe6842"
+      "sha256": "84d0d2e5ff30dbfca60ca8702f302231a9fbe305fc23d6da83c77e146bf14ced"
     },
     {
       "path": "pack/dwl/wda.json",
@@ -118,22 +131,22 @@
     {
       "path": "pack/eoe/eoec.json",
       "count": 266,
-      "sha256": "f6d90d0eee0cfc6c6f39887223c3cc049ab9ba8430ada6a6faa1846fe8367ce8"
+      "sha256": "392748744bc1273a4b2b7d2782ae60a64069b3ed6b0185db6d0bb677ed671d33"
     },
     {
       "path": "pack/eoe/eoep.json",
       "count": 137,
-      "sha256": "e7fc3a517b307d31c274a0c39f276243c65d879101a40faa86a97f292e758457"
+      "sha256": "34a986799e274d2662f47e9f827336b80f6690c0f65d9103245bab87d70d5acf"
     },
     {
       "path": "pack/fhv/fhvc.json",
       "count": 301,
-      "sha256": "bba21a8b738e91776f5acf29bb9aafce9eccf4f75a9f3b844729511d590aa258"
+      "sha256": "44c52ae91360a40aa62d345aaed2bd80337229a7a494420c9db2bbc4514e6b3b"
     },
     {
       "path": "pack/fhv/fhvp.json",
       "count": 140,
-      "sha256": "5ff842595c01f98542be1accb02c470ff0844ef32abc6758a16e90ef348b061e"
+      "sha256": "a065bfb0cc7b206922a57475f80d5439436fd06c36301ce8eaf1fe6ac424ca2c"
     },
     {
       "path": "pack/investigator/and.json",
@@ -163,12 +176,12 @@
     {
       "path": "pack/investigator/mig.json",
       "count": 32,
-      "sha256": "a69bba792159db44e3d71aca58ab11649f6fae800018094c76dad0f044d73d3b"
+      "sha256": "3a305c3ff0e756683349a75b570aafb1b0c254a8083fd13d6728d42437c32b88"
     },
     {
       "path": "pack/investigator/nat.json",
       "count": 32,
-      "sha256": "c2fb58417002efa59ad97b167faafcfa95b91c3547fe464868d6aa8488739342"
+      "sha256": "a717ec3a7ba9aa8de3334039fa43dfa33f6a3df5f7b135ac408f137700278827"
     },
     {
       "path": "pack/investigator/ste.json",
@@ -213,7 +226,7 @@
     {
       "path": "pack/parallel/btb_encounter.json",
       "count": 6,
-      "sha256": "45506bba67788eff912b6f7f88b035e828bd01a093465edf499dacb17539e8a9"
+      "sha256": "ef7be61055e65a88c2a47d71aaaccae04ee40d41d0802d20b516de2e5b579d27"
     },
     {
       "path": "pack/parallel/btb.json",
@@ -228,7 +241,7 @@
     {
       "path": "pack/parallel/enc.json",
       "count": 7,
-      "sha256": "035997dbc4a1e4ddb6e28bd00cf04009b4d2fe328b68c510d70be724b7fc7363"
+      "sha256": "67a8462f66660dba4f8bfeb877c967460f87dd768b87c2aaa88e9336cebde8a3"
     },
     {
       "path": "pack/parallel/hfa.json",
@@ -268,7 +281,7 @@
     {
       "path": "pack/parallel/rod.json",
       "count": 3,
-      "sha256": "c8aac30cec1cd89af2826fa864b76f407a08e40c99beaf2e75e9b64d7d13a72d"
+      "sha256": "70706c50ad32233654a1b48be6b4b441db13c71a55b967b03dc2f746826c9e0f"
     },
     {
       "path": "pack/parallel/rop_encounter.json",
@@ -283,7 +296,7 @@
     {
       "path": "pack/parallel/rtr_encounter.json",
       "count": 6,
-      "sha256": "d6f29815219b8d22b9583c5da2681b239260032c793361aef908667ef938fca5"
+      "sha256": "7dd610c99a3d71b441a3e3b5ea5bb44adbfbe1abc080f84580ed6dc8522fb06e"
     },
     {
       "path": "pack/parallel/rtr.json",
@@ -343,7 +356,7 @@
     {
       "path": "pack/ptc/bsr_encounter.json",
       "count": 32,
-      "sha256": "f12267c0e1d9a8b374c28c458b3e0c3f0e11cc6422ac21846c7d64ff6e37aadf"
+      "sha256": "ee00be62d4db998f056be49821ebcdcc5f32092f13429bb80b2f692b62c590fc"
     },
     {
       "path": "pack/ptc/bsr.json",
@@ -353,7 +366,7 @@
     {
       "path": "pack/ptc/dca_encounter.json",
       "count": 47,
-      "sha256": "1f8d9243a3df14bc752f535d08958ac0f0e147b5be310f38515a84d8726742c6"
+      "sha256": "cc08f0aae0fec34022cf48607b9adbbb327ca93171db4179724a57eb40c9e06c"
     },
     {
       "path": "pack/ptc/dca.json",
@@ -373,7 +386,7 @@
     {
       "path": "pack/ptc/ptc_encounter.json",
       "count": 78,
-      "sha256": "896c4b72ee2f3144d217455761af62746435c2cf0fd7f3dc3997f0bc56af910d"
+      "sha256": "3b28cc342137251872ad812567e1e10b507761e6a7435e255753530eebf1c247"
     },
     {
       "path": "pack/ptc/ptc.json",
@@ -383,7 +396,7 @@
     {
       "path": "pack/ptc/tpm_encounter.json",
       "count": 24,
-      "sha256": "8df309f8eeb66fd4be0a43151fa731c841905ca2de84a25d0358c70065237adc"
+      "sha256": "d515eca7de4ef460daecfc11e413d074a0e42556be45df02953b8adef8ca46ff"
     },
     {
       "path": "pack/ptc/tpm.json",
@@ -393,7 +406,7 @@
     {
       "path": "pack/ptc/tuo_encounter.json",
       "count": 31,
-      "sha256": "d81365b535531a806dac2a4c0bdcd2cdfd61c3839392982f6e231ad78b689be0"
+      "sha256": "24a989828ec1e9be7421b9ba8aa9347c6dfdeba5e14cb6e74771d561a0e2c448"
     },
     {
       "path": "pack/ptc/tuo.json",
@@ -403,12 +416,12 @@
     {
       "path": "pack/return/rtdwl_encounter.json",
       "count": 62,
-      "sha256": "cd1a2e813da180a466eb2c6c9b95d7d949d84e245b5331f57c3ae14dcc23180b"
+      "sha256": "2cedd39fca4d6307d0141fafa26946e046205ba6e2b48eec5c6890a96fdf7de2"
     },
     {
       "path": "pack/return/rtdwl.json",
       "count": 11,
-      "sha256": "2e5145c342708dc3d5c3c27d37ab19a6d1a9134a933a7ca5c66c1d3bdb928d28"
+      "sha256": "68c66ce19431cf63f34e5a0e200e4ab0d5079bd3427127f84c0d6571254bbb41"
     },
     {
       "path": "pack/return/rtnotz_encounter.json",
@@ -423,7 +436,7 @@
     {
       "path": "pack/return/rtptc_encounter.json",
       "count": 71,
-      "sha256": "158d0caae60a0091b4397c708c8aa58aa064f6fbd4cd6af5a33162b535d0e203"
+      "sha256": "c2d3fa24faa7cca6089a2c3afb5944a642367c3014eaef8faa490af0c66a1fc1"
     },
     {
       "path": "pack/return/rtptc.json",
@@ -433,7 +446,7 @@
     {
       "path": "pack/return/rttcu_encounter.json",
       "count": 63,
-      "sha256": "a2352c9a0c84ce501f046cec700ead1329b7abc10b401382beb3bb68a84de2b5"
+      "sha256": "63a3f5837a6d37746e70a7b3ae4ef0eb720c68459764aae499181c8d26353dbf"
     },
     {
       "path": "pack/return/rttcu.json",
@@ -458,17 +471,17 @@
     {
       "path": "pack/side/blbe.json",
       "count": 7,
-      "sha256": "97ce3ccf11696403353ecbaaadd7cd9ebf03a88fd4ea3193e60439fd3f98703d"
+      "sha256": "d9eb6604c7acf663f4c38d826fbc2f9c447347b943c2d9b1beb9d9a374fb711c"
     },
     {
       "path": "pack/side/blob_encounter.json",
       "count": 53,
-      "sha256": "184274498c0f5d12b2d8467c291713ab5d68d3b8e5635fb2affd9c9800906753"
+      "sha256": "67d95d35944a2174fd08c12106524336e31a7af02ca56993ae708adce51c1888"
     },
     {
       "path": "pack/side/coh_encounter.json",
       "count": 40,
-      "sha256": "8e901abe910d2fbc68eb37577f52767c1788a73014025d28cc2195f6762c3905"
+      "sha256": "b97aad0e15f85907eb587083d80f1dd3b84e25d09c39effbbf6dcf59ccb0ffc1"
     },
     {
       "path": "pack/side/cotr_encounter.json",
@@ -478,22 +491,22 @@
     {
       "path": "pack/side/film_fatale_encounter.json",
       "count": 64,
-      "sha256": "8077465a930686b43f0e33bc9cac49e6693ec5a37bb60bd319c94f27c94156e5"
+      "sha256": "217019656aa97d0a98192654563c4912bfecd5e805d1cc4c48583cfe59114fd5"
     },
     {
       "path": "pack/side/fof_encounter.json",
       "count": 89,
-      "sha256": "c713c29390218be2081130d8cb24d35bf29fe14c0d964194722ee7584bd49dac"
+      "sha256": "42ee04d7e4887ac852223f94d4bba5781ead806553a29fba8b8c5194715b7066"
     },
     {
       "path": "pack/side/guardians_encounter.json",
       "count": 70,
-      "sha256": "d28ab12ec4f327e8f828751eaf389636fb78f25682c8620e0f0592a7eb6a8116"
+      "sha256": "04c13200882c6c1623387fe3287cff7368dfc430690dc82fbefb1149b07406d9"
     },
     {
       "path": "pack/side/hotel_encounter.json",
       "count": 52,
-      "sha256": "594710697a2d4b89f06dde8d011d15ee9f27321eb5ec94e1597a5b7d320ddfc7"
+      "sha256": "fac55bfab33bbdcfbb54c5801b58078e9dfe5bb3d2c8b814021eb75096b363c5"
     },
     {
       "path": "pack/side/lol_encounter.json",
@@ -508,7 +521,7 @@
     {
       "path": "pack/side/tmg_encounter.json",
       "count": 74,
-      "sha256": "2250651457310b1b949bb4966af5ecb822335aa7a9650f232dc99c1f25d0ebcb"
+      "sha256": "3c50fb18eb6c70439becd7325d9ebdbb45d15ac8fc2b0e437b6d704429a25839"
     },
     {
       "path": "pack/side/wog_encounter.json",
@@ -518,7 +531,7 @@
     {
       "path": "pack/tcu/bbt_encounter.json",
       "count": 22,
-      "sha256": "bfc9e82d9845c0788097acc933acf8ad50ade174be1f5a5172d1fd05353c60bd"
+      "sha256": "ec2f98ec6924ae61719b807e06f909a36204c03b1588be477d52baff211dea67"
     },
     {
       "path": "pack/tcu/bbt.json",
@@ -553,7 +566,7 @@
     {
       "path": "pack/tcu/tcu.json",
       "count": 42,
-      "sha256": "3fd72e722e82d774a66526b54a57530ba24f59eda503329afe5b6797a3b1b00c"
+      "sha256": "516ce03aee9d1fe18552981ccb211b3dded1b61664814df2628f59541e22c413"
     },
     {
       "path": "pack/tcu/tsn_encounter.json",
@@ -578,7 +591,7 @@
     {
       "path": "pack/tcu/wos_encounter.json",
       "count": 47,
-      "sha256": "21975ce35c954dbfce87f2929bc3ef9a9aecefd1f6be0e840b37a9ada1872166"
+      "sha256": "a0eb4d0dd0cf2c675929295930841c5bc71afbff1fd1d65759ef6ebf5b2052a8"
     },
     {
       "path": "pack/tcu/wos.json",
@@ -587,18 +600,18 @@
     },
     {
       "path": "pack/tdc/tdcc.json",
-      "count": 297,
-      "sha256": "85af5a3b37ef854f9f293d18dfd520a015bd288df35377af65c3202c681a0732"
+      "count": 295,
+      "sha256": "99838a52d3d9f66bc65786b1a6bc031086804b434cc8027a8f8fe5d2fbc6f555"
     },
     {
       "path": "pack/tdc/tdcp.json",
       "count": 130,
-      "sha256": "59e79804b44a641cca04707e43c21b5de72ded8dab386421b0e47eefee7c7b01"
+      "sha256": "d59ec5424a314df2482ef1a7084746bebcb15993b0d9029ec25cc3885d867165"
     },
     {
       "path": "pack/tde/dsm_encounter.json",
       "count": 29,
-      "sha256": "d2efd027bf6527e20020811fc84f5b076ee99036ac8aa5cc957c24855c96ac25"
+      "sha256": "fb2929f237d5d51204d090bbc520bfaf79cdd51fdbc725055d42445a30dbd514"
     },
     {
       "path": "pack/tde/dsm.json",
@@ -628,7 +641,7 @@
     {
       "path": "pack/tde/tde_encounter.json",
       "count": 73,
-      "sha256": "6c0086a82a2d0cbf2f638902ac9acafc0f0fe0b446621510e9d4a427db612f04"
+      "sha256": "96531d835766e75550b6f4c5387b1f78b6c43658640ee8a8e4ded59c547ccf61"
     },
     {
       "path": "pack/tde/tde.json",
@@ -668,7 +681,7 @@
     {
       "path": "pack/tfa/hote_encounter.json",
       "count": 26,
-      "sha256": "f518a3e96273085236cb085d99bda98123e70e528339ebe5602aeb6949216859"
+      "sha256": "fbc64d6d63bac17634c013f9ba14172406aeccfcd9c0d3185a756d6a91859888"
     },
     {
       "path": "pack/tfa/hote.json",
@@ -678,7 +691,7 @@
     {
       "path": "pack/tfa/sha_encounter.json",
       "count": 36,
-      "sha256": "fe5860ee32de689e2fcd82ee416f18c49f88f4ea295268c67faebf26079e236c"
+      "sha256": "61bbb8e38ce73069ab3d8b787a50a876427a8915b4127e21f19bc7c7fa94dff6"
     },
     {
       "path": "pack/tfa/sha.json",
@@ -768,7 +781,7 @@
     {
       "path": "pack/tic/itm_encounter.json",
       "count": 30,
-      "sha256": "e853a40015d3f1d75cf467bc50f83b7edf1e909e1c98532b48294bcec3573e54"
+      "sha256": "f84c3064372044936abfd250f8635a33dd15fed3be655647032214079151c087"
     },
     {
       "path": "pack/tic/itm.json",
@@ -798,7 +811,7 @@
     {
       "path": "pack/tic/tic_encounter.json",
       "count": 68,
-      "sha256": "1f63662acd0da3c88aa2728a930475f409bcb74d8d75f9ef0142b9ee81fd1475"
+      "sha256": "a51abb883c7b775cdb621410623add0d996096a5350c1e55885af401d6586539"
     },
     {
       "path": "pack/tic/tic.json",
@@ -808,7 +821,7 @@
     {
       "path": "pack/tsk/tskc.json",
       "count": 311,
-      "sha256": "e883758480b4fddc99ab8786fd6d98005be045b3beba68b52e28e0af151341ae"
+      "sha256": "428982661a85c39558dd131ca228ba019131a0775bd09180fbf351acd419fc06"
     },
     {
       "path": "pack/tsk/tskp.json",
@@ -952,11 +965,8 @@
       ]
     }
   ],
-  "sourceDefinitionCount": 6111,
-  "collapsedDuplicateCodes": [
-    "11536",
-    "11552"
-  ],
+  "sourceDefinitionCount": 6109,
+  "collapsedDuplicateCodes": [],
   "additionalProducts": [
     {
       "code": "convention_2025",
@@ -980,20 +990,20 @@
     {
       "name": "cards-001.json",
       "count": 2240,
-      "bytes": 1799049,
-      "sha256": "0748d24a11701f4a464552f919c182af9b20217e84fedb86d224619779421b7e"
+      "bytes": 1799439,
+      "sha256": "d9fcc44cf6d9026b773eed14aeed6ec0d4dfe1e054932f8eab8d6463f26150da"
     },
     {
       "name": "cards-002.json",
       "count": 2121,
-      "bytes": 1799910,
-      "sha256": "a95cfdad76a06984973d82d291e89e02fe780951d9d41e1a024f3c2775100c01"
+      "bytes": 1799948,
+      "sha256": "2a7f67ba4e41687748cc9a99acc329b95f86c95bbec9b0cd64e67567d7a994e5"
     },
     {
       "name": "cards-003.json",
       "count": 1748,
-      "bytes": 1516904,
-      "sha256": "cf29a14bdaa1b4b863f60608c4b777be00f7781439016122905cdb1476b0e4f5"
+      "bytes": 1517229,
+      "sha256": "dfb1949c8269ca7b382fbd39e1f514b972b75c4490625e082df158f15a387465"
     }
   ],
   "excludedPacks": [],
@@ -1004,6 +1014,7 @@
     "Taboo lists are retained as optional metadata; they are not applied to printed card text.",
     "Source release dates are retained unless a publisher release announcement is cited in the product entry.",
     "Importing card definitions does not implement their scenario scripts or special card abilities.",
+    "The browser runtime Core snapshot and its provenance are preserved independently; catalog corrections do not change saved-game rules.",
     "Content remains property of Fantasy Flight Games."
   ]
 }

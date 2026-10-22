@@ -14,9 +14,12 @@ import type { CompanionSnapshot } from "../game/companionProtocol";
 import {
   selectCoreMilestone,
   selectCompanionMilestone,
+  coreMilestonePlaybackReset,
+  companionMilestonePlaybackReset,
   type MilestoneCue,
 } from "../game/milestones";
 import { readMotionPreference, type MotionPreference } from "./Motion";
+import { audio } from "../audio";
 import "../milestones.css";
 
 const ResolutionPlayer = lazy(() => import("./milestones/ResolutionPlayer"));
@@ -150,13 +153,16 @@ function useMilestones<T>(
   current: T | null,
   scope: string,
   select: (before: T, after: T) => MilestoneCue | undefined,
+  resetPlayback: (before: T, after: T) => boolean,
 ) {
   const previous = useRef<{ scope: string; value: T } | null>(null);
   const seen = useRef(new Set<string>());
   const [cue, setCue] = useState<MilestoneCue>();
   const dismiss = useCallback(() => setCue(undefined), []);
+  useEffect(() => () => audio.stopMilestone(), [scope]);
   useEffect(() => {
     if (!current) {
+      audio.stopMilestone();
       previous.current = null;
       setCue(undefined);
       return;
@@ -164,7 +170,13 @@ function useMilestones<T>(
     const before = previous.current;
     previous.current = { scope, value: current };
     if (!before || before.scope !== scope) {
+      audio.stopMilestone();
       seen.current.clear();
+      setCue(undefined);
+      return;
+    }
+    if (resetPlayback(before.value, current)) {
+      audio.stopMilestone();
       setCue(undefined);
       return;
     }
@@ -173,6 +185,9 @@ function useMilestones<T>(
     seen.current.add(next.key);
     if (seen.current.size > 128)
       seen.current.delete(seen.current.values().next().value!);
+    // Audio has its own opt-in. Visual motion Off does not suppress a new
+    // sound, and changing either preference never replays an old transition.
+    audio.playMilestone(next.kind);
     // Observe a milestone once even when motion is off. Turning it on later
     // never replays a saved result or changes a native question.
     if (
@@ -180,19 +195,29 @@ function useMilestones<T>(
       "off"
     )
       setCue(next);
-  }, [current, scope, select]);
+  }, [current, scope, select, resetPlayback]);
   return cue ? (
     <MilestoneNotice key={cue.key} cue={cue} onDone={dismiss} />
   ) : null;
 }
 
 export function useCoreMilestones(game: GameState) {
-  return useMilestones(game, game.id, selectCoreMilestone);
+  return useMilestones(
+    game,
+    game.id,
+    selectCoreMilestone,
+    coreMilestonePlaybackReset,
+  );
 }
 
 export function useCompanionMilestones(
   snapshot: CompanionSnapshot | null,
   sessionKey: string,
 ) {
-  return useMilestones(snapshot, sessionKey, selectCompanionMilestone);
+  return useMilestones(
+    snapshot,
+    sessionKey,
+    selectCompanionMilestone,
+    companionMilestonePlaybackReset,
+  );
 }

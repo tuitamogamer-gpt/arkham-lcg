@@ -121,6 +121,67 @@ const json = async (path) => JSON.parse(await readFile(path, "utf8"));
 const releasedOn = (pack) =>
   RELEASE_CORRECTIONS[pack.code]?.[0] ?? pack.date_release;
 
+const canonicalValue = (value) =>
+  Array.isArray(value)
+    ? value.map(canonicalValue)
+    : value && typeof value === "object"
+      ? Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((key) => [key, canonicalValue(value[key])]),
+        )
+      : value;
+
+async function existingCoreSnapshot(dest, refreshCore) {
+  if (refreshCore) return null;
+  const readOptional = async (name) => {
+    try {
+      return await readFile(join(dest, name));
+    } catch (error) {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    }
+  };
+  const [body, sourceBody, catalogBody] = await Promise.all(
+    ["core-2026.json", "source.json", "catalog.json"].map(readOptional),
+  );
+  if (!body && !sourceBody && !catalogBody) return null;
+  if (!body || !sourceBody)
+    throw new Error(
+      "Incomplete existing Core snapshot; restore both core-2026.json and source.json before importing. Use --refresh-core only for a deliberate runtime-data update.",
+    );
+  let cards, source;
+  try {
+    cards = JSON.parse(body);
+    source = JSON.parse(sourceBody);
+  } catch {
+    throw new Error(
+      "Invalid existing Core snapshot; catalog files were not changed.",
+    );
+  }
+  if (
+    !Array.isArray(cards) ||
+    cards.length < 190 ||
+    cards.some(
+      (card) =>
+        !card ||
+        typeof card.code !== "string" ||
+        !card.code ||
+        !card.name ||
+        !card.type_code ||
+        card.pack_code !== "core_2026",
+    ) ||
+    new Set(cards.map((card) => card.code)).size !== cards.length ||
+    source?.pack !== "core_2026" ||
+    source.count !== cards.length ||
+    !/^[a-f0-9]{40}$/.test(source.revision)
+  )
+    throw new Error(
+      "Inconsistent existing Core snapshot; catalog files were not changed.",
+    );
+  return { body, sourceBody, cards, source };
+}
+
 /** Retain each printing's identity and overrides while expanding duplicate chains. */
 export function expandDefinitions(definitions, requestedCodes) {
   const all = new Map(),
@@ -511,6 +572,12 @@ async function existingCards(dest) {
 export async function sync(options) {
   const asOf = options["as-of"] || new Date().toISOString().slice(0, 10),
     dest = resolve(options.dest || "public/data");
+  // The browser engine and its saves use a fixed Core dataset. A reference
+  // catalog refresh must not silently replace that separate runtime snapshot.
+  const preservedCore = await existingCoreSnapshot(
+    dest,
+    options["refresh-core"],
+  );
   let temp,
     sourceDir = options["source-dir"] && resolve(options["source-dir"]);
   try {
@@ -571,6 +638,36 @@ export async function sync(options) {
         );
     if (core.length < 190)
       throw new Error("Incomplete 2026 core; previous snapshot unchanged");
+    const coreBody =
+      preservedCore?.body || Buffer.from(JSON.stringify(core, null, 2) + "\n");
+    const coreSource = preservedCore?.source || {
+      pack: "core_2026",
+      edition: "Core Set (2026)",
+      source: repository,
+      revision: source.revision,
+      retrievedAt: new Date().toISOString(),
+      count: core.length,
+      api: "https://arkhamdb.com/api/public/cards/core_2026.json?encounter=1",
+      apiCount: apiCards.filter((card) => card.pack_code === "core_2026")
+        .length,
+      notes:
+        "Repository definitions take precedence over live API text. Duplicate definitions are expanded recursively; hidden faces are retained. API supplies image paths. Content remains property of Fantasy Flight Games.",
+    };
+    const coreSourceBody =
+      preservedCore?.sourceBody ||
+      Buffer.from(JSON.stringify(coreSource, null, 2) + "\n");
+    const runtimeCards = preservedCore?.cards || core;
+    const catalogCore = new Map(core.map((card) => [card.code, card]));
+    const runtimeCore = new Map(runtimeCards.map((card) => [card.code, card]));
+    const differentCoreCodes = [
+      ...new Set([...runtimeCore.keys(), ...catalogCore.keys()]),
+    ]
+      .filter(
+        (code) =>
+          JSON.stringify(canonicalValue(runtimeCore.get(code))) !==
+          JSON.stringify(canonicalValue(catalogCore.get(code))),
+      )
+      .sort();
     const files = [];
     let shard = [],
       bytes = 2;
@@ -606,6 +703,16 @@ export async function sync(options) {
       counts: manifest.counts,
       api,
       apiCount: apiCards.length,
+      coreSnapshot: {
+        policy: preservedCore ? "preserved-runtime" : "initialized-runtime",
+        path: "core-2026.json",
+        sha256: hash(coreBody),
+        sourcePath: "source.json",
+        sourceSha256: hash(coreSourceBody),
+        revision: coreSource.revision,
+        count: runtimeCards.length,
+        catalogDifferenceCodes: differentCoreCodes,
+      },
       sourceFiles: source.files,
       supplements: source.supplements,
       sourceDefinitionCount: source.definitions.length,
@@ -637,6 +744,7 @@ export async function sync(options) {
         "Taboo lists are retained as optional metadata; they are not applied to printed card text.",
         "Source release dates are retained unless a publisher release announcement is cited in the product entry.",
         "Importing card definitions does not implement their scenario scripts or special card abilities.",
+        "The browser runtime Core snapshot and its provenance are preserved independently; catalog corrections do not change saved-game rules.",
         "Content remains property of Fantasy Flight Games.",
       ],
     };
@@ -655,30 +763,10 @@ export async function sync(options) {
       join(dest, "catalog.json"),
       JSON.stringify(manifest, null, 2) + "\n",
     );
-    await writeFile(
-      join(dest, "core-2026.json"),
-      JSON.stringify(core, null, 2) + "\n",
-    );
-    await writeFile(
-      join(dest, "source.json"),
-      JSON.stringify(
-        {
-          pack: "core_2026",
-          edition: "Core Set (2026)",
-          source: repository,
-          revision: source.revision,
-          retrievedAt: provenance.retrievedAt,
-          count: core.length,
-          api: "https://arkhamdb.com/api/public/cards/core_2026.json?encounter=1",
-          apiCount: apiCards.filter((card) => card.pack_code === "core_2026")
-            .length,
-          notes:
-            "Repository definitions take precedence over live API text. Duplicate definitions are expanded recursively; hidden faces are retained. API supplies image paths. Content remains property of Fantasy Flight Games.",
-        },
-        null,
-        2,
-      ) + "\n",
-    );
+    if (!preservedCore) {
+      await writeFile(join(dest, "core-2026.json"), coreBody);
+      await writeFile(join(dest, "source.json"), coreSourceBody);
+    }
     for (const file of await readdir(dest))
       if (
         /^cards-\d{3}\.json$/.test(file) &&
@@ -705,6 +793,7 @@ if (
       "as-of": { type: "string" },
       dest: { type: "string" },
       offline: { type: "boolean" },
+      "refresh-core": { type: "boolean" },
     },
   });
   await sync(values);

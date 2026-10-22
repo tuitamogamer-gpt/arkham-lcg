@@ -1,6 +1,6 @@
 # Released Arkham content catalog
 
-The import is a dated catalog of official published content through **30 September 2026**. The existing 196-definition 2026 Core Set snapshot remains the engine's starting dataset. The larger catalog loads separately when the investigator library or card archive is opened.
+The import is a verified source catalog refreshed through **22 October 2026**. It retains the published products represented in its pinned source; the date is not a claim that every announced product has a complete available definition set. The existing 196-definition 2026 Core Set snapshot remains the engine's starting dataset. The larger catalog loads separately when the investigator library or card archive is opened.
 
 The saved snapshot contains **6,109 card definitions**, **116 product entries**, **103 original card packs**, **388 encounter sets** and **15 starter lists**. The 121 investigator definitions include edition variants, hidden faces and miniature cards. There are 107 non-hidden investigator records, including six scenario-specific identities; the public investigator roster excludes those story identities. These record counts do not represent distinct characters.
 
@@ -10,7 +10,9 @@ Card import and playable rules support have different scopes. Imported investiga
 
 The main source is the maintained [ArkhamDB JSON repository](https://github.com/zzorba/arkhamdb-json-data). The snapshot records its full Git revision, the SHA-256 and row count of every imported card file, output shard checksums, release cutoff and API response count in `public/data/catalog-source.json`. The [ArkhamDB public API](https://arkhamdb.com/api/public/cards?encounter=1) supplies scan paths. Repository rules and errata take precedence over live API text.
 
-The source includes original, revised and 2026 cores; all expansion cycles; legacy deluxe and Mythos packs; repackaged investigator and campaign boxes; the two generations of separately sold investigator starter decks; standalone scenarios; Return To boxes; novella investigators; promotional cards; parallel investigators and their challenge cards. [Children of Blood](https://www.arkhamhorror.com/news/the-ravenous-undead/) is included following its 14 August 2026 release. [Traces to Nowhere](https://www.fantasyflightgames.com/gone-without-a-trace/) is excluded because its October release is after this snapshot's cutoff.
+The source includes original, revised and 2026 cores; expansion cycles; legacy deluxe and Mythos packs; repackaged investigator and campaign boxes; the two generations of separately sold investigator starter decks; standalone scenarios; Return To boxes; novella investigators; promotional cards; parallel investigators and their challenge cards. [Children of Blood](https://www.arkhamhorror.com/news/the-ravenous-undead/) is included following its 14 August 2026 release. [Traces to Nowhere](https://www.fantasyflightgames.com/gone-without-a-trace/) remains excluded: the publisher announcement gives an October release window, but the pinned source has no complete pack/definition set and the refresh did not establish an exact release day. No partial cards or playable scenario are inferred from the announcement.
+
+The [22 October refresh](import-catalog-2026-10-22.md) updates 101 existing reference definitions, including rules wording, formatting, traits and errata dates, without adding or removing card identifiers or products. Archive inspection uses those reference definitions. The browser game continues to use the separately preserved Core snapshot; the refresh does not change saved-game rules or unlock imported scenarios.
 
 [Barkham Horror: The Meddling of Meowlathotep](https://www.fantasyflightgames.com/en/news/2020/9/18/available-now-september-18/) is official content omitted from ArkhamDB. A checked-in supplement preserves all 57 full-size definitions representing the advertised 78 cards, plus five hidden miniature investigator definitions. The supplement comes from a [pinned OCTGN set definition](https://raw.githubusercontent.com/GeckoTH/arkham-horror/977173cea94dd6a736cb4eeafde2b1cc701faee5/o8g/Sets/The%20Meddling%20of%20Meowlathotep/set.xml), with transcription corrections verified against published scans. `scripts/data/barkham-source.json` records the immutable source revision, XML hash, printed-card verification, restrictions and normalization decisions. Barkham's investigators and cards are restricted to its own scenario; no preconstructed deck is invented for them.
 
@@ -42,7 +44,7 @@ Five additional lists are the suggested starters from the [2026 Core rulebook, p
 Run a fresh synchronization with a deliberate release date:
 
 ```sh
-npm run sync:cards -- --as-of 2026-09-30
+npm run sync:cards -- --as-of 2026-10-22
 ```
 
 For a pinned source checkout and a saved API response, reproduction does not need a network fetch:
@@ -51,10 +53,12 @@ For a pinned source checkout and a saved API response, reproduction does not nee
 node scripts/sync-cards.mjs \
   --source-dir /path/to/arkhamdb-json-data \
   --api-file /path/to/arkham-api-cards.json \
-  --as-of 2026-09-30
+  --as-of 2026-10-22
 ```
 
 Use `--offline` with a local source checkout to reuse known scan metadata. Missing remote scans remain text cards in the UI; the importer does not guess filenames or download thousands of card images. Cards whose printing has identical inherited rules can reuse the ancestor's known scan.
+
+An ordinary refresh preserves both `core-2026.json` and its `source.json` provenance byte-for-byte. `catalog-source.json` records their separate hashes, revision and any differing reference codes. An incomplete, corrupt or inconsistent existing Core pair stops the import before catalog writes. A truly new destination initializes a Core pair; `--refresh-core` explicitly replaces it and is reserved for a deliberate runtime-data update with its own gameplay/save verification. It is not needed for catalog synchronization.
 
 The importer validates chains, definitions and starter recipes before writing. The catalog tests additionally check every product reference, release cutoff, old and new printings, the six split-box partitions, deck quantities, cache-size limits, recorded SHA-256 hashes and unchanged 196-card core scope:
 

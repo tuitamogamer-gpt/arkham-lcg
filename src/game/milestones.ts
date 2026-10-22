@@ -25,6 +25,37 @@ const stateTag = (value: unknown): string =>
 const positiveStep = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 
+const retainedCursor = (before: number, after: number) =>
+  Number.isSafeInteger(before) &&
+  Number.isSafeInteger(after) &&
+  before >= 0 &&
+  after >= before;
+
+/** An in-flight accent belongs to its live history, even before audio finishes
+ * loading. Undo and context changes cancel it without creating another cue.
+ */
+export function coreMilestonePlaybackReset(
+  before: GameState,
+  after: GameState,
+) {
+  return (
+    before.id !== after.id ||
+    !retainedCursor(before.eventSerial, after.eventSerial)
+  );
+}
+
+export function companionMilestonePlaybackReset(
+  before: CompanionSnapshot,
+  after: CompanionSnapshot,
+) {
+  return (
+    before.gameId !== after.gameId ||
+    before.playerId !== after.playerId ||
+    scenarioId(before.game) !== scenarioId(after.game) ||
+    !retainedCursor(before.step, after.step)
+  );
+}
+
 /** Public resolved transitions only. Loading, undo and replay suppression belong
  * to the caller, which knows whether an incoming state follows a live action.
  */

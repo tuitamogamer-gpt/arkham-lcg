@@ -1,0 +1,29 @@
+{
+  "provider": "Fish Audio",
+  "model": "flash",
+  "checkedOn": "2026-10-22",
+  "scope": "Automated transcript check of the original generated clips; not a human listening review.",
+  "assets": {
+    "act": {
+      "text": "<|speaker:0|> A new lead.",
+      "language": "en",
+      "duration_seconds": 2,
+      "model": "flash",
+      "credits_charged": 17
+    },
+    "agenda": {
+      "text": "<|speaker:0|> Time is running out.",
+      "language": "en",
+      "duration_seconds": 2,
+      "model": "flash",
+      "credits_charged": 17
+    },
+    "ending": {
+      "text": "<|speaker:0|> The investigation is over.",
+      "language": "en",
+      "duration_seconds": 2,
+      "model": "flash",
+      "credits_charged": 17
+    }
+  }
+}
