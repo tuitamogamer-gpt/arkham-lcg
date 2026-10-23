@@ -102,7 +102,7 @@
 }
 .save-slots-heading small {
   color: #b2b5a0;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1px;
 }
 .save-slots ul {
@@ -133,7 +133,7 @@
   display: block;
   margin-top: 3px;
   color: #98a58c;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .save-slot-actions {
@@ -357,6 +357,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+  }
+  .sidebar nav button > span[data-short] {
+    font-size: 0;
+    letter-spacing: 0;
+  }
+  .sidebar nav button > span[data-short]::before {
+    content: attr(data-short);
+    font-size: 9.5px;
+    letter-spacing: 0.6px;
   }
   .sidebar nav button > small {
     display: none;

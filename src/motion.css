@@ -14,12 +14,13 @@
   background: #0a1914;
   color: #e4d5ad;
   border: 1px solid #bfa36466;
+  font-size: 14px;
 }
 .motion-setting small {
   grid-column: 1 / -1;
   color: #b2b5a0;
   line-height: 1.6;
-  font-size: 11px;
+  font-size: 13px;
 }
 .sealed-note {
   padding: 12px 15px;
@@ -635,6 +636,14 @@
   animation: motion-soft 0.15s ease-out !important;
 }
 @media (max-width: 600px) {
+  .motion-setting {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .motion-setting select,
+  .motion-setting input[type="range"] {
+    width: 100%;
+    min-width: 0;
+  }
   .event-motif {
     display: none;
   }
