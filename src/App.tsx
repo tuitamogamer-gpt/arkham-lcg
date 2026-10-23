@@ -591,12 +591,13 @@ export default function App() {
       navigate("game");
     });
   const onStart = () => setSetup(true);
-  const navItems: [Page, string, typeof Compass][] = [
-    ["home", "Campaigns", Compass],
-    ["expanded", "Expansions & campaigns", GraduationCap],
-    ["investigators", "Investigator files", UsersThree],
-    ["archive", "Card archive", Stack],
-    ["guide", "Field guide", BookOpenText],
+  // The short label replaces the full one in the phone bottom bar.
+  const navItems: [Page, string, string, typeof Compass][] = [
+    ["home", "Campaigns", "Home", Compass],
+    ["expanded", "Expansions & campaigns", "Expansions", GraduationCap],
+    ["investigators", "Investigator files", "People", UsersThree],
+    ["archive", "Card archive", "Cards", Stack],
+    ["guide", "Field guide", "Guide", BookOpenText],
   ];
   return (
     <div
@@ -628,7 +629,7 @@ export default function App() {
           <span>THE CARD GAME</span>
         </div>
         <nav aria-label="Main navigation">
-          {navItems.map(([id, label, Icon]) => (
+          {navItems.map(([id, label, short, Icon]) => (
             <button
               className={page === id ? "active" : ""}
               key={id}
@@ -637,7 +638,7 @@ export default function App() {
               onClick={() => navigate(id)}
             >
               <Icon size={20} weight="light" />
-              <span>{label}</span>
+              <span data-short={short}>{label}</span>
               {id === "archive" && (
                 <small>{catalog.counts.cardCount.toLocaleString()}</small>
               )}
@@ -653,7 +654,7 @@ export default function App() {
               onClick={() => navigate("game")}
             >
               <FolderOpen size={20} weight="light" />
-              <span>Current investigation</span>
+              <span data-short="Case">Current investigation</span>
               <i />
             </button>
           )}

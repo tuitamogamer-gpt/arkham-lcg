@@ -130,7 +130,7 @@ h3 {
 }
 .local-indicator {
   color: #9e9d81;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
 }
 .local-indicator i {
@@ -188,6 +188,11 @@ h3 {
   background: #29372a;
   color: #f4e1b7;
 }
+.button.secondary .button-arrow {
+  background: #d6c39814;
+  border-color: #d6c39838;
+  color: currentColor;
+}
 .icon-button {
   color: #bbad86;
   background: transparent;
@@ -197,6 +202,97 @@ input {
   color: #e0d7bb;
   background: #101d1a;
   border-color: #b4955d50;
+}
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #b4955d90;
+  border-radius: 3px;
+  background: #101d1a;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+input[type="checkbox"]::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #142019;
+  border-bottom: 2px solid #142019;
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+  transition: transform 0.15s;
+}
+input[type="checkbox"]:checked {
+  background: #d2b47a;
+  border-color: #e3cb98;
+}
+input[type="checkbox"]:checked::after {
+  transform: translateY(-1px) rotate(-45deg) scale(1);
+}
+input[type="checkbox"]:hover:not(:disabled) {
+  border-color: #dcc38e;
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid #e1c78f;
+  outline-offset: 2px;
+}
+input[type="checkbox"]:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #b4955d55;
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #b4955d55;
+}
+input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: #d2b47a;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid #142019;
+  border-radius: 50%;
+  background: #e0c58f;
+  box-shadow: 0 0 0 1px #e3cb98;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #142019;
+  border-radius: 50%;
+  background: #e0c58f;
+  box-shadow: 0 0 0 1px #e3cb98;
+}
+input[type="range"]:focus-visible {
+  outline: 2px solid #e1c78f;
+  outline-offset: 3px;
 }
 select {
   border-radius: 2px;
@@ -247,7 +343,7 @@ select {
   align-items: center;
   gap: 16px;
   color: #c7af7e;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 2.5px;
   margin-bottom: 24px;
 }
@@ -334,7 +430,7 @@ select {
   font-size: 10px;
 }
 .night-meta > span:last-child {
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 2px;
   color: #b3a477;
 }
@@ -382,7 +478,7 @@ select {
   color: #805239;
 }
 .case-number {
-  font-size: 7px;
+  font-size: 10px;
   letter-spacing: 2px;
   color: #6d634a;
   margin-top: 24px;
@@ -471,7 +567,7 @@ select {
   display: flex;
   align-items: center;
   gap: 20px;
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: 2px;
   color: #a59b76;
 }
@@ -500,7 +596,7 @@ select {
   color: #e1d5b7;
 }
 .night-section-title > span {
-  font-size: 7px;
+  font-size: 10px;
   letter-spacing: 2px;
   color: #8d927f;
 }
@@ -563,7 +659,7 @@ select {
   color: #c7bb8999;
 }
 .night-chapter > div > span {
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: #b3b58f;
@@ -584,7 +680,7 @@ select {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 7px;
+  font-size: 10px;
   letter-spacing: 1.7px;
   color: #bca673;
   margin-top: 22px;
@@ -617,8 +713,8 @@ select {
 }
 .night-party-intro > p {
   color: #a8afa0;
-  font-size: 12px;
-  line-height: 1.9;
+  font-size: 15px;
+  line-height: 1.7;
   margin: 20px 0 25px;
 }
 .night-party-intro .night-text-link {
@@ -653,7 +749,7 @@ select {
 .dossier-photo {
   height: 210px;
   background-size: 310%;
-  background-position: 10% 25%;
+  background-position: 10% 44%;
   filter: saturate(0.58) contrast(1.07);
   border: 1px solid #3e4a3944;
 }
@@ -663,8 +759,8 @@ select {
   right: -5px;
   background: #324a35;
   color: #e3d8b6;
-  padding: 7px 12px;
-  font-size: 7px;
+  padding: 6px 11px;
+  font-size: 9px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   box-shadow: 0 2px 6px #0004;
@@ -680,9 +776,9 @@ select {
   padding: 16px 8px 13px;
 }
 .dossier-note > span {
-  font-size: 6px;
+  font-size: 9px;
   letter-spacing: 1.5px;
-  color: #6c6c4e;
+  color: #5f6046;
 }
 .dossier-note h3 {
   font-size: 24px;
@@ -721,7 +817,7 @@ select {
   color: #d5c7a1;
 }
 .night-help > div > span {
-  font-size: 10px;
+  font-size: 14px;
   color: #939f90;
 }
 .night-help > button {
@@ -731,7 +827,7 @@ select {
   align-items: center;
   gap: 14px;
   color: #c3ab75;
-  font-size: 10px;
+  font-size: 14px;
 }
 .night-saved {
   display: flex;
@@ -748,8 +844,8 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  color: #777f6f;
-  font-size: 8px;
+  color: #8d9483;
+  font-size: 12px;
   letter-spacing: 0.5px;
 }
 .night-footer > span:first-child {
@@ -782,14 +878,14 @@ select {
   gap: 10px;
 }
 .party-setup-heading > span:last-child {
-  font-size: 11px;
+  font-size: 13px;
   color: #c9b884;
 }
 .party-setup-heading > .eyebrow {
-  font-size: 9px;
+  font-size: 10.5px;
 }
 .party-setup-help {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.7;
   margin: 10px 0 17px;
   color: #aab49f;
@@ -1552,6 +1648,7 @@ select {
 }
 .log-entry > span {
   color: #667d61;
+  font-size: 9px;
 }
 .log-entry p {
   color: #a4b38e;
@@ -1847,9 +1944,19 @@ select {
   color: #849976;
 }
 .edition-tag {
-  background: #243323;
-  color: #b9b17b;
-  border-color: #91915440;
+  align-self: flex-end;
+  padding: 10px 14px;
+  background: #1a2a20;
+  color: #b9a26f;
+  border: 1px solid #91915440;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.edition-tag > span {
+  color: #d6cba5;
+  font-size: 13px;
 }
 .investigator-file {
   background: #15291e;
@@ -1873,12 +1980,30 @@ select {
   background: #263f2d;
   color: #b1bc8d;
 }
+.guide-grid {
+  gap: 20px;
+}
 .guide-grid article {
+  padding: 26px 30px 28px;
   background: #15271e;
-  border-color: #8b8a533e;
+  border: 1px solid #8b8a533e;
+  border-radius: 4px;
+}
+.guide-grid article > span {
+  font-size: 11px;
 }
 .guide-grid h2 {
   color: #d2c398;
+}
+.guide-grid p {
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 62ch;
+}
+.coverage-note p {
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 90ch;
 }
 .guide-grid p,
 .coverage-note p {
@@ -1893,6 +2018,7 @@ select {
 }
 .source-links a {
   color: #baa678;
+  font-size: 13px;
 }
 .resolution-page {
   background: #101e17;
@@ -2027,7 +2153,7 @@ select {
     width: 30px;
   }
   .occult-rule {
-    font-size: 7px;
+    font-size: 9px;
     letter-spacing: 1.6px;
     gap: 8px;
   }
@@ -2165,7 +2291,7 @@ select {
     letter-spacing: 10px;
   }
   .occult-rule {
-    font-size: 6px;
+    font-size: 9px;
     letter-spacing: 1.3px;
     margin-bottom: 23px;
     gap: 7px;
@@ -2207,7 +2333,7 @@ select {
     line-height: 1.6;
   }
   .night-meta > span:last-child {
-    font-size: 7px;
+    font-size: 9px;
   }
   .campaign-case {
     max-width: 410px;
@@ -2240,13 +2366,13 @@ select {
     gap: 6px;
   }
   .case-topline {
-    font-size: 5px;
+    font-size: 9px;
     letter-spacing: 0.7px;
   }
   .night-hero-footer {
     left: 23px;
     right: 23px;
-    font-size: 5px;
+    font-size: 8px;
     letter-spacing: 1px;
     gap: 10px;
     bottom: 22px;
@@ -2268,11 +2394,11 @@ select {
     margin: 10px 0;
   }
   .night-section-title > span {
-    font-size: 6px;
+    font-size: 9px;
     letter-spacing: 1.4px;
   }
   .night-section-title .eyebrow {
-    font-size: 7px;
+    font-size: 9.5px;
   }
   .night-chapters {
     grid-template-columns: 1fr;
@@ -2296,7 +2422,7 @@ select {
     font-size: 33px;
   }
   .night-party-intro .eyebrow {
-    font-size: 7px;
+    font-size: 10px;
   }
   .night-dossiers {
     grid-template-columns: 1fr;
@@ -2313,12 +2439,12 @@ select {
   .dossier-photo {
     height: 137px;
     background-size: 370%;
-    background-position: 9% 22%;
+    background-position: 9% 40%;
   }
   .dossier-tab {
     top: 8px;
     right: -2px;
-    font-size: 6px;
+    font-size: 9px;
     padding: 6px 10px;
   }
   .dossier-note {
@@ -2328,7 +2454,7 @@ select {
     font-size: 25px;
   }
   .dossier-note > span {
-    font-size: 5px;
+    font-size: 9px;
   }
   .dossier-note p {
     font-size: 12px;
@@ -2348,7 +2474,7 @@ select {
     max-width: calc(100% - 40px);
   }
   .night-help > div > span {
-    font-size: 9px;
+    font-size: 13px;
     line-height: 1.6;
   }
   .night-help > button {
@@ -2359,11 +2485,11 @@ select {
     align-items: start;
     gap: 15px;
     flex-wrap: wrap;
-    font-size: 7px;
+    font-size: 9px;
   }
   .night-footer > span:nth-child(2) {
     max-width: 200px;
-    font-size: 6px;
+    font-size: 9px;
     line-height: 1.8;
   }
   .night-footer > svg {
@@ -2712,10 +2838,10 @@ select {
     font-size: 36px;
   }
   .setup-content > p {
-    font-size: 12px;
+    font-size: 14px;
   }
   .party-setup-heading > .eyebrow {
-    font-size: 7px;
+    font-size: 9.5px;
     letter-spacing: 1.3px;
   }
   .party-setup-heading > span:last-child {

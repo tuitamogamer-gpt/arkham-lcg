@@ -372,7 +372,7 @@ body:after {
   animation: enter 0.65s var(--ease);
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: 10.5px;
   letter-spacing: 2.1px;
   text-transform: uppercase;
   font-weight: 600;
@@ -1171,7 +1171,7 @@ body:after {
   place-items: center;
 }
 .quiet-note {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.8;
   color: #8b947d;
   margin: 23px 0 30px;
@@ -1458,8 +1458,8 @@ body:after {
   line-height: 1.1;
 }
 .setup-content > p {
-  font-size: 11px;
-  line-height: 1.8;
+  font-size: 15px;
+  line-height: 1.65;
   color: #859077;
 }
 .setup-investigator {
@@ -3306,7 +3306,7 @@ body:after {
     max-width: 290px;
   }
   .eyebrow {
-    font-size: 7px;
+    font-size: 9.5px;
     letter-spacing: 1.5px;
   }
   .campaign-hero {
@@ -3563,7 +3563,7 @@ body:after {
     margin-top: 15px;
   }
   .setup-content > p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .setup-investigator {
     margin-top: 15px;
@@ -3738,7 +3738,7 @@ body:after {
   .board-legend > span:last-child {
     width: 100%;
     margin: 0;
-    font-size: 5px;
+    font-size: 9px;
   }
   .compass-rose {
     right: 10px;

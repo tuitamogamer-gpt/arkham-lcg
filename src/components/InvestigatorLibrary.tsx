@@ -97,8 +97,9 @@ function InvestigatorArt({ investigator }: { investigator: Card }) {
       <span className="library-art-fallback" aria-hidden="true">
         {investigator.name
           .split(" ")
-          .map((word) => word[0])
-          .join("")}
+          .map((word) => word.replace(/[^\p{L}]/gu, "")[0] ?? "")
+          .join("")
+          .slice(0, 3)}
         <small>{investigator.subname || "Investigator file"}</small>
       </span>
       {source && (

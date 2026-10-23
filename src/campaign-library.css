@@ -17,14 +17,31 @@
 .campaign-browser-case .button {
   flex-shrink: 0;
 }
+.campaign-browser-case h2 {
+  margin: 6px 0 10px;
+}
+.campaign-browser-case p + p {
+  margin-top: 6px;
+}
+.campaign-catalog-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 28px;
+  flex-wrap: wrap;
+}
 .campaign-catalog-heading h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 8px;
 }
 .campaign-catalog-heading p {
   max-width: 80ch;
   line-height: 1.7;
+}
+.campaign-catalog-heading .button {
+  flex-shrink: 0;
 }
 .campaign-library-filters {
   display: flex;
@@ -49,6 +66,10 @@
   background: #14221e;
   color: #e1dfd0;
   font: inherit;
+}
+.campaign-library > p[role="status"] {
+  margin: 0 0 16px;
+  color: #a9ad9f;
 }
 .campaign-library-notice {
   border-left: 3px solid #bdaa71;
